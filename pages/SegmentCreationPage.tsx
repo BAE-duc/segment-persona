@@ -188,7 +188,7 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState('');
   const [isConversionSettingsModalOpen, setIsConversionSettingsModalOpen] = useState(false);
-  // 編集中のアイテムIDとSOMデータ型を保持するstate。
+  // 編集中のアイテムIDとデータ型を保持するstate。
   const [editingConversionItem, setEditingConversionItem] = useState<{ id: string; somDataType: string } | null>(null);
 
 
