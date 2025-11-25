@@ -37,14 +37,14 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
 
   const xScale = d3.scaleLinear().domain([0, 100]).range([0, 100]);
 
-  const renderBar = (value: number, isTotal: boolean) => {
+  const renderBar = (value: number, isTotal: boolean, isMaxInRow: boolean = false) => {
     const widthPct = xScale(value);
-    // 80%以上の場合強調（参考画像の赤い背景と同様の効果）
+    // 各選択肢で最大値の場合に強調表示
 
-    const isHighlight = !isTotal && value >= 80;
+    const isHighlight = !isTotal && isMaxInRow;
 
     return (
-      <div className={`relative w-full h-6 flex items-center px-1 ${isHighlight ? 'bg-red-100' : ''}`}>
+      <div className={`relative w-full h-6 flex items-center px-1 ${isHighlight ? 'bg-red-50' : ''}`}>
         {/* バー背景 */}
         <div className="absolute inset-y-1 left-0 bg-gray-100 w-full z-0 rounded-sm overflow-hidden">
           {/* 実際のバー */}
@@ -54,7 +54,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
           ></div>
         </div>
         {/* 数値テキスト */}
-        <span className={`relative z-10 ml-auto text-xs font-medium ${isHighlight ? 'text-red-600' : 'text-gray-700'}`}>
+        <span className={`relative z-10 ml-auto text-xs ${isHighlight ? 'font-bold text-red-600' : 'font-medium text-gray-700'}`}>
           {Math.round(value)}%
         </span>
       </div>
@@ -87,39 +87,48 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
             <th className="border-b border-r border-gray-300 bg-gray-50 p-1 font-semibold w-24">選択肢</th>
             <th className="border-b border-r border-gray-300 bg-gray-50 p-1 font-semibold text-center">全体</th>
             {segmentSizes.map((_, i) => (
-              <th key={i} className="border-b border-r border-gray-300 bg-gray-50 p-1 font-semibold text-center">{i + 1}</th>
+              <th key={i} className="border-b border-r border-gray-300 bg-gray-50 p-1 font-semibold text-center">セグメント{i + 1}</th>
             ))}
           </tr>
         </thead>
         <tbody>
           {groupedData.order.map((varId) => {
             const rows = groupedData.groups[varId];
-            return rows.map((row, rowIndex) => (
-              <tr key={`${varId}-${row.choiceId}`} className="hover:bg-gray-50">
-                {rowIndex === 0 && (
-                  <td rowSpan={rows.length} className="border-r border-b border-gray-300 p-2 align-middle bg-white font-bold text-gray-700">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-gray-400">{row.variableId}</span>
-                      <span>{row.variableName}</span>
+            return rows.map((row, rowIndex) => {
+              // 各行（選択肢）で最大値のインデックスを見つける
+              const maxRatio = Math.max(...row.segmentRatios);
+              
+              return (
+                <tr key={`${varId}-${row.choiceId}`} className="hover:bg-gray-50">
+                  {rowIndex === 0 && (
+                    <td rowSpan={rows.length} className="border-r border-b border-gray-300 p-2 align-middle bg-white font-bold text-gray-700">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] text-gray-400">{row.variableId}</span>
+                        <span>{row.variableName}</span>
+                      </div>
+                    </td>
+                  )}
+                  <td className="border-r border-b border-gray-300 p-1 align-middle">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block w-4 text-center text-gray-400 bg-gray-100 rounded text-[10px]">{row.choiceId}</span>
+                      <span>{row.choiceName}</span>
                     </div>
                   </td>
-                )}
-                <td className="border-r border-b border-gray-300 p-1 align-middle">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-block w-4 text-center text-gray-400 bg-gray-100 rounded text-[10px]">{row.choiceId}</span>
-                    <span>{row.choiceName}</span>
-                  </div>
-                </td>
-                <td className="border-r border-b border-gray-300 p-1">
-                  {renderBar(row.totalRatio, true)}
-                </td>
-                {row.segmentRatios.map((ratio, i) => (
-                  <td key={i} className="border-r border-b border-gray-300 p-1 border-l-2 border-l-blue-100">
-                    {renderBar(ratio, false)}
+                  <td className="border-r border-b border-gray-300 p-1">
+                    {renderBar(row.totalRatio, true, false)}
                   </td>
-                ))}
-              </tr>
-            ));
+                  {row.segmentRatios.map((ratio, i) => {
+                    // 이 셀이 최대값인지 확인 (동점인 경우 모두 강조)
+                    const isMaxInRow = ratio === maxRatio && maxRatio > 0;
+                    return (
+                      <td key={i} className="border-r border-b border-gray-300 p-1 border-l-2 border-l-blue-100">
+                        {renderBar(ratio, false, isMaxInRow)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            });
           })}
         </tbody>
       </table>

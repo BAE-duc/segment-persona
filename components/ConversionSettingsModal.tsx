@@ -30,6 +30,33 @@ const StyledNumInput: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (p
     />
 );
 
+// 右パネルヘッダー（ツールチップ付き）
+const RightPanelHeader: React.FC = () => {
+  const [hoverLoc, setHoverLoc] = useState<{ top: number; left: number } | null>(null);
+
+  return (
+    <h3
+      className="font-semibold text-xs mb-1 text-[#586365] cursor-help underline decoration-dotted underline-offset-2 decoration-gray-400"
+      onMouseEnter={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        setHoverLoc({ top: rect.bottom + 5, left: rect.left });
+      }}
+      onMouseLeave={() => setHoverLoc(null)}
+    >
+      セグメントに使用するカテゴリ
+      {hoverLoc && (
+        <div
+          className="fixed z-[9999] bg-white border border-gray-300 shadow-xl rounded-md p-3 text-left w-72 pointer-events-none"
+          style={{ top: hoverLoc.top, left: hoverLoc.left }}
+        >
+          <div className="font-bold text-gray-800 mb-1 text-xs">セグメントに使用するカテゴリ</div>
+          <div className="text-gray-600 text-[10px] leading-relaxed">セグメントに使用しないカテゴリがあれば左記へ移動してください</div>
+        </div>
+      )}
+    </h3>
+  );
+};
+
 export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = ({
     onClose,
     onConfirm,
@@ -671,7 +698,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
             <div className="flex flex-col items-start gap-1">
                 <span className="text-sm font-bold">{itemId}</span>
                 <div className="flex items-center space-x-2">
-                    <label className="text-xs font-medium">SOMデータ型</label>
+                    <label className="text-xs font-medium">データ型</label>
                     <AppSelect value={somDataType} onChange={e => setSomDataType(e.target.value)} className="w-32">
                         <option value="カテゴリ型">カテゴリ型</option>
                         <option value="数値型">数値型</option>
@@ -680,7 +707,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
             </div>
             <div className="flex-grow flex gap-2 overflow-hidden">
                 <div className="flex-1 flex flex-col">
-                    <h3 className="font-semibold text-xs mb-1 text-[#586365]">SOMに使用しないカテゴリ</h3>
+                    <h3 className="font-semibold text-xs mb-1 text-[#586365]">セグメントに使用しないカテゴリ</h3>
                     <div className="flex items-center space-x-1 mb-2">
                         <input type="text" className="flex-grow h-[28px] px-2 text-xs border border-gray-400 bg-white rounded-md outline-none focus:ring-1 focus:ring-gray-400" />
                         <button
@@ -703,10 +730,15 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                 </div>
 
                 <div className="flex-1 flex flex-col">
-                    <h3 className="font-semibold text-xs mb-1 text-[#586365]">SOMに使用するカテゴリ</h3>
-                    <div className="flex items-center space-x-1 mb-2 invisible">
-                        <input type="text" className="flex-grow h-[28px]" />
-                        <button className="h-[28px] w-[28px]"></button>
+                    <RightPanelHeader />
+                    <div className="flex items-center space-x-1 mb-2">
+                        <input type="text" className="flex-grow h-[28px] px-2 text-xs border border-gray-400 bg-white rounded-md outline-none focus:ring-1 focus:ring-gray-400" />
+                        <button
+                            className="flex items-center justify-center flex-shrink-0 h-[28px] w-[28px] border border-gray-400 bg-gray-200 hover:bg-gray-300 transition-colors text-gray-700 font-semibold rounded-md"
+                            aria-label="検索オプション"
+                        >
+                            ↓
+                        </button>
                     </div>
                     <div className="flex-grow border border-gray-400 rounded-md bg-white overflow-hidden flex flex-col">
                         {renderCategoricalTable(rightItems, selectedRightNos, handleToggleRightSelection)}
@@ -727,7 +759,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                     <p className="text-sm font-bold mb-4">{itemId}</p>
                     <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-xs">
                         <div className="flex items-center gap-2">
-                            <label className="w-24 text-right flex-shrink-0">SOMデータ型</label>
+                            <label className="w-24 text-right flex-shrink-0">データ型</label>
                             <AppSelect value={somDataType} onChange={e => setSomDataType(e.target.value)} className="w-full">
                                 <option value="数値型">数値型</option>
                                 <option value="カテゴリ型">カテゴリ型</option>

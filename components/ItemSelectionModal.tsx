@@ -218,7 +218,7 @@ export const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({ onClose,
                       <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">アイテム名称</th>
                       <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">アイテム型</th>
                       <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">変換設定</th>
-                      <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">SOMデータ型</th>
+                      <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">データ型</th>
                       <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">分散</th>
                       <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">有効回答率(%)</th>
                     </tr>

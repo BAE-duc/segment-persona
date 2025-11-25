@@ -19,7 +19,7 @@ import heatmapImage from '../data/hitmap.png';
 
 // 右パネルのタブボタンのラベルを定義します。
 
-const rightPanelTabs = ['セグメント比較', 'ポジショニング', 'ヒートマップ', '構成比比較'];
+const rightPanelTabs = ['集計表', 'ポジショニングマップ', 'ヒートマップ', '構成比比較グラフ'];
 
 interface SegmentMainContentProps {
   isSegmentationExecuted: boolean;
@@ -216,13 +216,13 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
   // Overlay item settings modal state
   const [isOverlayItemModalOpen, setIsOverlayItemModalOpen] = useState(false);
-  const [overlaySelections, setOverlaySelections] = useState<OverlaySelection>({ carIds: new Set() });
+  const [overlaySelections, setOverlaySelections] = useState<OverlaySelection | null>(null);
   const [overlayItemDisplay, setOverlayItemDisplay] = useState('');
 
 
   // Heatmap condition setting modal state
   const [isHeatmapConditionsModalOpen, setIsHeatmapConditionsModalOpen] = useState(false);
-  const [heatmapConditions, setHeatmapConditions] = useState<ConditionListItem[]>(customFilterConditions);
+  const [heatmapConditions, setHeatmapConditions] = useState<ConditionListItem[]>([]);
 
 
   // Manage whether the heatmap execute button is enabled (pending changes). Initial value is true (enabled).
@@ -501,10 +501,13 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
 
   // セグメンテーションが再実行されたときに、表示条件のローカル設定をリセットするeffect。
-  // セグメンテーションが再実行されたときに、グローバルのフィルター条件をヒートマップ条件に同期します。
 
   useEffect(() => {
     if (executionTrigger > 0) {
+      // 集計表タブを選択
+      setActiveTab('集計表');
+      
+      // 集計表の設定をリセット
       setDisplayRangeConfigs({});
       setDisplayCategoryConfigs({});
       setDisplayAdoptedVariableIds(null);
@@ -513,18 +516,26 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       setPendingAdoptedVariableIds(null);
       setSegmentComparisonConditions([]);
       setHasPendingChanges(false);
+      setIsSegmentComparisonExecuted(true);
 
-      // グローバルフィルター条件をヒートマップ条件に同期し、実行ボタンを有効化
+      // ポジショニングマップの設定をリセット
+      setPositioningAxes({ vertical: null, horizontal: null });
+      setOverlaySelections(null);
+      setOverlayItemDisplay('');
+      setIsPositioningExecuted(false);
 
-      setHeatmapConditions(customFilterConditions);
+      // ヒートマップの設定をリセット
+      setHeatmapConditions([]);
+      setIsHeatmapExecuted(false);
       setHeatmapPending(true);
 
-      // 構成比比較のリセット
+      // 構成比比較の設定をリセット
       setPendingCompositionSelection(null);
       setExecutedCompositionSelection(null);
       setCompositionRatioPending(false);
+      setIsCompositionRatioExecuted(false);
     }
-  }, [executionTrigger, customFilterConditions]);
+  }, [executionTrigger]);
 
   // セグメント比較が実行されたとき、またはセグメント数が変更されたときにデータを生成
 
@@ -579,8 +590,38 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
   // When the "Apply" button is clicked, apply the temporary segment count to the actual segment count.
   const handleApplySegmentCount = () => {
     setSegmentCount(tempSegmentCount);
-    // データを再生成（この時点ではuseEffectがトリガーされるはずですが、明示的に呼ぶ必要があれば呼ぶ）
-    // Reactの状態更新は非同期なのでuseEffectに任せるのがベター
+    
+    // セグメント実行ボタンと同じ初期化処理を実行
+    // 集計表タブを選択
+    setActiveTab('集計表');
+    
+    // 集計表の設定をリセット
+    setDisplayRangeConfigs({});
+    setDisplayCategoryConfigs({});
+    setDisplayAdoptedVariableIds(null);
+    setPendingRangeConfigs({});
+    setPendingCategoryConfigs({});
+    setPendingAdoptedVariableIds(null);
+    setSegmentComparisonConditions([]);
+    setHasPendingChanges(false);
+    setIsSegmentComparisonExecuted(true);
+
+    // ポジショニングマップの設定をリセット
+    setPositioningAxes({ vertical: null, horizontal: null });
+    setOverlaySelections(null);
+    setOverlayItemDisplay('');
+    setIsPositioningExecuted(false);
+
+    // ヒートマップの設定をリセット
+    setHeatmapConditions([]);
+    setIsHeatmapExecuted(false);
+    setHeatmapPending(true);
+
+    // 構成比比較の設定をリセット
+    setPendingCompositionSelection(null);
+    setExecutedCompositionSelection(null);
+    setCompositionRatioPending(false);
+    setIsCompositionRatioExecuted(false);
   };
 
   // セグメント比較の実行ボタンハンドラ
@@ -604,7 +645,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
   const heatmapConditionsText = heatmapConditions.length > 0
     ? heatmapConditions.map(c => `${c.itemName} ${c.symbol} ${c.categoryName}${c.connector ? ` ${c.connector}` : ''}`).join(' ')
-    : '選択した内容が表示されます';
+    : '';
 
   const compositionRatioVariableText = pendingCompositionSelection
     ? `${pendingCompositionSelection.variable.name} : ${pendingCompositionSelection.adoptedChoices.map(c => c.content).join(', ')}`
@@ -729,7 +770,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                 <div className="-m-4 flex-grow flex flex-col">
                   {/* 高さ設定：全タブ共通 h-[120px] に変更し、パディングを調整 */}
                   <div className="flex-shrink-0 py-2 px-4 border-b border-gray-300 flex items-start h-[120px]">
-                    {activeTab === 'セグメント比較' && (
+                    {activeTab === '集計表' && (
                       // gap-2 -> gap-1
                       <div className="flex flex-col gap-1 w-full h-full">
                         <div className="flex items-center gap-2">
@@ -753,7 +794,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                         </div>
                       </div>
                     )}
-                    {activeTab === 'ポジショニング' && (
+                    {activeTab === 'ポジショニングマップ' && (
                       <PositioningSettings
                         onExecute={() => setIsPositioningExecuted(true)}
                         onOpenAxisModal={() => setIsPositioningAxisModalOpen(true)}
@@ -781,7 +822,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                         isExecuteDisabled={isHeatmapExecuteDisabled}
                       />
                     )}
-                    {activeTab === '構成比比較' && (
+                    {activeTab === '構成比比較グラフ' && (
                       <CompositionRatioSettings
                         onExecute={() => {
                           setExecutedCompositionSelection(pendingCompositionSelection);
@@ -801,7 +842,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                     )}
                   </div>
                   <div className="flex-grow relative overflow-hidden">
-                    <div id="segment-comparison-graph-area" className={`absolute inset-0 overflow-auto ${activeTab === 'セグメント比較' ? '' : 'hidden'}`}>
+                    <div id="segment-comparison-graph-area" className={`absolute inset-0 overflow-auto ${activeTab === '集計表' ? '' : 'hidden'}`}>
                       {isSegmentComparisonExecuted && comparisonData ? (
                         <ComparisonTable data={comparisonData.rows} segmentSizes={comparisonData.segmentSizes} />
                       ) : (
@@ -810,7 +851,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                         </div>
                       )}
                     </div>
-                    <div id="positioning-graph-area" className={`absolute inset-0 flex items-center justify-center ${activeTab === 'ポジショニング' ? '' : 'hidden'}`}>
+                    <div id="positioning-graph-area" className={`absolute inset-0 flex items-center justify-center ${activeTab === 'ポジショニングマップ' ? '' : 'hidden'}`}>
                       {isPositioningExecuted ? (
                         <img src={positioningMapImage} alt="Positioning Map" className="max-w-full max-h-full object-contain" />
                       ) : (
@@ -824,7 +865,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                         <span className="text-gray-500">表示設定が完了したら実行ボタンを押してください</span>
                       )}
                     </div>
-                    <div id="composition-ratio-comparison-graph-area" className={`absolute inset-0 flex items-center justify-center ${activeTab === '構成比比較' ? '' : 'hidden'}`}>
+                    <div id="composition-ratio-comparison-graph-area" className={`absolute inset-0 flex items-center justify-center ${activeTab === '構成比比較グラフ' ? '' : 'hidden'}`}>
                       {isCompositionRatioExecuted && executedCompositionSelection ? (
                         <CompositionRatioGraph
                           variable={executedCompositionSelection.variable}
@@ -906,16 +947,11 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
           onConfirm={(selection) => {
             setOverlaySelections(selection);
 
-            const selectedVariableNames: string[] = [];
-            if (selection.carIds.size > 0) {
-              // '保有車' 変数名を追加します。
-
-              selectedVariableNames.push('保有車');
+            if (selection && selection.choiceNames.length > 0) {
+              setOverlayItemDisplay(`${selection.variableName} : ${selection.choiceNames.join(', ')}`);
+            } else {
+              setOverlayItemDisplay('');
             }
-            // 他の変数の選択もここに追加できます
-
-
-            setOverlayItemDisplay(selectedVariableNames.join(', '));
             setIsOverlayItemModalOpen(false);
           }}
           initialSelection={overlaySelections}

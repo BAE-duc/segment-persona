@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AppButton } from './shared/FormControls';
 import { modalStyles } from './shared/modalStyles';
+import { TEST_CSV_RAW } from '../data/testData';
 
 // 明確にするために型を定義します
 
@@ -18,26 +19,60 @@ interface PositioningAxisModalProps {
   initialAxes?: { vertical: AxisSelection | null; horizontal: AxisSelection | null };
 }
 
-// モーダルの静的データ
-
-const variables = [
-  { id: 'car_image', name: '車イメージ' },
-];
-
-const choicesData: { [key: string]: { id: string; name: string }[] } = {
-  car_image: [
-    { id: 'tokaiteki', name: '都会的な' },
-    { id: 'kokyuna', name: '高級な' },
-    { id: 'senshinteki', name: '先進的な' },
-    { id: 'koseiteki', name: '個性的な' },
-    { id: '60dai', name: '60代以上' },
-    { id: 'wakawakashii', name: '若々しい' },
-    { id: 'sporty', name: 'スポーティな' },
-  ],
-
+// 年齢を年齢帯に変換する関数
+const getAgeBin = (val: number): string => {
+  if (val <= 19) return '19歳以下';
+  if (val >= 60) return '60歳以上';
+  const lower = Math.floor(val / 5) * 5;
+  return `${lower}-${lower + 4}歳`;
 };
 
 export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onClose, onConfirm, onShowWarning, initialAxes }) => {
+  // TEST_CSV_RAWからデータを動的に抽出
+  const { variables, choicesData } = useMemo(() => {
+    const lines = TEST_CSV_RAW.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim());
+
+    // IDを除く全てのカラムを変数として追加
+    const vars = headers
+      .filter(h => h !== 'ID')
+      .map(h => ({ id: h, name: h }));
+
+    // 各変数の選択肢を抽出
+    const choices: { [key: string]: { id: string; name: string }[] } = {};
+
+    headers.forEach((header, colIndex) => {
+      if (header === 'ID') return;
+
+      const uniqueValues = new Set<string>();
+      const allValues: string[] = [];
+
+      // データ行から値を抽出
+      for (let i = 1; i < lines.length; i++) {
+        const row = lines[i].split(',').map(v => v.trim());
+        const value = row[colIndex];
+
+        if (value && value !== 'NA') {
+          allValues.push(value);
+          uniqueValues.add(value);
+        }
+      }
+
+      // 数値型かどうかを判定
+      const isNumeric = allValues.length > 0 && allValues.every(v => !isNaN(Number(v)));
+
+      if (isNumeric) {
+        // 数値型の場合は変数名自体を選択肢として追加
+        choices[header] = [{ id: `${header}_self`, name: header }];
+      } else {
+        // カテゴリ型の場合は通常通り選択肢を追加
+        choices[header] = Array.from(uniqueValues).map((val, idx) => ({ id: `${header}_${idx}`, name: val }));
+      }
+    });
+
+    return { variables: vars, choicesData: choices };
+  }, []);
+
   const [selectedVariableId, setSelectedVariableId] = useState<string | null>(null);
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
 
