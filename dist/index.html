@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>i-MAP Products</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html,
+    body,
+    #root {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: #f3f4f6;
+      /* gray-100 */
+      overflow: hidden;
+      /* メインページでのスクロールバーを防止 */
+      /* 메인 페이지에서 스크롤바 방지 */
+    }
+
+    /* --- Custom Scrollbar Styles --- */
+    /* --- 사용자 정의 스크롤바 스타일 --- */
+    /* Webkitベースのブラウザ用 (Chrome、Safari、Edge) */
+    /* Webkit 기반 브라우저용 (Chrome, Safari, Edge) */
+    ::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #ffffff;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: #d1d5db;
+      /* gray-300 */
+      border-radius: 6px;
+      border: 1px solid #9ca3af;
+      /* gray-400 */
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background-color: #9ca3af;
+      /* gray-400 */
+    }
+
+    /* Firefox用 */
+    /* Firefox용 */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: #9ca3af #ffffff;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <link rel="stylesheet" href="./index.css">
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "d3": "https://cdn.jsdelivr.net/npm/d3@7/+esm"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/i-map/assets/index-B37xx3N8.js"></script>
+</head>
+
+<body class="font-sans text-xs font-medium text-[#586365]">
+  <div id="root"></div>
+</body>
+
+</html>
