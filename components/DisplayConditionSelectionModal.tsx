@@ -113,6 +113,37 @@ const StyledNumInput: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (p
   />
 );
 
+/**
+ * 数値の年齢範囲から該当する年齢カテゴリを計算
+ * @param min 最小年齢
+ * @param max 最大年齢
+ * @returns 該当する年齢カテゴリの配列
+ */
+const mapAgeRangeToCategories = (min: number, max: number): string[] => {
+  const categories: string[] = [];
+
+  // 19歳以下 (1-19)
+  if (min <= 19) {
+    categories.push('19歳以下');
+  }
+
+  // 20-24歳, 25-29歳, ..., 55-59歳
+  for (let lower = 20; lower <= 55; lower += 5) {
+    const upper = lower + 4;
+    // 範囲が重なっているかチェック
+    if (max >= lower && min <= upper) {
+      categories.push(`${lower}-${upper}歳`);
+    }
+  }
+
+  // 60歳以上
+  if (max >= 60) {
+    categories.push('60歳以上');
+  }
+
+  return categories;
+};
+
 export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionModalProps> = ({
   onClose,
   onConfirm,
@@ -244,6 +275,27 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
       // ageの場合は特別に計算した選択肢を使用
       const choices = varId === 'age' ? ageChoices : choicesData[varId];
       if (!choices) return;
+
+      // 🆕 age変数で数値範囲が設定されている場合の特別処理
+      // 優先順位 1.5: 数値範囲からカテゴリへの自動マッピング (displayCategoryConfigsより後、他より前)
+      if (varId === 'age' &&
+        !displayCategoryConfigs?.[varId] &&
+        item.conversionDetails?.type === 'numerical' &&
+        item.conversionDetails.range) {
+        const min = parseInt(item.conversionDetails.range.min, 10);
+        const max = parseInt(item.conversionDetails.range.max, 10);
+
+        if (!isNaN(min) && !isNaN(max)) {
+          // 数値範囲から該当カテゴリを計算
+          const targetCategories = mapAgeRangeToCategories(min, max);
+          const categorySet = new Set(targetCategories);
+          const filteredIds = choices
+            .filter(c => categorySet.has(c.content))
+            .map(c => c.id);
+          initial[varId] = new Set(filteredIds);
+          return; // 早期リターン
+        }
+      }
 
       // 優先順位 1: 表示条件での上書き設定
       if (displayCategoryConfigs && displayCategoryConfigs[varId]) {

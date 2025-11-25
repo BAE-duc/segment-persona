@@ -323,12 +323,12 @@ export const MainLayout = () => {
 
                     {/* セグメント作成ポップアップ - 相対コンテナ内で絶対配置されます */}
 
-                    {isSegmentPopupOpen && !isSegmentPopupMinimized && (
+                    {isSegmentPopupOpen && (
                         <>
                             {/* 背景 */}
 
                             <div
-                                className="absolute inset-0 bg-black bg-opacity-20 z-30"
+                                className={`absolute inset-0 bg-black bg-opacity-20 z-30 ${isSegmentPopupMinimized ? 'hidden' : ''}`}
                                 onDrop={handleBackdropDrop}
                                 onDragOver={handleBackdropDragOver}
                                 onClick={() => bringPopupToFront('segment')}
@@ -336,7 +336,7 @@ export const MainLayout = () => {
                             {/* ポップアップコンテンツ */}
 
                             <div
-                                className={`absolute w-[1450px] h-[730px] shadow-2xl border border-gray-400 flex flex-col`}
+                                className={`absolute w-[1450px] h-[730px] shadow-2xl border border-gray-400 flex flex-col ${isSegmentPopupMinimized ? 'hidden' : ''}`}
                                 style={{
                                     ...(popupPosition ? { top: `${popupPosition.y}px`, left: `${popupPosition.x}px` } : { visibility: 'hidden' as const }),
                                     zIndex: 50 - popupStack.indexOf('segment')
@@ -357,10 +357,10 @@ export const MainLayout = () => {
 
                     {/* ペルソナ一覧ポップアップ（複数対応） */}
 
-                    {personaPopups.filter(p => !p.isMinimized).map((popup) => (
+                    {personaPopups.map((popup) => (
                         <div
                             key={popup.id}
-                            className="absolute w-[1450px] h-[730px] shadow-2xl border border-gray-400 flex flex-col"
+                            className={`absolute w-[1450px] h-[730px] shadow-2xl border border-gray-400 flex flex-col ${popup.isMinimized ? 'hidden' : ''}`}
                             style={{
                                 ...(popup.position ? { top: `${popup.position.y}px`, left: `${popup.position.x}px` } : { visibility: 'hidden' as const }),
                                 zIndex: 50 - popupStack.indexOf(popup.id)

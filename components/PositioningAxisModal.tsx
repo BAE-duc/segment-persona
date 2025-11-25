@@ -22,7 +22,6 @@ interface PositioningAxisModalProps {
 
 const variables = [
   { id: 'car_image', name: '車イメージ' },
-  ...Array.from({ length: 19 }, (_, i) => ({ id: `var${i + 2}`, name: `変数${i + 2}` })), // 変数2から変数20まで
 ];
 
 const choicesData: { [key: string]: { id: string; name: string }[] } = {
@@ -34,16 +33,8 @@ const choicesData: { [key: string]: { id: string; name: string }[] } = {
     { id: '60dai', name: '60代以上' },
     { id: 'wakawakashii', name: '若々しい' },
     { id: 'sporty', name: 'スポーティな' },
-    ...Array.from({ length: 10 }, (_, i) => ({ id: `image${i + 1}`, name: `イメージ${i + 1}` })), // イメージ1から10まで追加
   ],
-  // 他の変数のプレースホルダーデータ
 
-  ...Object.fromEntries(
-    Array.from({ length: 19 }, (_, i) => [ // 変数2から変数20まで
-      `var${i + 2}`,
-      Array.from({ length: 2 }, (_, j) => ({ id: `choice${j + 1}`, name: `選択肢${j + 1}` })), // 選択肢を2つに減らす
-    ])
-  ),
 };
 
 export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onClose, onConfirm, onShowWarning, initialAxes }) => {
