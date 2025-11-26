@@ -12,8 +12,8 @@ import { CompositionRatioVariableModal, type CompositionRatioSelection } from '.
 import { ComparisonTable, type ComparisonRow } from './ComparisonTable';
 import { TEST_CSV_RAW } from '../data/testData';
 import { CompositionRatioGraph } from './CompositionRatioGraph';
+import { PositioningMapGraph } from './PositioningMapGraph';
 import somMapImage from '../data/sommap.png';
-import positioningMapImage from '../data/positioningmap.png';
 import heatmapImage from '../data/hitmap.png';
 
 
@@ -97,7 +97,12 @@ const PositioningSettings: React.FC<PositioningSettingsProps> = ({ onExecute, on
 
       <div className="flex flex-col space-y-1">
         <AppButton className="w-44" onClick={onOpenOverlayModal}>重ね合わせ項目設定</AppButton>
-        <StyledTextInput id="overlay-item" value={overlayItemDisplay} />
+        <textarea
+          id="overlay-item"
+          value={overlayItemDisplay}
+          readOnly
+          className="h-[64px] px-2 py-1 text-xs border border-gray-400 bg-white rounded-md outline-none focus:ring-1 focus:ring-gray-400 w-full resize-none overflow-y-auto"
+        />
       </div>
 
       {/* 実行ボタン */}
@@ -267,6 +272,11 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
   // セグメント比較用データ
 
   const [comparisonData, setComparisonData] = useState<{ rows: ComparisonRow[], segmentSizes: number[] } | null>(null);
+  const [segmentedRows, setSegmentedRows] = useState<any[]>([]);
+
+  // ポジショニングマップ実行時のスナップショット
+  const [executedPositioningAxes, setExecutedPositioningAxes] = useState<{ vertical: AxisSelection | null; horizontal: AxisSelection | null }>({ vertical: null, horizontal: null });
+  const [executedOverlaySelection, setExecutedOverlaySelection] = useState<OverlaySelection | null>(null);
 
 
   // 年齢の区分けロジック
@@ -468,7 +478,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       });
     });
 
-    return { rows: resultRows, segmentSizes };
+    return { rows: resultRows, segmentSizes, rowsWithSegment };
   };
 
 
@@ -506,7 +516,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     if (executionTrigger > 0) {
       // 集計表タブを選択
       setActiveTab('集計表');
-      
+
       // 集計表の設定をリセット
       setDisplayRangeConfigs({});
       setDisplayCategoryConfigs({});
@@ -578,7 +588,9 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       }
 
       // 選択された変数と条件に基づいてデータを生成
-      setComparisonData(generateRealDataFromCSV(segmentCount, targetVariables, displayRangeConfigs, displayCategoryConfigs));
+      const result = generateRealDataFromCSV(segmentCount, targetVariables, displayRangeConfigs, displayCategoryConfigs);
+      setComparisonData({ rows: result.rows, segmentSizes: result.segmentSizes });
+      setSegmentedRows(result.rowsWithSegment);
     }
   }, [isSegmentComparisonExecuted, segmentCount, selectedVariables, displayRangeConfigs, displayCategoryConfigs, displayAdoptedVariableIds, itemDetails, choicesData]);
 
@@ -590,11 +602,11 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
   // When the "Apply" button is clicked, apply the temporary segment count to the actual segment count.
   const handleApplySegmentCount = () => {
     setSegmentCount(tempSegmentCount);
-    
+
     // セグメント実行ボタンと同じ初期化処理を実行
     // 集計表タブを選択
     setActiveTab('集計表');
-    
+
     // 集計表の設定をリセット
     setDisplayRangeConfigs({});
     setDisplayCategoryConfigs({});
@@ -796,7 +808,11 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                     )}
                     {activeTab === 'ポジショニングマップ' && (
                       <PositioningSettings
-                        onExecute={() => setIsPositioningExecuted(true)}
+                        onExecute={() => {
+                          setExecutedPositioningAxes(positioningAxes);
+                          setExecutedOverlaySelection(overlaySelections);
+                          setIsPositioningExecuted(true);
+                        }}
                         onOpenAxisModal={() => setIsPositioningAxisModalOpen(true)}
                         onOpenOverlayModal={() => setIsOverlayItemModalOpen(true)}
                         verticalAxisDisplay={verticalAxisDisplay}
@@ -853,7 +869,17 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                     </div>
                     <div id="positioning-graph-area" className={`absolute inset-0 flex items-center justify-center ${activeTab === 'ポジショニングマップ' ? '' : 'hidden'}`}>
                       {isPositioningExecuted ? (
-                        <img src={positioningMapImage} alt="Positioning Map" className="max-w-full max-h-full object-contain" />
+                        positioningAxes.vertical && positioningAxes.horizontal ? (
+                          <PositioningMapGraph
+                            segmentedRows={segmentedRows}
+                            verticalAxis={executedPositioningAxes.vertical}
+                            horizontalAxis={executedPositioningAxes.horizontal}
+                            overlaySelection={executedOverlaySelection}
+                            segmentCount={segmentCount}
+                          />
+                        ) : (
+                          <span className="text-gray-500">軸を設定してください</span>
+                        )
                       ) : (
                         <span className="text-gray-500">表示設定が完了したら実行ボタンを押してください</span>
                       )}
