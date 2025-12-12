@@ -46,7 +46,7 @@ interface DisplayConditionSelectionModalProps {
   ) => void;
   initialSelectedItems: SelectedItemsMap;
   segmentCount: number;
-  // 全てのアイテムと選択肢データを受け取るように追加
+  // 全てのアイテムとカテゴリデータを受け取るように追加
 
   items: ItemDetail[];
   choicesData: { [key: string]: { id: number; content: string }[] };
@@ -79,13 +79,12 @@ const CustomCheckbox = ({
       />
       <div
         className={`w-4 h-4 border border-gray-400 rounded-sm flex items-center justify-center transition-colors 
-                  peer-checked:bg-black peer-checked:border-black
                   peer-disabled:bg-gray-200 peer-disabled:cursor-not-allowed
                   bg-white`}
       >
         {checked && (
           <svg
-            className="w-3 h-3 text-white"
+            className="w-3 h-3 text-black"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -167,7 +166,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
     [items]
   );
 
-  // 年齢(age)の選択肢をCSVから動的に生成するロジック
+  // 年齢(age)のカテゴリをCSVから動的に生成するロジック
 
   const ageChoices = useMemo(() => {
     const lines = TEST_CSV_RAW.trim().split('\n');
@@ -207,7 +206,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
   }, []);
 
 
-  // 選択された変数、採用された変数、選択された選択肢の状態を管理します。
+  // 選択された変数、採用された変数、選択されたカテゴリの状態を管理します。
 
   const [selectedVariableId, setSelectedVariableId] = useState<string | null>(null);
 
@@ -261,7 +260,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
     return initial;
   });
 
-  // 初期表示時、セグメントアイテム選択で選択した選択肢が選択された状態にします。
+  // 初期表示時、セグメントアイテム選択で選択したカテゴリが選択された状態にします。
   // 変換設定（カテゴリ型）がある場合は、その設定内容を反映させます。
   // 表示条件選択での上書き設定（displayCategoryConfigs）がある場合はそれを優先します。
 
@@ -272,7 +271,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
 
     items.forEach(item => {
       const varId = item.id;
-      // ageの場合は特別に計算した選択肢を使用
+      // ageの場合は特別に計算したカテゴリを使用
       const choices = varId === 'age' ? ageChoices : choicesData[varId];
       if (!choices) return;
 
@@ -399,8 +398,8 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
         // 変数の採用を解除する場合
         // 変数の採用を解除する場合
         newSet.delete(variableId);
-        // この変数の選択された選択肢をクリアします。
-        // この変数の選択された選択肢をクリアします。
+        // この変数の選択されたカテゴリをクリアします。
+        // この変数の選択されたカテゴリをクリアします。
         setSelectedChoices(prevChoices => {
           const newChoices = { ...prevChoices };
           delete newChoices[variableId];
@@ -410,7 +409,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
         // 変数を採用する場合
         // 変数を採用する場合
         newSet.add(variableId);
-        // ユーザーの要求に応じて、変数を採用する際にその変数の選択肢を表示し、すべてを選択します。
+        // ユーザーの要求に応じて、変数を採用する際にその変数のカテゴリを表示し、すべてを選択します。
 
         setSelectedVariableId(variableId);
 
@@ -449,7 +448,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
   const handleChoiceToggle = (variableId: string, choiceId: number) => {
     const isAdding = !(selectedChoices[variableId]?.has(choiceId));
 
-    // 選択肢を追加する際に、変数がまだ採用されていなければ自動で採用します。
+    // カテゴリを追加する際に、変数がまだ採用されていなければ自動で採用します。
 
     if (isAdding && !adoptedVariables.has(variableId)) {
       setAdoptedVariables(prev => new Set(prev).add(variableId));
@@ -465,7 +464,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
       }
       newChoices[variableId] = choiceSet;
 
-      // 選択肢がなくなった場合、変数の採用を解除します。
+      // カテゴリがなくなった場合、変数の採用を解除します。
       // If there are no more selected choices, un-adopt the variable.
       if (!isAdding && choiceSet.size === 0) {
         setAdoptedVariables(prevAdopted => {
@@ -875,7 +874,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
       >
         {/* Header */}
         <div className={modalStyles.header.container}>
-          <h2 className={modalStyles.header.title}>表示条件選択</h2>
+          <h2 className={modalStyles.header.title}>集計表の表示条件設定</h2>
           <button onClick={onClose} className={modalStyles.header.closeButton}>{modalStyles.header.closeButtonIcon}</button>
         </div>
 
@@ -883,12 +882,12 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
         <div className={`${modalStyles.body.container} flex gap-4 overflow-hidden`}>
           {/* Left Panel: Variable List */}
           <div className="w-[280px] flex flex-col pr-4 border-r border-gray-300">
-            <h3 className="font-semibold text-xs mb-1 text-[#586365]">変数一覧</h3>
+            <h3 className="font-semibold text-xs mb-1 text-[#586365]">アイテム一覧</h3>
             <div className="flex items-center space-x-1 mb-2">
               <input type="text" className="flex-grow h-[28px] px-2 text-xs border border-gray-400 bg-white rounded-md outline-none focus:ring-1 focus:ring-gray-400" />
               <button
                 className="flex items-center justify-center flex-shrink-0 h-[28px] w-[28px] border border-gray-400 bg-gray-200 hover:bg-gray-300 transition-colors text-gray-700 font-semibold rounded-md"
-                aria-label="変数一覧 オプション"
+                aria-label="アイテム一覧 オプション"
               >
                 ↓
               </button>
@@ -897,9 +896,14 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
               <table className="w-full text-xs">
                 <thead className="sticky top-0 bg-gray-50 z-10">
                   <tr>
-                    <th className="p-1 font-bold text-center border-b border-r border-gray-300 w-12">採用</th>
+                    <th className="p-1 font-bold text-center border-b border-r border-gray-300 w-12">
+                      <CustomCheckbox
+                        checked={variables.length > 0 && variables.every(v => adoptedVariables.has(v.id))}
+                        onChange={handleSelectAllVariablesToggle}
+                      />
+                    </th>
                     <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">変数名</th>
-                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">データ型</th>
+                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">データタイプ</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -926,7 +930,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
           {/* Middle Panel: Choices or Range Input */}
           <div className="w-[320px] flex flex-col pr-4 border-r border-gray-300">
             <h3 className="font-semibold text-xs mb-2 text-[#586365]">
-              {isNumerical ? '値範囲設定' : '選択肢'}
+              {isNumerical ? '値範囲設定' : 'カテゴリ一覧'}
             </h3>
 
             {isNumerical ? (
@@ -962,7 +966,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
                 <div className="text-center text-xs text-gray-500">ヒストグラム表示領域</div>
               </div>
             ) : (
-              // カテゴリ型またはその他の場合の選択肢リスト
+              // カテゴリ型またはその他の場合のカテゴリリスト
               <div className="flex-grow border border-gray-400 bg-white overflow-hidden flex flex-col rounded-md">
                 <div className="flex-shrink-0">
                   <table className="w-full text-xs">
@@ -975,12 +979,9 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
                             disabled={!selectedVariableId}
                           />
                         </th>
-                        <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2 w-20">選択肢</th>
+                        <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2 w-20">No.</th>
                         <th className="p-1 font-bold text-left border-b border-gray-300 pl-2 flex items-center">
                           内容
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 ml-1">
-                            <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-                          </svg>
                         </th>
                       </tr>
                     </thead>
@@ -1062,7 +1063,14 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
         {/* Footer */}
         <div className={`${modalStyles.footer.container} justify-end`}>
           <div className={modalStyles.footer.buttonGroup}>
-            <AppButton onClick={handleConfirm} className="w-24 py-1">完了</AppButton>
+            <AppButton
+              onClick={handleConfirm}
+              className="w-24 py-1"
+              primary
+              disabled={!(adoptedVariables.size > 0 && selectedSegments.size > 0)}
+            >
+              OK
+            </AppButton>
             <AppButton onClick={onClose} className="w-24 py-1">Cancel</AppButton>
           </div>
         </div>

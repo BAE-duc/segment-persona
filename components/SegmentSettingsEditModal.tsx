@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { AppButton, AppSelect } from './shared/FormControls';
 import { modalStyles } from './shared/modalStyles';
 
@@ -140,6 +140,19 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
   const [neighborhoodFunction, setNeighborhoodFunction] = useState(initialSettings.neighborhoodFunction);
   const [decayFunction, setDecayFunction] = useState(initialSettings.decayFunction);
 
+  const isFormValid = useMemo(() => {
+    const isMapSizeValid = mapSize === 'auto' || (customWidth.trim() !== '' && customHeight.trim() !== '');
+    const isOtherSettingsValid =
+      learningRate.trim() !== '' &&
+      iterations.trim() !== '' &&
+      distanceMetric.trim() !== '' &&
+      neighborhoodRadius.trim() !== '' &&
+      neighborhoodFunction.trim() !== '' &&
+      decayFunction.trim() !== '';
+
+    return isMapSizeValid && isOtherSettingsValid;
+  }, [mapSize, customWidth, customHeight, learningRate, iterations, distanceMetric, neighborhoodRadius, neighborhoodFunction, decayFunction]);
+
   const handleConfirm = () => {
     onConfirm({
       mapSize,
@@ -168,7 +181,7 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
         {/* ヘッダー */}
 
         <div className={modalStyles.header.container}>
-          <h2 className={modalStyles.header.title}>セグメント設定</h2>
+          <h2 className={modalStyles.header.title}>パラメータ選択</h2>
           <button onClick={onClose} className={modalStyles.header.closeButton}>{modalStyles.header.closeButtonIcon}</button>
         </div>
 
@@ -256,7 +269,14 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
 
         <div className={`${modalStyles.footer.container} justify-end`}>
           <div className={modalStyles.footer.buttonGroup}>
-            <AppButton onClick={handleConfirm} className="w-24 py-1">OK</AppButton>
+            <AppButton
+              onClick={handleConfirm}
+              className="w-24 py-1"
+              primary
+              disabled={!isFormValid}
+            >
+              OK
+            </AppButton>
             <AppButton onClick={onClose} className="w-24 py-1">Cancel</AppButton>
           </div>
         </div>

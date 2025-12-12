@@ -9,7 +9,7 @@ interface CompositionRatioGraphProps {
     segmentCount: number;
     rangeConfigs?: Record<string, { min: number; max: number }>;
     displayCategoryConfigs?: Record<string, string[]>;
-    // 選択された選択肢を受け取るためのPropを追加
+    // 選択されたカテゴリを受け取るためのPropを追加
 
     adoptedChoices?: { id: number; content: string }[];
 }
@@ -73,7 +73,7 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
             else if (!val || val === '') val = 'NA';
 
             // Apply Display Category Configs if present (Global Filter)
-            // ユーザーが構成比比較用に明示的に選択肢を選んでいる場合(adoptedChoicesがある場合)、
+            // ユーザーが構成比比較用に明示的にカテゴリを選んでいる場合(adoptedChoicesがある場合)、
             // その変数のグローバルフィルター(displayCategoryConfigs)は無視して、ローカルな選択を優先します。
             const hasLocalOverride = adoptedChoices && adoptedChoices.length > 0;
 
@@ -82,7 +82,7 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
             }
 
             // Apply Adopted Choices Filter (Selection from Modal)
-            // モーダルで選択された選択肢のみを表示するようにフィルタリング
+            // モーダルで選択されたカテゴリのみを表示するようにフィルタリング
             if (hasLocalOverride) {
                 const isSelected = adoptedChoices!.some(c => c.content === val);
                 if (!isSelected) return;

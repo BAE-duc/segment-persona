@@ -1,4 +1,7 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
+import { PERSONA_TEST_DATA_CSV } from '../data/persona_test_data';
+import { parsePurchaseData, normalizeData } from '../components/RadarChartUtils';
+import { parsePurchaseItems, sortPurchaseItems, getUniqueCategories } from '../components/PurchaseTableUtils';
 
 interface PersonaData {
     id: number;
@@ -36,26 +39,22 @@ const dummyValuesBelow = [
     '思い通りできなくてもそれほど気にしない'
 ];
 
-const dummyPurchaseHistory = [
-    { category: 'ファッション', place: 'チヨダ', item: 'メンズコートスニーカー', price: '4,300', usage: '自分以外' },
-    { category: 'ファッション', place: '2NDSTREET', item: 'ブルゾン/L/ポリエステル/BLU/無地', price: '3,900', usage: '自分以外' },
-    { category: 'ファッション', place: '2NDSTREET', item: 'レーワンピース/L/半袖A/税抜', price: '2,300', usage: '自分以外' },
-    { category: '趣味/レジャー/教養', place: '風鈴屋', item: '宿泊WEB', price: '14,545', usage: '共有' },
-    { category: '趣味/レジャー/教養', place: 'マース北上', item: '一般素泊り平日3,300内', price: '5,998', usage: '共有' },
-    { category: '趣味/レジャー/教養', place: 'さくらんど温泉', item: '入館大人昼', price: '2,544', usage: '共有' },
-    { category: '家電/生活サービス', place: 'ドン・キホーテ', item: 'サロニアミニ', price: '1,980', usage: '自分' },
-    { category: '家電/生活サービス', place: 'ダイレックス', item: 'ゴッパ スマホ＆タブレット高速充電器 ホワイト', price: '1,072', usage: '共有' },
-    { category: '美容/健康/医療', place: '眼科', item: '診療費', price: '5,100', usage: '自分以外' },
-    { category: '美容/健康/医療', place: 'くろさきこころのクリニック', item: '診断書', price: '5,000', usage: '自分以外' },
-];
+
 
 // レーダーチャートコンポーネント
 const RadarChart = () => {
-    const size = 330;
+    const size = 340;
     const center = size / 2;
-    const radius = 110;
-    const axes = ['食費', '外食/デリバリー', 'ファッション', '趣味/レジャー/教養', '日用品/雑貨', '美容/健康/医療', '自動車/バイク関連', '交通', '家電/生活サービス', '教育', '保険', '固定費'];
-    const data = [0.8, 0.6, 0.4, 0.5, 0.3, 0.2, 0.4, 0.5, 0.7, 0.2, 0.6, 0.5]; // Dummy values 0-1
+    const radius = 120;
+
+    // 実データを処理
+    const chartData = useMemo(() => {
+        const parsed = parsePurchaseData(PERSONA_TEST_DATA_CSV);
+        return normalizeData(parsed);
+    }, []);
+
+    const axes = chartData.map(d => d.category);
+    const data = chartData.map(d => d.value);
 
     const angleSlice = (Math.PI * 2) / axes.length;
 
@@ -70,7 +69,7 @@ const RadarChart = () => {
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
             {/* グリッド円 */}
             {[0.25, 0.5, 0.75, 1].map((r, i) => (
-                <circle key={i} cx={center} cy={center} r={radius * r} fill="none" stroke="#ddd" strokeWidth="1" />
+                <circle key={i} cx={center} cy={center} r={radius * r} fill="none" stroke="#E5E7EB" strokeWidth="1" />
             ))}
 
             {/* 軸 */}
@@ -80,17 +79,17 @@ const RadarChart = () => {
                 const y = center + radius * Math.sin(angle);
                 return (
                     <g key={i}>
-                        <line x1={center} y1={center} x2={x} y2={y} stroke="#ddd" strokeWidth="1" />
+                        <line x1={center} y1={center} x2={x} y2={y} stroke="#E5E7EB" strokeWidth="1" />
                         <text
-                            x={center + (radius + 15) * Math.cos(angle)}
-                            y={center + (radius + 15) * Math.sin(angle)}
-                            fontSize="8"
+                            x={center + (radius + 25) * Math.cos(angle)}
+                            y={center + (radius + 25) * Math.sin(angle)}
+                            fontSize="14"
                             textAnchor="middle"
                             alignmentBaseline="middle"
-                            fill="#555"
+                            fill="#6B7280"
                         >
-                            {axis.split('/').map((line, j) => (
-                                <tspan x={center + (radius + 20) * Math.cos(angle)} dy={j * 8} key={j}>{line}</tspan>
+                            {axis.split(' ').map((line, j) => (
+                                <tspan x={center + (radius + 30) * Math.cos(angle)} dy={j === 0 ? 0 : 16} key={j}>{line}</tspan>
                             ))}
                         </text>
                     </g>
@@ -98,12 +97,30 @@ const RadarChart = () => {
             })}
 
             {/* データポリゴン */}
-            <polygon points={points} fill="rgba(59, 130, 246, 0.5)" stroke="#3B82F6" strokeWidth="2" />
+            <polygon points={points} fill="rgba(147, 197, 253, 0.5)" stroke="#2563EB" strokeWidth="2" />
         </svg>
     );
 };
 
 export const PersonaDetailPage: React.FC<PersonaDetailPageProps> = ({ currentPersona, allPersonas, readStatus, onSelectPersona, onBack }) => {
+    // 購入データを処理
+    const allPurchaseItems = useMemo(() => {
+        const items = parsePurchaseItems(PERSONA_TEST_DATA_CSV);
+        return sortPurchaseItems(items);
+    }, []);
+
+    const categories = useMemo(() => getUniqueCategories(allPurchaseItems), [allPurchaseItems]);
+
+    const [selectedCategory, setSelectedCategory] = useState<string>('全て');
+
+    // フィルタリングされた購入データ
+    const filteredItems = useMemo(() => {
+        if (selectedCategory === '全て') {
+            return allPurchaseItems;
+        }
+        return allPurchaseItems.filter(item => item.category === selectedCategory);
+    }, [allPurchaseItems, selectedCategory]);
+
     return (
         <div className="flex h-full w-full bg-white overflow-hidden">
             {/* 左サイドバー */}
@@ -170,7 +187,7 @@ export const PersonaDetailPage: React.FC<PersonaDetailPageProps> = ({ currentPer
                 <div className="flex-grow p-4 overflow-y-auto bg-gray-50">
                     <div className="flex gap-4 h-full">
                         {/* 左カラム：価値観＆レーダーチャート */}
-                        <div className="w-1/3 flex flex-col gap-4">
+                        <div className="w-1/3 flex flex-col gap-2">
                             {/* 価値観 */}
                             <div className="bg-white p-4 rounded shadow-sm border border-gray-200 flex-grow flex flex-col">
                                 <h3 className="font-bold text-gray-700 mb-4 border-l-4 border-gray-500 pl-2">価値観</h3>
@@ -215,8 +232,8 @@ export const PersonaDetailPage: React.FC<PersonaDetailPageProps> = ({ currentPer
                             </div>
 
                             {/* レーダーチャート */}
-                            <div className="bg-white p-4 rounded shadow-sm border border-gray-200 aspect-square flex flex-col">
-                                <h3 className="font-bold text-gray-700 mb-2 border-l-4 border-gray-500 pl-2">購入カテゴリ</h3>
+                            <div className="bg-white p-2 rounded shadow-sm border border-gray-200 flex flex-col">
+                                <h3 className="font-bold text-gray-700 mb-0 border-l-4 border-gray-500 pl-2">購入カテゴリ</h3>
                                 <div className="flex-grow flex items-center justify-center">
                                     <RadarChart />
                                 </div>
@@ -230,14 +247,21 @@ export const PersonaDetailPage: React.FC<PersonaDetailPageProps> = ({ currentPer
                             <div className="flex justify-end gap-4 mb-4 text-xs">
                                 <div className="flex items-center gap-2">
                                     <span>表示データ</span>
-                                    <select className="border border-gray-300 rounded px-2 py-1">
+                                    <select className="border border-gray-300 rounded px-2 py-1" disabled>
                                         <option>購入データ</option>
                                     </select>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span>表示カテゴリ</span>
-                                    <select className="border border-gray-300 rounded px-2 py-1">
+                                    <select
+                                        className="border border-gray-300 rounded px-2 py-1"
+                                        value={selectedCategory}
+                                        onChange={(e) => setSelectedCategory(e.target.value)}
+                                    >
                                         <option>全て</option>
+                                        {categories.map(cat => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>
@@ -254,12 +278,12 @@ export const PersonaDetailPage: React.FC<PersonaDetailPageProps> = ({ currentPer
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {dummyPurchaseHistory.map((row, i) => (
+                                        {filteredItems.map((row, i) => (
                                             <tr key={i} className="border-b hover:bg-gray-50">
                                                 <td className="py-3 px-2 text-blue-600 font-bold">{row.category}</td>
                                                 <td className="py-3 px-2 text-blue-600 font-bold">{row.place}</td>
                                                 <td className="py-3 px-2">{row.item}</td>
-                                                <td className="py-3 px-2 text-right">{row.price}</td>
+                                                <td className="py-3 px-2 text-right">{row.price.toLocaleString()}</td>
                                                 <td className="py-3 px-2 text-gray-500">{row.usage}</td>
                                             </tr>
                                         ))}

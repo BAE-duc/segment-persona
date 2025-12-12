@@ -28,7 +28,7 @@ export const PositioningMapGraph: React.FC<PositioningMapGraphProps> = ({
 
         const width = 800;
         const height = 600;
-        const margin = { top: 40, right: 120, bottom: 80, left: 80 }; // Increased margins
+        const margin = { top: 40, right: 20, bottom: 40, left: 70 }; // Increased left/top margins
         const innerWidth = width - margin.left - margin.right;
         const innerHeight = height - margin.top - margin.bottom;
 
@@ -147,39 +147,54 @@ export const PositioningMapGraph: React.FC<PositioningMapGraphProps> = ({
             });
         }
 
-        // --- Dynamic Scales ---
-        const allX = [...segmentData.map((d) => d.x), ...overlayData.map((d) => d.x)];
-        const allY = [...segmentData.map((d) => d.y), ...overlayData.map((d) => d.y)];
-
-        const xMin = d3.min(allX) || 0;
-        const xMax = d3.max(allX) || 100;
-        const yMin = d3.min(allY) || 0;
-        const yMax = d3.max(allY) || 100;
-
-        // Add padding (e.g., 10% of range)
-        const xPadding = (xMax - xMin) * 0.1 || 5;
-        const yPadding = (yMax - yMin) * 0.1 || 5;
-
-        const xScale = d3.scaleLinear()
-            .domain([Math.max(0, xMin - xPadding), xIsNumeric ? xMax + xPadding : Math.min(100, xMax + xPadding)])
-            .range([0, innerWidth]);
-
-        const yScale = d3.scaleLinear()
-            .domain([Math.max(0, yMin - yPadding), yIsNumeric ? yMax + yPadding : Math.min(100, yMax + yPadding)])
-            .range([innerHeight, 0]);
-
-        // Bubble size scale - USE MIN TO MAX RANGE FOR BETTER DIFFERENTIATION
+        // Bubble size scale
         const minDimension = Math.min(innerWidth, innerHeight);
-        const maxBubbleRadius = minDimension * 0.25; // 直径が50%なので半径は25%
-        const minBubbleRadius = minDimension * 0.025; // 直径が5%なので半径は2.5%
+        const maxBubbleRadius = minDimension * 0.15; // Reduced from 0.25 to 0.15 to avoid overwhelming the chart
+        const minBubbleRadius = minDimension * 0.025;
 
         const minSize = d3.min(segmentData, (d) => d.size) || 1;
         const maxSize = d3.max(segmentData, (d) => d.size) || 100;
 
         const sizeScale = d3
             .scaleSqrt()
-            .domain([minSize, maxSize])  // Changed from [0, maxSize] to [minSize, maxSize]
+            .domain([minSize, maxSize])
             .range([minBubbleRadius, maxBubbleRadius]);
+
+        // --- Dynamic Scales with Padding for Bubbles ---
+        const allX = [...segmentData.map((d) => d.x), ...overlayData.map((d) => d.x)];
+        const allY = [...segmentData.map((d) => d.y), ...overlayData.map((d) => d.y)];
+
+        let xMin = d3.min(allX) || 0;
+        let xMax = d3.max(allX) || 100;
+        let yMin = d3.min(allY) || 0;
+        let yMax = d3.max(allY) || 100;
+
+        // Ensure we have a non-zero range
+        if (xMin === xMax) {
+            xMin -= 10;
+            xMax += 10;
+        }
+        if (yMin === yMax) {
+            yMin -= 10;
+            yMax += 10;
+        }
+
+        const xDomainLength = xMax - xMin;
+        const yDomainLength = yMax - yMin;
+
+        // Calculate padding required to fit the largest bubble at the edge
+        // Formula: padding = (Radius * DomainLength) / (Width - 2 * Radius)
+        // We use maxBubbleRadius as a safe upper bound for required padding
+        const xPadding = (maxBubbleRadius * xDomainLength) / Math.max(1, innerWidth - 2 * maxBubbleRadius);
+        const yPadding = (maxBubbleRadius * yDomainLength) / Math.max(1, innerHeight - 2 * maxBubbleRadius);
+
+        const xScale = d3.scaleLinear()
+            .domain([xMin - xPadding, xMax + xPadding])
+            .range([0, innerWidth]);
+
+        const yScale = d3.scaleLinear()
+            .domain([yMin - yPadding, yMax + yPadding])
+            .range([innerHeight, 0]);
 
         // --- Axes ---
         const xAxis = d3.axisBottom(xScale).ticks(5).tickFormat((d) => xIsNumeric ? `${d}` : `${d}%`);
@@ -206,8 +221,8 @@ export const PositioningMapGraph: React.FC<PositioningMapGraphProps> = ({
             .call(xAxis)
             .append('text')
             .attr('x', innerWidth / 2)
-            .attr('y', 50) // Adjusted position
-            .attr('fill', 'black')
+            .attr('y', 35) // Adjusted position
+            .attr('fill', '#586365') // Updated color
             .style('font-size', '14px')
             .style('text-anchor', 'middle')
             .text(xAxisLabel);
@@ -216,10 +231,10 @@ export const PositioningMapGraph: React.FC<PositioningMapGraphProps> = ({
             .call(yAxis)
             .append('text')
             .attr('transform', 'rotate(-90)')
-            .attr('y', -60) // Adjusted position
+            .attr('y', -55) // Adjusted position for more space
             .attr('x', -innerHeight / 2)
             .attr('dy', '0.71em')
-            .attr('fill', 'black')
+            .attr('fill', '#586365') // Updated color
             .style('text-anchor', 'middle')
             .style('font-size', '14px')
             .text(yAxisLabel);
@@ -267,7 +282,7 @@ export const PositioningMapGraph: React.FC<PositioningMapGraphProps> = ({
         overlayGroups
             .append('path')
             .attr('d', triangleSymbol)
-            .attr('fill', 'black');
+            .attr('fill', 'black'); // Keep overlay items black or change? Keeping black for contrast as they are markers.
 
         overlayGroups
             .append('text')
@@ -275,21 +290,22 @@ export const PositioningMapGraph: React.FC<PositioningMapGraphProps> = ({
             .attr('y', 5)
             .text((d) => d.name)
             .style('font-size', '12px')
-            .style('font-weight', 'bold');
+            .style('font-weight', 'bold')
+            .style('fill', '#586365'); // Updated color
 
         // Legend
         g.append('text')
-            .attr('x', 10)
-            .attr('y', -10)
+            .attr('x', 0)
+            .attr('y', -15) // Adjusted for spacing
             .text('バブルサイズ・・・セグメントボリューム')
-            .style('font-size', '12px')
-            .style('fill', '#555');
+            .style('font-size', '14px')
+            .style('fill', '#586365'); // Updated color
 
     }, [segmentedRows, verticalAxis, horizontalAxis, overlaySelection, segmentCount]);
 
     return (
         <div className="w-full h-full flex items-center justify-center">
-            <svg ref={svgRef} style={{ width: '100%', height: '100%', maxHeight: '600px' }}></svg>
+            <svg ref={svgRef} style={{ width: '100%', height: '100%' }}></svg>
         </div>
     );
 };

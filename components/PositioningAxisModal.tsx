@@ -38,7 +38,7 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
       .filter(h => h !== 'ID')
       .map(h => ({ id: h, name: h }));
 
-    // 各変数の選択肢を抽出
+    // 各変数のカテゴリを抽出
     const choices: { [key: string]: { id: string; name: string }[] } = {};
 
     headers.forEach((header, colIndex) => {
@@ -62,10 +62,10 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
       const isNumeric = allValues.length > 0 && allValues.every(v => !isNaN(Number(v)));
 
       if (isNumeric) {
-        // 数値型の場合は変数名自体を選択肢として追加
+        // 数値型の場合は変数名自体をカテゴリとして追加
         choices[header] = [{ id: `${header}_self`, name: header }];
       } else {
-        // カテゴリ型の場合は通常通り選択肢を追加
+        // カテゴリ型の場合は通常通りカテゴリを追加
         choices[header] = Array.from(uniqueValues).map((val, idx) => ({ id: `${header}_${idx}`, name: val }));
       }
     });
@@ -81,7 +81,7 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
 
   const handleVariableClick = (id: string) => {
     setSelectedVariableId(id);
-    setSelectedChoiceId(null); // 変数が変更されたら選択肢の選択をリセット
+    setSelectedChoiceId(null); // 変数が変更されたらカテゴリの選択をリセット
 
   };
 
@@ -130,13 +130,13 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
 
   const currentChoices = selectedVariableId ? choicesData[selectedVariableId] || [] : [];
 
-  // 現在選択されている選択肢が既にいずれかの軸で使用されているかを確認します。
+  // 現在選択されているカテゴリが既にいずれかの軸で使用されているかを確認します。
   // Check if the currently selected choice is already used in either axis.
   const isChoiceAlreadyUsed =
     (verticalAxis?.variableId === selectedVariableId && verticalAxis?.choiceId === selectedChoiceId) ||
     (horizontalAxis?.variableId === selectedVariableId && horizontalAxis?.choiceId === selectedChoiceId);
 
-  // 選択肢が選択されていない場合、または既に使われている場合は追加ボタンを無効にします。
+  // カテゴリが選択されていない場合、または既に使われている場合は追加ボタンを無効にします。
   // Disable the add buttons if no choice is selected OR if the selected choice is already used.
   const isAddButtonDisabled = !selectedChoiceId || isChoiceAlreadyUsed;
 
@@ -146,7 +146,7 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
     <div className={modalStyles.overlay} aria-modal="true" role="dialog">
       <div className={`${modalStyles.container} max-w-4xl w-full`} style={{ height: '40rem' }}>
         <div className={modalStyles.header.container}>
-          <h2 className={modalStyles.header.title}>ポジショニング軸の設定</h2>
+          <h2 className={modalStyles.header.title}>ポジショニングマップの軸設定</h2>
           <button onClick={onClose} className={modalStyles.header.closeButton}>{modalStyles.header.closeButtonIcon}</button>
         </div>
 
@@ -154,16 +154,14 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
           {/* 上部パネル */}
 
           <div className="flex-grow flex gap-4 min-h-0">
-            {/* 左パネル: 変数一覧 */}
+            {/* 左パネル: アイテム一覧 */}
 
             <div className="w-1/3 flex flex-col">
-              <h3 className="font-semibold text-xs mb-1 text-[#586365]">変数一覧</h3>
+              <h3 className="font-semibold text-xs mb-1 text-[#586365]">アイテム一覧</h3>
               <div className="flex items-center space-x-1 mb-2">
                 <input type="text" className="flex-grow h-[30px] px-2 text-xs border border-gray-400 bg-white rounded-md outline-none focus:ring-1 focus:ring-gray-400" placeholder="検索..." />
-                <button className="flex items-center justify-center flex-shrink-0 h-[30px] w-[30px] border border-gray-400 bg-gray-200 hover:bg-gray-300 rounded-md" aria-label="検索">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+                <button className="flex items-center justify-center flex-shrink-0 h-[30px] w-[30px] border border-gray-400 bg-gray-200 hover:bg-gray-300 transition-colors text-gray-700 font-semibold rounded-md" aria-label="アイテム一覧 オプション">
+                  ↓
                 </button>
               </div>
               <div className="flex-grow border border-gray-400 bg-white rounded-md overflow-y-auto text-xs p-1 select-none">
@@ -178,7 +176,7 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
               </div>
             </div>
 
-            {/* 右パネル: 選択肢一覧 */}
+            {/* 右パネル: カテゴリ一覧 */}
 
             <div className="w-2/3 flex flex-col">
               <div className="flex-grow flex flex-col border border-gray-400 rounded-md bg-white overflow-hidden">
@@ -186,9 +184,8 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
 
                 <div className="flex-shrink-0 p-2 bg-gray-200 border-b border-gray-300 flex justify-between items-center font-semibold">
                   <span>{selectedVariableName}</span>
-                  <span className="text-xs">▼</span>
                 </div>
-                {/* 選択肢リスト */}
+                {/* カテゴリリスト */}
 
                 <div className="flex-grow overflow-y-auto">
                   <table className="w-full text-xs">
@@ -242,7 +239,14 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
 
         <div className={`${modalStyles.footer.container} justify-end`}>
           <div className={modalStyles.footer.buttonGroup}>
-            <AppButton onClick={handleConfirmClick} className="w-24 py-1">OK</AppButton>
+            <AppButton
+              onClick={handleConfirmClick}
+              className="w-24 py-1"
+              primary
+              disabled={!verticalAxis || !horizontalAxis}
+            >
+              OK
+            </AppButton>
             <AppButton onClick={handleCancelClick} className="w-24 py-1">Cancel</AppButton>
           </div>
         </div>

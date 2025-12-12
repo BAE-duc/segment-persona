@@ -368,7 +368,7 @@ export const MainLayout = () => {
                             onClick={() => bringPopupToFront(popup.id)}
                         >
                             <TabSystem
-                                title="ペルソナ一覧"
+                                title="ペルソナ"
                                 onHeaderMouseDown={(e) => handleMouseDown(e, 'persona', popup.id)}
                                 onClose={() => handleClosePersonaPopup(popup.id)}
                                 onMinimize={() => handleMinimizePersonaPopup(popup.id)}
@@ -442,7 +442,7 @@ export const MainLayout = () => {
                         className="font-bold flex-grow h-full flex items-center"
                         onClick={() => !wasDraggedRef.current && handleRestorePersonaPopup(popup.id)}
                     >
-                        ペルソナ一覧 #{index + 1}
+                        ペルソナ #{index + 1}
                     </span>
                     <div className="flex items-center space-x-2">
                         <button

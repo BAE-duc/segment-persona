@@ -91,7 +91,7 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
   choicesData,
   initialSelection
 }) => {
-  // 年齢(age)の選択肢をCSVから動的に生成するロジック
+  // 年齢(age)のカテゴリをCSVから動的に生成するロジック
 
   // state初期化で使用するため、定義を上に移動しました。
   const ageChoices = useMemo(() => {
@@ -155,7 +155,7 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
   const handleItemSelect = (itemId: string) => {
     if (itemId !== selectedItemId) {
       setSelectedItemId(itemId);
-      setSelectedChoiceIds(new Set()); // 変数が変更されたら選択肢をクリア
+      setSelectedChoiceIds(new Set()); // 変数が変更されたらカテゴリをクリア
 
     }
   };
@@ -182,7 +182,7 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
 
     const selectedVariable = items.find(item => item.id === selectedItemId);
 
-    // ageの場合は専用の選択肢を使用
+    // ageの場合は専用のカテゴリを使用
     const allChoicesForVar = selectedItemId === 'age' ? ageChoices : (choicesData[selectedItemId] || []);
     const adoptedChoices = allChoicesForVar.filter(choice => selectedChoiceIds.has(choice.id));
 
@@ -194,7 +194,7 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
     }
   };
 
-  // 選択されたアイテムに応じて選択肢を切り替え
+  // 選択されたアイテムに応じてカテゴリを切り替え
 
   const currentChoices = selectedItemId
     ? (selectedItemId === 'age' ? ageChoices : (choicesData[selectedItemId] || []))
@@ -227,7 +227,7 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
       >
         {/* Header */}
         <div className={modalStyles.header.container}>
-          <h2 className={modalStyles.header.title}>構成比を比べたい変数検索</h2>
+          <h2 className={modalStyles.header.title}>構成比比較グラフの表示条件設定</h2>
           <button onClick={onClose} className={modalStyles.header.closeButton}>{modalStyles.header.closeButtonIcon}</button>
         </div>
 
@@ -235,12 +235,12 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
         <div className={`${modalStyles.body.container} flex gap-4 overflow-hidden`}>
           {/* Left Panel: Item List */}
           <div className="w-[320px] flex flex-col">
-            <h3 className="font-semibold text-xs mb-1 text-[#586365]">変数一覧</h3>
+            <h3 className="font-semibold text-xs mb-1 text-[#586365]">アイテム一覧</h3>
             <div className="flex items-center space-x-1 mb-2">
               <input type="text" className="flex-grow h-[28px] px-2 text-xs border border-gray-400 bg-white rounded-md outline-none focus:ring-1 focus:ring-gray-400" />
               <button
                 className="flex items-center justify-center flex-shrink-0 h-[28px] w-[28px] border border-gray-400 bg-gray-200 hover:bg-gray-300 transition-colors text-gray-700 font-semibold rounded-md"
-                aria-label="変数一覧 オプション"
+                aria-label="アイテム一覧 オプション"
               >
                 ↓
               </button>
@@ -250,7 +250,7 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
                 <thead className="sticky top-0 bg-gray-50 z-10">
                   <tr>
                     <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">変数名</th>
-                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">データ型</th>
+                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">データタイプ</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -271,7 +271,7 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
 
           {/* Right Panel: Choices of selected item */}
           <div className="flex-1 flex flex-col">
-            <h3 className="font-semibold text-xs mb-1 text-[#586365]">選択肢</h3>
+            <h3 className="font-semibold text-xs mb-1 text-[#586365]">カテゴリ一覧</h3>
             <div className="h-[28px] mb-2"></div>
             <div className="flex-grow border border-gray-400 rounded-md bg-white overflow-hidden flex flex-col">
               <div className="flex-grow overflow-auto">
@@ -288,9 +288,6 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
                       <th className="p-1 font-semibold text-center border-b border-r border-gray-300 w-16">No.</th>
                       <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2 flex items-center">
                         内容
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 ml-1">
-                          <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
-                        </svg>
                       </th>
                     </tr>
                   </thead>
@@ -314,7 +311,7 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
                     ) : (
                       <tr>
                         <td colSpan={3} className="text-center p-4 text-gray-500">
-                          {selectedItemId ? 'この変数には選択肢がありません。' : '左のリストから変数を選択してください。'}
+                          {selectedItemId ? 'この変数にはカテゴリがありません。' : '左のリストから変数を選択してください。'}
                         </td>
                       </tr>
                     )}
@@ -337,7 +334,14 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
         {/* Footer */}
         <div className={`${modalStyles.footer.container} justify-end`}>
           <div className={modalStyles.footer.buttonGroup}>
-            <AppButton onClick={handleConfirmClick} className="w-24 py-1">OK</AppButton>
+            <AppButton
+              onClick={handleConfirmClick}
+              className="w-24 py-1"
+              primary
+              disabled={selectedChoiceIds.size === 0}
+            >
+              OK
+            </AppButton>
             <AppButton onClick={onClose} className="w-24 py-1">Cancel</AppButton>
           </div>
         </div>

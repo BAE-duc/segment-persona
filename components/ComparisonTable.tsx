@@ -15,9 +15,10 @@ export interface ComparisonRow {
 interface ComparisonTableProps {
   data: ComparisonRow[];
   segmentSizes: number[];
+  isConversionView?: boolean;
 }
 
-export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentSizes }) => {
+export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentSizes, isConversionView = false }) => {
   // 変数IDでデータをグループ化します。
 
   const groupedData = useMemo(() => {
@@ -37,9 +38,41 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
 
   const xScale = d3.scaleLinear().domain([0, 100]).range([0, 100]);
 
+  // 差分表示用のバーレンダリング関数
+  // 差分表示用のバーレンダリング関数
+  const renderDifferenceBar = (segmentRatio: number, totalRatio: number) => {
+    const difference = segmentRatio - totalRatio;
+    const absValue = Math.abs(difference);
+    const widthPct = xScale(Math.min(absValue, 100));
+    const isPositive = difference > 0;
+
+    return (
+      <div className="relative w-full h-6 flex items-center justify-center px-1">
+        {/* バー背景 */}
+        <div className="absolute inset-y-1 left-0 bg-gray-100 w-full z-0 rounded-sm overflow-hidden">
+          {/* 差分バー */}
+          {difference !== 0 && (
+            <div
+              style={{
+                width: `${widthPct / 2}%`,
+                [isPositive ? 'left' : 'right']: '0'
+              }}
+              className={`absolute inset-y-0 ${isPositive ? 'bg-blue-500' : 'bg-red-500'} transition-all duration-500`}
+            ></div>
+          )}
+        </div>
+        {/* 数値テキスト */}
+        <span className={`relative z-10 text-xs font-medium ${isPositive ? 'text-blue-600' : difference < 0 ? 'text-red-600' : 'text-gray-700'
+          }`}>
+          {difference > 0 ? '+' : ''}{Math.round(difference)}%
+        </span>
+      </div>
+    );
+  };
+
   const renderBar = (value: number, isTotal: boolean, isMaxInRow: boolean = false) => {
     const widthPct = xScale(value);
-    // 各選択肢で最大値の場合に強調表示
+    // 各カテゴリで最大値の場合に強調表示
 
     const isHighlight = !isTotal && isMaxInRow;
 
@@ -97,7 +130,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
             return rows.map((row, rowIndex) => {
               // 各行（選択肢）で最大値のインデックスを見つける
               const maxRatio = Math.max(...row.segmentRatios);
-              
+
               return (
                 <tr key={`${varId}-${row.choiceId}`} className="hover:bg-gray-50">
                   {rowIndex === 0 && (
@@ -122,7 +155,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
                     const isMaxInRow = ratio === maxRatio && maxRatio > 0;
                     return (
                       <td key={i} className="border-r border-b border-gray-300 p-1 border-l-2 border-l-blue-100">
-                        {renderBar(ratio, false, isMaxInRow)}
+                        {isConversionView ? renderDifferenceBar(ratio, row.totalRatio) : renderBar(ratio, false, isMaxInRow)}
                       </td>
                     );
                   })}

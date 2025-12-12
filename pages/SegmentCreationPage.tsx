@@ -153,7 +153,7 @@ headers.forEach((header, colIndex) => {
 // ItemSelectionModal で使用されるアイテムデータの初期値。
 const initialItemDetailsData: ItemDetail[] = generatedItemDetails;
 
-// 変数IDに基づいて中央の選択肢テーブルに表示するデータ。
+// 変数IDに基づいて中央のカテゴリテーブルに表示するデータ。
 const choicesData: { [key: string]: { id: number; content: string }[] } = generatedChoicesData;
 
 // 変換設定で使用するデータ定義
@@ -429,6 +429,15 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
   const numericData = editingDataRaw ? editingDataRaw.filter(v => v !== 'NA' && v !== '' && !isNaN(Number(v))).map(Number) : [];
   const naCount = editingDataRaw ? editingDataRaw.filter(v => v === 'NA' || v === '').length : 0;
 
+  // ヘッダー名からインデックスへのマップを作成
+  const headerIndexMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    headers.forEach((h, i) => {
+      map[h] = i;
+    });
+    return map;
+  }, []);
+
   // 選択されたアイテムの変換設定に基づいて、対象データの総数を計算します。
   // 選択されたアイテムの変換設定に基づいて、対象データの総数を計算します。
   const selectedDataCount = useMemo(() => {
@@ -443,7 +452,8 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
     for (const row of rows) {
       let match = true;
       for (const item of (activeVariables as SelectedItem[])) {
-        const rawValue = row[item.id];
+        const colIndex = headerIndexMap[item.id];
+        const rawValue = row[colIndex];
         const settings = item.conversionDetails;
 
         if (settings!.type === 'numerical' && settings!.range) {

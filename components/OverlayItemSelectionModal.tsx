@@ -20,31 +20,30 @@ interface OverlayItemSelectionModalProps {
   initialSelection?: OverlaySelection | null;
 }
 
-// 年齢を年齢帯に変換する関数
-const getAgeBin = (val: number): string => {
-  if (val <= 19) return '19歳以下';
-  if (val >= 60) return '60歳以上';
-  const lower = Math.floor(val / 5) * 5;
-  return `${lower}-${lower + 4}歳`;
-};
-
 // チェックボックスコンポーネント
 const CustomCheckbox = ({
   checked,
   onChange,
+  disabled = false,
 }: {
   checked: boolean;
   onChange: () => void;
+  disabled?: boolean;
 }) => (
   <div className="flex items-center justify-center">
-    <label className="relative flex items-center justify-center w-4 h-4 cursor-pointer">
+    <label className={`relative flex items-center justify-center w-4 h-4 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
       <input
         type="checkbox"
         checked={checked}
         onChange={onChange}
+        disabled={disabled}
         className="sr-only peer"
       />
-      <div className="w-4 h-4 border border-gray-400 rounded-sm flex items-center justify-center transition-colors bg-white">
+      <div
+        className={`w-4 h-4 border border-gray-400 rounded-sm flex items-center justify-center transition-colors 
+                  peer-disabled:bg-gray-200 peer-disabled:cursor-not-allowed
+                  bg-white`}
+      >
         {checked && (
           <svg
             className="w-3 h-3 text-black"
@@ -72,9 +71,9 @@ export const OverlayItemSelectionModal: React.FC<OverlayItemSelectionModalProps>
     const lines = TEST_CSV_RAW.trim().split('\n');
     const headers = lines[0].split(',').map(h => h.trim());
 
-    // 各変数の選択肢を抽出
+    // 各変数のカテゴリを抽出
     const choices: { [key: string]: { id: string; name: string }[] } = {};
-    const categoricalVars: { id: string; name: string }[] = [];
+    const categoricalVars: { id: string; name: string; dataType: string }[] = [];
 
     headers.forEach((header, colIndex) => {
       if (header === 'ID') return;
@@ -98,7 +97,7 @@ export const OverlayItemSelectionModal: React.FC<OverlayItemSelectionModalProps>
 
       // 数値型でない場合のみ変数リストに追加
       if (!isNumeric) {
-        categoricalVars.push({ id: header, name: header });
+        categoricalVars.push({ id: header, name: header, dataType: 'string' });
         choices[header] = Array.from(uniqueValues).map((val, idx) => ({ id: `${header}_${idx}`, name: val }));
       }
     });
@@ -114,7 +113,7 @@ export const OverlayItemSelectionModal: React.FC<OverlayItemSelectionModalProps>
   );
 
   const handleVariableClick = (id: string) => {
-    // 変数が変更されたら選択肢の選択をリセット
+    // 変数が変更されたらカテゴリの選択をリセット
     if (id !== selectedVariableId) {
       setSelectedChoiceIds(new Set());
     }
@@ -163,74 +162,133 @@ export const OverlayItemSelectionModal: React.FC<OverlayItemSelectionModalProps>
   };
 
   const currentChoices = selectedVariableId ? choicesData[selectedVariableId] || [] : [];
+  const allCurrentChoicesSelected = currentChoices.length > 0 && currentChoices.every(c => selectedChoiceIds.has(c.id));
 
-  const selectedVariableName = selectedVariableId ? variables.find(v => v.id === selectedVariableId)?.name : '項目を選択してください';
+  const handleSelectAllToggle = () => {
+    if (!selectedVariableId) return;
+
+    if (allCurrentChoicesSelected) {
+      setSelectedChoiceIds(new Set());
+    } else {
+      const allChoiceIds = new Set(currentChoices.map(c => c.id));
+      setSelectedChoiceIds(allChoiceIds);
+    }
+  };
 
   return (
     <div className={modalStyles.overlay} aria-modal="true" role="dialog">
-      <div className={`${modalStyles.container} max-w-4xl w-full`} style={{ height: '40rem' }}>
+      <div className={`${modalStyles.container} max-w-5xl w-full`} style={{ height: '40rem' }}>
         <div className={modalStyles.header.container}>
           <h2 className={modalStyles.header.title}>重ね合わせ項目設定</h2>
           <button onClick={onClose} className={modalStyles.header.closeButton}>{modalStyles.header.closeButtonIcon}</button>
         </div>
 
         <div className={`${modalStyles.body.container} flex gap-4 overflow-hidden`}>
-          {/* 左パネル: 変数一覧 */}
-          <div className="w-1/3 flex flex-col">
-            <h3 className="font-semibold text-xs mb-1 text-[#586365]">変数一覧</h3>
+          {/* 左パネル: アイテム一覧 */}
+          <div className="w-[320px] flex flex-col">
+            <h3 className="font-semibold text-xs mb-1 text-[#586365]">アイテム一覧</h3>
             <div className="flex items-center space-x-1 mb-2">
-              <input type="text" className="flex-grow h-[30px] px-2 text-xs border border-gray-400 bg-white rounded-md outline-none focus:ring-1 focus:ring-gray-400" placeholder="検索..." />
-              <button className="flex items-center justify-center flex-shrink-0 h-[30px] w-[30px] border border-gray-400 bg-gray-200 hover:bg-gray-300 rounded-md" aria-label="検索">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+              <input type="text" className="flex-grow h-[28px] px-2 text-xs border border-gray-400 bg-white rounded-md outline-none focus:ring-1 focus:ring-gray-400" />
+              <button
+                className="flex items-center justify-center flex-shrink-0 h-[28px] w-[28px] border border-gray-400 bg-gray-200 hover:bg-gray-300 transition-colors text-gray-700 font-semibold rounded-md"
+                aria-label="アイテム一覧 オプション"
+              >
+                ↓
               </button>
             </div>
-            <div className="flex-grow border border-gray-400 bg-white rounded-md overflow-y-auto text-xs p-1 select-none">
-              {variables.map(v => (
-                <div key={v.id}
-                  className={`p-1 cursor-pointer rounded-sm whitespace-nowrap overflow-hidden text-ellipsis ${modalStyles.interactive.listItem(selectedVariableId === v.id)}`}
-                  onClick={() => handleVariableClick(v.id)}
-                  title={v.name}>
-                  {v.name}
-                </div>
-              ))}
+            <div className="flex-grow border border-gray-400 bg-white rounded-md overflow-y-auto text-xs">
+              <table className="w-full text-xs">
+                <thead className="sticky top-0 bg-gray-50 z-10">
+                  <tr>
+                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">変数名</th>
+                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">データタイプ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {variables.map(v => (
+                    <tr
+                      key={v.id}
+                      className={`cursor-pointer font-medium ${modalStyles.interactive.tableRow(selectedVariableId === v.id)}`}
+                      onClick={() => handleVariableClick(v.id)}
+                    >
+                      <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{v.name}</td>
+                      <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{v.dataType}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
-          {/* 右パネル: 選択肢一覧（チェックボックス付き） */}
-          <div className="w-2/3 flex flex-col">
-            <div className="flex-grow flex flex-col border border-gray-400 rounded-md bg-white overflow-hidden">
-              {/* ドロップダウン風ヘッダー */}
-              <div className="flex-shrink-0 p-2 bg-gray-200 border-b border-gray-300 flex justify-between items-center font-semibold">
-                <span>{selectedVariableName}</span>
-                <span className="text-xs">▼</span>
-              </div>
-              {/* 選択肢リスト */}
-              <div className="flex-grow overflow-y-auto">
+          {/* 右パネル: カテゴリ一覧 */}
+          <div className="flex-1 flex flex-col">
+            <h3 className="font-semibold text-xs mb-1 text-[#586365]">カテゴリ一覧</h3>
+            <div className="h-[28px] mb-2"></div>
+            <div className="flex-grow border border-gray-400 rounded-md bg-white overflow-hidden flex flex-col">
+              <div className="flex-grow overflow-auto">
                 <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-gray-50 z-10">
+                    <tr>
+                      <th className="p-1 font-semibold text-center border-b border-r border-gray-300 w-12">
+                        <CustomCheckbox
+                          checked={allCurrentChoicesSelected}
+                          onChange={handleSelectAllToggle}
+                          disabled={!selectedVariableId || currentChoices.length === 0}
+                        />
+                      </th>
+                      <th className="p-1 font-semibold text-center border-b border-r border-gray-300 w-16">No.</th>
+                      <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2 flex items-center">
+                        内容
+                      </th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    {currentChoices.map(choice => (
-                      <tr key={choice.id} className="hover:bg-gray-50">
-                        <td className="p-1 border-b border-gray-200 w-10 text-center">
-                          <CustomCheckbox
-                            checked={selectedChoiceIds.has(choice.id)}
-                            onChange={() => handleChoiceToggle(choice.id)}
-                          />
+                    {currentChoices.length > 0 ? (
+                      currentChoices.map((choice, index) => (
+                        <tr key={choice.id} className="font-medium even:bg-gray-50 hover:bg-gray-200">
+                          <td className="p-1 border-b border-r border-gray-200 text-center">
+                            <CustomCheckbox
+                              checked={selectedChoiceIds.has(choice.id)}
+                              onChange={() => handleChoiceToggle(choice.id)}
+                            />
+                          </td>
+                          <td className="p-1 border-b border-r border-gray-200 text-center">{index + 1}</td>
+                          <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{choice.name}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={3} className="text-center p-4 text-gray-500">
+                          {selectedVariableId ? 'この変数にはカテゴリがありません。' : '左のリストから変数を選択してください。'}
                         </td>
-                        <td className="p-1 border-b border-gray-200 pl-2">{choice.name}</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
                 </table>
               </div>
+            </div>
+            <div className="pt-2 flex-shrink-0 flex justify-end">
+              <AppButton
+                onClick={handleSelectAllToggle}
+                disabled={!selectedVariableId || currentChoices.length === 0}
+                className="py-1"
+              >
+                全選択/全解除
+              </AppButton>
             </div>
           </div>
         </div>
 
         <div className={`${modalStyles.footer.container} justify-end`}>
           <div className={modalStyles.footer.buttonGroup}>
-            <AppButton onClick={handleConfirmClick} className="w-24 py-1">OK</AppButton>
+            <AppButton
+              onClick={handleConfirmClick}
+              className="w-24 py-1"
+              primary
+              disabled={selectedChoiceIds.size === 0}
+            >
+              OK
+            </AppButton>
             <AppButton onClick={handleCancelClick} className="w-24 py-1">Cancel</AppButton>
           </div>
         </div>

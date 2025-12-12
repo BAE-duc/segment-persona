@@ -168,11 +168,7 @@ export const PersonaListPage: React.FC = () => {
                 </div>
 
                 {/* ナビゲーションボタン */}
-                <button
-                    className="w-full py-2 bg-gray-200 border border-gray-400 rounded shadow-sm hover:bg-gray-300 font-bold text-gray-700"
-                >
-                    セグメント選択画面表示
-                </button>
+
 
                 {/* 出力ボタン (左下) */}
                 <div className="mt-auto">
@@ -210,10 +206,10 @@ export const PersonaListPage: React.FC = () => {
                                 {personaData.map(p => (
                                     <div
                                         key={p.id}
-                                        className="aspect-square bg-[#FDF6D8] p-2 flex items-center justify-center border border-gray-200 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all"
+                                        className="aspect-square bg-[#FDF6D8] flex items-center justify-center border border-gray-200 cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all overflow-hidden"
                                         onClick={() => handleSelectPersona(p.id)}
                                     >
-                                        <img src={p.image} alt={p.name} className="max-w-full max-h-full object-cover shadow-sm" />
+                                        <img src={p.image} alt={p.name} className="w-full h-full object-cover shadow-sm" />
                                     </div>
                                 ))}
                             </div>
@@ -226,7 +222,17 @@ export const PersonaListPage: React.FC = () => {
                                 <div className="p-2 font-bold text-gray-600 flex items-center">セグメント</div>
                                 <div className="grid grid-cols-6 gap-2">
                                     {personaData.map(p => (
-                                        <div key={p.id} className="p-2 text-center flex items-center justify-center text-[10px]">{p.segmentName}</div>
+                                        <div key={p.id} className="p-2 text-center flex items-center justify-center text-[10px] gap-1 relative group">
+                                            <span>{p.segmentName}</span>
+                                            <span className="inline-flex items-center justify-center w-3 h-3 rounded-full bg-blue-500 text-white text-[8px] cursor-help">
+                                                i
+                                            </span>
+                                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-[9px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                <div>Information</div>
+                                                <div>1. Content</div>
+                                                <div>2. Content</div>
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
@@ -245,12 +251,17 @@ export const PersonaListPage: React.FC = () => {
                                     <div className="absolute left-0 right-0 top-1/2 border-t border-dotted border-gray-400 z-0"></div>
 
                                     {personaData.map(p => (
-                                        <div key={p.id} className="flex flex-col items-center justify-end h-24 z-10">
+                                        <div key={p.id} className="flex flex-col items-center justify-end h-24 z-10 relative group">
                                             <span className="mb-1 text-[10px]">{p.innovatorScore}</span>
                                             <div
-                                                className="w-full bg-[#2CA0F0]"
+                                                className="w-full bg-[#2CA0F0] cursor-help"
                                                 style={{ height: `${(p.innovatorScore / 7) * 100}%` }}
                                             ></div>
+                                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-2 py-1 bg-gray-800 text-white text-[9px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                                <div>Information</div>
+                                                <div>1. Content</div>
+                                                <div>2. Content</div>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
@@ -258,7 +269,7 @@ export const PersonaListPage: React.FC = () => {
 
                             {/* その他属性 */}
                             {[
-                                { label: '特徴的な\n購入カテゴリ', key: 'purchaseCategory' },
+                                { label: '[特徴的な 購入カテゴリ]', key: 'purchaseCategory' },
                                 { label: '居住地', key: 'residence' },
                                 { label: '職業', key: 'occupation' },
                                 { label: 'ライフステージ', key: 'lifeStage' },

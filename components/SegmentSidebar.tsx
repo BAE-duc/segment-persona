@@ -54,9 +54,9 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
   // タブの定義と状態。JSXラベルをサポートするためにオブジェクトの配列を使用します。
   // タブの定義と状態。JSXラベルをサポートするためにオブジェクトの配列を使用します。
   const tabs = [
-    { key: 'フィルター編集', label: 'フィルター編集' },
     { key: 'セグメントアイテム選択', label: <>セグメント<br />アイテム選択</> },
-    { key: 'セグメント設定', label: 'セグメント設定' },
+    { key: 'セグメント設定', label: 'パラメータ選択' },
+    { key: 'フィルター編集', label: 'フィルター編集' },
   ];
   const [activeTab, setActiveTab] = useState(tabs[0].key);
 
@@ -244,9 +244,9 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
                   </button>
                   {/* 選択中のデータ数を表示 */}
                   {/* 選択中のデータ数を表示 */}
-                  {typeof selectedDataCount === 'number' && (
+                  {selectedData && Object.keys(selectedVariables).length > 0 && typeof selectedDataCount === 'number' && (
                     <span className="text-xs font-medium text-[#586365]">
-                      選択中のデータ：{selectedDataCount.toLocaleString()}件
+                      選択中のアイテム：{selectedDataCount.toLocaleString()}件
                     </span>
                   )}
                 </div>
@@ -300,7 +300,7 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
                     onClick={onOpenSettingsEditModal}
                     className="text-xs text-blue-600 cursor-pointer hover:underline focus:outline-none"
                   >
-                    セグメント設定
+                    パラメータ選択
                   </button>
                 </div>
                 <div className="mt-2 flex-grow overflow-y-auto text-xs space-y-1 pl-1">

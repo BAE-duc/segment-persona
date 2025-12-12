@@ -170,7 +170,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
   onConfirm,
   initialConditions = [],
   onShowInfo,
-  title = "カスタムフィルター設定",
+  title = "フィルター編集",
   hideRowControls = false
 }) => {
   // ツリービューと条件テーブルの状態を管理するためのstate。
@@ -388,7 +388,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
                     <table className="w-full text-xs">
                       <thead className="sticky top-0 bg-gray-50 z-10">
                         <tr>
-                          <th className="p-1 font-semibold text-left border-b border-r border-gray-300 w-16 text-center whitespace-nowrap">No.</th>
+                          <th className="p-1 font-semibold text-left border-b border-r border-gray-300 w-16 text-center whitespace-nowrap">No</th>
                           <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2 whitespace-nowrap">名前</th>
                           <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2 whitespace-nowrap">下限値</th>
                           <th className="p-1 font-semibold text-left border-b border-gray-300 pl-2 whitespace-nowrap">上限値</th>
@@ -465,19 +465,26 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
                             <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{item.categoryName}</td>
                             <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">{item.bracketClose}</td>
                             <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">
-                              {index < conditionList.length - 1 && (
-                                <AppSelect value={item.connector} onChange={(e) => {
-                                  const newConnector = e.target.value as 'AND' | 'OR';
-                                  setConditionList(prev => {
-                                    const newList = [...prev];
-                                    newList[index].connector = newConnector;
-                                    return newList;
-                                  });
-                                }} className="h-6 text-xs w-20">
-                                  <option value="AND">AND</option>
-                                  <option value="OR">OR</option>
-                                </AppSelect>
-                              )}
+                              {index < conditionList.length - 1 && (() => {
+                                // 同じアイテム名称の場合はORのみ選択可能
+                                const currentItemName = item.itemName;
+                                const nextItemName = conditionList[index + 1]?.itemName;
+                                const isSameItem = currentItemName === nextItemName;
+                                
+                                return (
+                                  <AppSelect value={item.connector} onChange={(e) => {
+                                    const newConnector = e.target.value as 'AND' | 'OR';
+                                    setConditionList(prev => {
+                                      const newList = [...prev];
+                                      newList[index].connector = newConnector;
+                                      return newList;
+                                    });
+                                  }} className="h-6 text-xs w-20">
+                                    <option value="AND" disabled={isSameItem}>AND</option>
+                                    <option value="OR">OR</option>
+                                  </AppSelect>
+                                );
+                              })()}
                             </td>
                           </tr>
                         ))}
@@ -494,7 +501,14 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
 
         <div className={`${modalStyles.footer.container} justify-end`}>
           <div className={modalStyles.footer.buttonGroup}>
-            <AppButton onClick={() => onConfirm(conditionList)} className="w-24 py-1">OK</AppButton>
+            <AppButton
+              onClick={() => onConfirm(conditionList)}
+              className="w-24 py-1"
+              primary
+              disabled={conditionList.length === 0}
+            >
+              OK
+            </AppButton>
             <AppButton onClick={onClose} className="w-24 py-1">Cancel</AppButton>
           </div>
         </div>

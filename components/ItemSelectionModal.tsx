@@ -173,8 +173,8 @@ export const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({ onClose,
                 <thead className="sticky top-0 bg-gray-50 z-10">
                   <tr>
                     <th className="p-1 font-bold text-center border-b border-r border-gray-300 w-12">採用</th>
-                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">アイテム名</th>
-                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">データ型</th>
+                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">アイテム名称</th>
+                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">データタイプ</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -264,7 +264,14 @@ export const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({ onClose,
         {/* Footer */}
         <div className={`${modalStyles.footer.container} justify-end`}>
           <div className={modalStyles.footer.buttonGroup}>
-            <AppButton onClick={handleConfirmClick} className="w-24 py-1">OK</AppButton>
+            <AppButton
+              onClick={handleConfirmClick}
+              className="w-24 py-1"
+              primary
+              disabled={adoptedItems.size === 0}
+            >
+              OK
+            </AppButton>
             <AppButton onClick={onClose} className="w-24 py-1">Cancel</AppButton>
           </div>
         </div>

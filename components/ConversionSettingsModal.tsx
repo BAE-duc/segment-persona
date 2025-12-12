@@ -32,29 +32,29 @@ const StyledNumInput: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (p
 
 // 右パネルヘッダー（ツールチップ付き）
 const RightPanelHeader: React.FC = () => {
-  const [hoverLoc, setHoverLoc] = useState<{ top: number; left: number } | null>(null);
+    const [hoverLoc, setHoverLoc] = useState<{ top: number; left: number } | null>(null);
 
-  return (
-    <h3
-      className="font-semibold text-xs mb-1 text-[#586365] cursor-help underline decoration-dotted underline-offset-2 decoration-gray-400"
-      onMouseEnter={(e) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        setHoverLoc({ top: rect.bottom + 5, left: rect.left });
-      }}
-      onMouseLeave={() => setHoverLoc(null)}
-    >
-      セグメントに使用するカテゴリ
-      {hoverLoc && (
-        <div
-          className="fixed z-[9999] bg-white border border-gray-300 shadow-xl rounded-md p-3 text-left w-72 pointer-events-none"
-          style={{ top: hoverLoc.top, left: hoverLoc.left }}
+    return (
+        <h3
+            className="font-semibold text-xs mb-1 text-[#586365] cursor-help underline decoration-dotted underline-offset-2 decoration-gray-400"
+            onMouseEnter={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setHoverLoc({ top: rect.bottom + 5, left: rect.left });
+            }}
+            onMouseLeave={() => setHoverLoc(null)}
         >
-          <div className="font-bold text-gray-800 mb-1 text-xs">セグメントに使用するカテゴリ</div>
-          <div className="text-gray-600 text-[10px] leading-relaxed">セグメントに使用しないカテゴリがあれば左記へ移動してください</div>
-        </div>
-      )}
-    </h3>
-  );
+            セグメントに使用するカテゴリ
+            {hoverLoc && (
+                <div
+                    className="fixed z-[9999] bg-white border border-gray-300 shadow-xl rounded-md p-3 text-left w-72 pointer-events-none"
+                    style={{ top: hoverLoc.top, left: hoverLoc.left }}
+                >
+                    <div className="font-bold text-gray-800 mb-1 text-xs">セグメントに使用するカテゴリ</div>
+                    <div className="text-gray-600 text-[10px] leading-relaxed">セグメントに使用しないカテゴリがあれば左記へ移動してください</div>
+                </div>
+            )}
+        </h3>
+    );
 };
 
 export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = ({
@@ -129,8 +129,8 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
             const rawWeights = [];
             let weightSum = 0;
 
-            // 1歳から100歳
-            for (let i = 1; i <= 100; i++) {
+            // 0歳から100歳
+            for (let i = 0; i <= 100; i++) {
                 const weight = Math.exp(-Math.pow(i - mean, 2) / (2 * Math.pow(stdDev, 2)));
                 rawWeights.push(weight);
                 weightSum += weight;
@@ -667,7 +667,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
             <table className="w-full text-xs">
                 <thead className="sticky top-0 bg-gray-50 z-10">
                     <tr>
-                        <th className="p-1 font-semibold text-left border-b border-r border-gray-300 w-12 text-center">No</th>
+                        <th className="p-1 font-semibold text-left border-b border-r border-gray-300 w-12 text-center">No.</th>
                         <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">名称</th>
                         <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">サンプル数</th>
                         <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">割合(%)</th>
