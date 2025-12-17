@@ -151,7 +151,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
                     {renderBar(row.totalRatio, true, false)}
                   </td>
                   {row.segmentRatios.map((ratio, i) => {
-                    // 이 셀이 최대값인지 확인 (동점인 경우 모두 강조)
+                    // このセルが最大値かどうかを確認 (同点の場合はすべて強調)
                     const isMaxInRow = ratio === maxRatio && maxRatio > 0;
                     return (
                       <td key={i} className="border-r border-b border-gray-300 p-1 border-l-2 border-l-blue-100">

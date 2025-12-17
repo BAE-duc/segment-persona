@@ -1,11 +1,11 @@
 # Technology Stack
 
 ## Core Technologies
-- **React 18.3.1** - Main UI framework with React.StrictMode (안전한 LTS 버전)
+- **React 18.3.1** - Main UI framework with React.StrictMode (安全なLTSバージョン)
 - **TypeScript 5.8.2** - Type safety with ES2022 target
 - **Vite 6.2.0** - Build tool and development server
 - **D3.js 7.9.0** - Data visualization library for charts and graphs
-- **React Router DOM 6.28.0** - Client-side routing (안정적인 v6 버전)
+- **React Router DOM 6.28.0** - Client-side routing (安定したv6バージョン)
 
 ## Build System
 - **Vite** configuration with React plugin
