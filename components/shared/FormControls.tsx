@@ -5,30 +5,23 @@ import React from 'react';
 // disabled:opacity-50を削除し、各テーマで個別に制御します。
 const buttonStructureClasses = "h-[30px] px-4 flex items-center justify-center transition-colors duration-200 text-xs font-medium disabled:cursor-not-allowed rounded-md";
 
-const inactiveThemeClasses = "border border-gray-400 bg-gray-200 hover:bg-gray-300 disabled:opacity-50";
-const activeThemeClasses = "text-white border border-blue-600 bg-gradient-to-b from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 disabled:opacity-50";
+// 対象データ選択モーダルと同じデザインに統一します。
+// 非活性化状態: グレー (disabled時は透明度を下げて区別しやすくします)
+const inactiveThemeClasses = "border border-gray-400 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-200 disabled:text-gray-500 disabled:border-gray-400 disabled:opacity-60";
 
-// 「いますぐ分析する」ボタンと同じスタイルのプライマリテーマ。
-
-// 有効時は #00BFFF、無効時はグレーになります。
-const primaryThemeClasses = "text-white bg-[#00BFFF] hover:opacity-90 border border-transparent disabled:bg-gray-300 disabled:text-gray-500 disabled:border-gray-300";
+// 活性化状態: 青いグラデーション (対象データ選択モーダルと同じデザイン)
+const activeThemeClasses = "text-white border border-blue-600 bg-gradient-to-b from-blue-400 to-blue-600 hover:from-blue-500 hover:to-blue-700 disabled:bg-gray-200 disabled:text-gray-500 disabled:border-gray-400 disabled:from-gray-200 disabled:to-gray-200 disabled:opacity-60";
 
 // AppButtonコンポーネントのPropsインターフェース。
 
 interface AppButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
   isActive?: boolean;
-  primary?: boolean;
 }
 
-export const AppButton: React.FC<AppButtonProps> = ({ children, onClick, className = '', isActive, primary, ...props }) => {
-  let themeClasses = inactiveThemeClasses;
-
-  if (primary) {
-    themeClasses = primaryThemeClasses;
-  } else if (isActive) {
-    themeClasses = activeThemeClasses;
-  }
+export const AppButton: React.FC<AppButtonProps> = ({ children, onClick, className = '', isActive, ...props }) => {
+  // 対象データ選択モーダルと同じデザインに統一: isActiveの場合は青いグラデーション、そうでなければグレー
+  const themeClasses = isActive ? activeThemeClasses : inactiveThemeClasses;
 
   return (
     <button onClick={onClick} className={`${buttonStructureClasses} ${themeClasses} ${className}`} {...props}>

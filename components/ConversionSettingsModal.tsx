@@ -504,21 +504,9 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
     }, [minRange, maxRange, somDataType, dimensions, rangeConfig, histData]);
 
 
-    // 右側のテーブルの累積割合を再計算するヘルパー関数。
-    // 右側のテーブルの累積割合を再計算するヘルパー関数。
-    const recalculateCumulative = (items: CategoryItem[]): CategoryItem[] => {
-        // 項目を 'no' プロパティでソートして、正しい計算順序を保証します。
-        // 項目を 'no' プロパティでソートして、正しい計算順序を保証します。
-        const sortedItems = [...items].sort((a, b) => a.no - b.no);
-
-        let cumulativeTotal = 0;
-        return sortedItems.map(item => {
-            cumulativeTotal += item.ratio;
-            // 小数点第1位に丸めます
-            // 小数点第1位に丸めます
-            const roundedCumulative = parseFloat(cumulativeTotal.toFixed(1));
-            return { ...item, cumulative: roundedCumulative };
-        });
+    // 項目をソートするヘルパー関数
+    const sortItems = (items: CategoryItem[]): CategoryItem[] => {
+        return [...items].sort((a, b) => a.no - b.no);
     };
 
     // 以前に保存した設定でモーダルを初期化するか、デフォルト値を設定します。
@@ -529,13 +517,13 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
             if (initialSettings?.type === 'categorical' && initialSettings.categories) {
                 const right = allItems.filter(item => initialSettings.categories!.includes(item.name));
                 const left = allItems.filter(item => !initialSettings.categories!.includes(item.name));
-                setRightItems(recalculateCumulative(right));
-                setLeftItems(left.sort((a, b) => a.no - b.no));
+                setRightItems(sortItems(right));
+                setLeftItems(sortItems(left));
             } else {
                 // デフォルトでは全選択（すべて右側）
                 // デフォルトでは全選択（すべて右側）
                 setLeftItems([]);
-                setRightItems(recalculateCumulative(allItems));
+                setRightItems(sortItems(allItems));
             }
         } else { // '数値型'
             const range = rangeConfig || { min: 1, max: 100 };
@@ -565,26 +553,26 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
 
     const moveToRight = () => {
         const itemsToMove = leftItems.filter(item => selectedLeftNos.has(item.no));
-        setRightItems(prev => recalculateCumulative([...prev, ...itemsToMove]));
+        setRightItems(prev => sortItems([...prev, ...itemsToMove]));
         setLeftItems(prev => prev.filter(item => !selectedLeftNos.has(item.no)));
         setSelectedLeftNos(new Set());
     };
 
     const moveToLeft = () => {
         const itemsToMove = rightItems.filter(item => selectedRightNos.has(item.no));
-        setLeftItems(prev => [...prev, ...itemsToMove].sort((a, b) => a.no - b.no));
-        setRightItems(prev => recalculateCumulative(prev.filter(item => !selectedRightNos.has(item.no))));
+        setLeftItems(prev => sortItems([...prev, ...itemsToMove]));
+        setRightItems(prev => sortItems(prev.filter(item => !selectedRightNos.has(item.no))));
         setSelectedRightNos(new Set());
     };
 
     const moveAllToRight = () => {
-        setRightItems(prev => recalculateCumulative([...prev, ...leftItems]));
+        setRightItems(prev => sortItems([...prev, ...leftItems]));
         setLeftItems([]);
         setSelectedLeftNos(new Set());
     };
 
     const moveAllToLeft = () => {
-        setLeftItems(prev => [...prev, ...rightItems].sort((a, b) => a.no - b.no));
+        setLeftItems(prev => sortItems([...prev, ...rightItems]));
         setRightItems([]);
         setSelectedRightNos(new Set());
     };
@@ -668,10 +656,9 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                 <thead className="sticky top-0 bg-gray-50 z-10">
                     <tr>
                         <th className="p-1 font-semibold text-left border-b border-r border-gray-300 w-12 text-center">No.</th>
-                        <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">名称</th>
-                        <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">サンプル数</th>
-                        <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">割合(%)</th>
-                        <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">累積(%)</th>
+                        <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2 flex-grow">名称</th>
+                        <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2 w-20">サンプル数</th>
+                        <th className="p-1 font-semibold text-left border-b border-gray-300 pl-2 w-20">割合(%)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -684,8 +671,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                             <td className="p-1 border-b border-r border-gray-200 text-center">{item.no}</td>
                             <td className="p-1 border-b border-r border-gray-200 pl-2">{item.name}</td>
                             <td className="p-1 border-b border-r border-gray-200 pl-2">{item.samples.toLocaleString()}</td>
-                            <td className="p-1 border-b border-r border-gray-200 pl-2">{item.ratio}</td>
-                            <td className="p-1 border-b border-r border-gray-200 pl-2">{item.cumulative}</td>
+                            <td className="p-1 border-b border-gray-200 pl-2">{item.ratio}</td>
                         </tr>
                     ))}
                 </tbody>

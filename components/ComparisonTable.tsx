@@ -72,12 +72,9 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
 
   const renderBar = (value: number, isTotal: boolean, isMaxInRow: boolean = false) => {
     const widthPct = xScale(value);
-    // 各カテゴリで最大値の場合に強調表示
-
-    const isHighlight = !isTotal && isMaxInRow;
 
     return (
-      <div className={`relative w-full h-6 flex items-center px-1 ${isHighlight ? 'bg-red-50' : ''}`}>
+      <div className="relative w-full h-6 flex items-center px-1">
         {/* バー背景 */}
         <div className="absolute inset-y-1 left-0 bg-gray-100 w-full z-0 rounded-sm overflow-hidden">
           {/* 実際のバー */}
@@ -87,7 +84,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
           ></div>
         </div>
         {/* 数値テキスト */}
-        <span className={`relative z-10 ml-auto text-xs ${isHighlight ? 'font-bold text-red-600' : 'font-medium text-gray-700'}`}>
+        <span className={`relative z-10 ml-auto text-xs font-medium text-gray-700`}>
           {Math.round(value)}%
         </span>
       </div>
@@ -102,7 +99,10 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
         <thead className="sticky top-0 bg-white z-20 shadow-sm text-[#586365]">
           <tr>
             <th colSpan={2} className="border-b border-r border-gray-300 bg-gray-50 p-1 text-center font-bold min-w-[200px]">
-              セグメントサイズ→
+              <div>セグメントサイズ→</div>
+              <div className="text-[10px] text-gray-500 mt-1">
+                {isConversionView ? '(差分)' : '(絶対値)'}
+              </div>
             </th>
             <th className="border-b border-r border-gray-300 bg-gray-50 p-1 text-center w-16">
               <div className="text-[10px] text-gray-500">全体</div>
@@ -153,8 +153,10 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
                   {row.segmentRatios.map((ratio, i) => {
                     // このセルが最大値かどうかを確認 (同点の場合はすべて強調)
                     const isMaxInRow = ratio === maxRatio && maxRatio > 0;
+                    // 최대값 셀의 경우 붉은색 배경 적용
+                    const cellBgColor = !isConversionView && isMaxInRow ? 'bg-red-100' : '';
                     return (
-                      <td key={i} className="border-r border-b border-gray-300 p-1 border-l-2 border-l-blue-100">
+                      <td key={i} className={`border-r border-b border-gray-300 p-1 border-l-2 border-l-blue-100 ${cellBgColor}`}>
                         {isConversionView ? renderDifferenceBar(ratio, row.totalRatio) : renderBar(ratio, false, isMaxInRow)}
                       </td>
                     );

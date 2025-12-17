@@ -323,6 +323,7 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
               <AppButton
                 onClick={handleSelectAllToggle}
                 disabled={!selectedItemId || currentChoices.length === 0}
+                isActive={!(!selectedItemId || currentChoices.length === 0)}
                 className="py-1"
               >
                 全選択/全解除
@@ -337,7 +338,7 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
             <AppButton
               onClick={handleConfirmClick}
               className="w-24 py-1"
-              primary
+              isActive={selectedChoiceIds.size > 0}
               disabled={selectedChoiceIds.size === 0}
             >
               OK

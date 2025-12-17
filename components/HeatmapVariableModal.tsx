@@ -267,8 +267,8 @@ export const HeatmapVariableModal: React.FC<HeatmapVariableModalProps> = ({
                                         </table>
                                     </div>
                                     <div className="flex-shrink-0 p-2 flex justify-end gap-2 bg-gray-50 border-t border-gray-300">
-                                        <AppButton onClick={() => handleAddCondition('AND')} className="py-1 px-2 text-xs" disabled={isAndButtonDisabled}>ANDで条件を追加</AppButton>
-                                        <AppButton onClick={() => handleAddCondition('OR')} className="py-1 px-2 text-xs" disabled={selectedConditionIndex === null}>ORで条件を追加</AppButton>
+                                        <AppButton onClick={() => handleAddCondition('AND')} className="py-1 px-2 text-xs" disabled={isAndButtonDisabled} isActive={!isAndButtonDisabled}>ANDで条件を追加</AppButton>
+                                        <AppButton onClick={() => handleAddCondition('OR')} className="py-1 px-2 text-xs" disabled={selectedConditionIndex === null} isActive={selectedConditionIndex !== null}>ORで条件を追加</AppButton>
                                     </div>
                                 </div>
                             </div>
@@ -277,11 +277,11 @@ export const HeatmapVariableModal: React.FC<HeatmapVariableModalProps> = ({
                         <div className="flex-1 grid grid-cols-8 gap-4 min-h-0 overflow-hidden">
                             <div className="col-span-1 flex flex-col items-center justify-start pt-6 space-y-2">
                                 <span className="font-semibold text-xs text-[#586365] mb-1 invisible">Controls</span>
-                                <AppButton onClick={handleMoveUp} disabled={selectedConditionListIndex === null || selectedConditionListIndex === 0} className="w-12 h-[30px] flex items-center justify-center p-0 text-sm">↑</AppButton>
-                                <AppButton onClick={handleMoveDown} disabled={selectedConditionListIndex === null || selectedConditionListIndex >= conditionList.length - 1} className="w-12 h-[30px] flex items-center justify-center p-0 text-sm">↓</AppButton>
+                                <AppButton onClick={handleMoveUp} disabled={selectedConditionListIndex === null || selectedConditionListIndex === 0} isActive={selectedConditionListIndex !== null && selectedConditionListIndex > 0} className="w-12 h-[30px] flex items-center justify-center p-0 text-sm">↑</AppButton>
+                                <AppButton onClick={handleMoveDown} disabled={selectedConditionListIndex === null || selectedConditionListIndex >= conditionList.length - 1} isActive={selectedConditionListIndex !== null && selectedConditionListIndex < conditionList.length - 1} className="w-12 h-[30px] flex items-center justify-center p-0 text-sm">↓</AppButton>
                                 <div className="pt-4"></div>
-                                <AppButton onClick={handleDeleteRow} disabled={selectedConditionListIndex === null} className="py-1 w-20">行削除</AppButton>
-                                <AppButton onClick={handleDeleteAll} disabled={conditionList.length === 0} className="py-1 w-20">全削除</AppButton>
+                                <AppButton onClick={handleDeleteRow} disabled={selectedConditionListIndex === null} isActive={selectedConditionListIndex !== null} className="py-1 w-20">行削除</AppButton>
+                                <AppButton onClick={handleDeleteAll} disabled={conditionList.length === 0} isActive={conditionList.length > 0} className="py-1 w-20">全削除</AppButton>
                             </div>
                             <div className="col-span-7 flex flex-col min-h-0">
                                 <span className="font-semibold text-xs text-[#586365] mb-1">条件一覧</span>
@@ -344,7 +344,7 @@ export const HeatmapVariableModal: React.FC<HeatmapVariableModalProps> = ({
 
                 <div className={`${modalStyles.footer.container} justify-end`}>
                     <div className={modalStyles.footer.buttonGroup}>
-                        <AppButton onClick={() => onConfirm(conditionList)} className="w-24 py-1" primary disabled={conditionList.length === 0}>OK</AppButton>
+                        <AppButton onClick={() => onConfirm(conditionList)} className="w-24 py-1" isActive={conditionList.length > 0} disabled={conditionList.length === 0}>OK</AppButton>
                         <AppButton onClick={onClose} className="w-24 py-1">Cancel</AppButton>
                     </div>
                 </div>

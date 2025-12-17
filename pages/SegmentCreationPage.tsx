@@ -91,7 +91,6 @@ headers.forEach((header, colIndex) => {
 
   // itemCategoryData (カテゴリ型の変換設定デフォルト用)
   const categoryItems: CategoryItem[] = [];
-  let cumulative = 0;
 
   // ソート: NAは最後、数値なら数値順、文字列なら辞書順
   const sortedValues = [...uniqueValues].sort((a, b) => {
@@ -104,13 +103,11 @@ headers.forEach((header, colIndex) => {
   sortedValues.forEach((val, idx) => {
     const count = colValues.filter(v => v === val).length;
     const ratio = (count / totalCount) * 100;
-    cumulative += ratio;
     categoryItems.push({
       no: idx + 1,
       name: val,
       samples: count,
-      ratio: parseFloat(ratio.toFixed(1)),
-      cumulative: parseFloat(cumulative.toFixed(1))
+      ratio: parseFloat(ratio.toFixed(1))
     });
   });
   generatedItemCategoryData[header] = categoryItems;

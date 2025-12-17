@@ -504,7 +504,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
             <AppButton
               onClick={() => onConfirm(conditionList)}
               className="w-24 py-1"
-              primary
+              isActive={conditionList.length > 0}
               disabled={conditionList.length === 0}
             >
               OK

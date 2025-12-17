@@ -375,7 +375,7 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
           className="w-full"
           onClick={handleSegmentationExecuteClick}
           disabled={isExecuteDisabled}
-          primary
+          isActive={!isExecuteDisabled}
         >
           セグメンテーション実行
         </AppButton>

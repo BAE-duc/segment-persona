@@ -82,7 +82,6 @@ export const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({ onClose,
 
   // 右パネルの下部にあるチェックボックスの状態を管理します。
 
-  const [includeNA, setIncludeNA] = useState(true);
   const [standardize, setStandardize] = useState(true);
 
   // ポップアップが開かれるたびに、渡された初期選択状態を同期します。
@@ -206,6 +205,7 @@ export const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({ onClose,
                 className="py-1 px-4"
                 onClick={() => selectedItemDetail && onOpenConversionSettings(selectedItemDetail.id, selectedItemDetail.somDataType)}
                 disabled={isConversionDisabled}
+                isActive={!isConversionDisabled}
               >
                 変換設定
               </AppButton>
@@ -245,13 +245,6 @@ export const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({ onClose,
             <div className="flex gap-4 mt-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <CustomCheckbox
-                  checked={includeNA}
-                  onChange={() => setIncludeNA(prev => !prev)}
-                />
-                <span className="text-xs select-none">NAを含める</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <CustomCheckbox
                   checked={standardize}
                   onChange={() => setStandardize(prev => !prev)}
                 />
@@ -267,7 +260,7 @@ export const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({ onClose,
             <AppButton
               onClick={handleConfirmClick}
               className="w-24 py-1"
-              primary
+              isActive={adoptedItems.size > 0}
               disabled={adoptedItems.size === 0}
             >
               OK

@@ -1010,7 +1010,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
             )}
             <div className="pt-2 flex-shrink-0 flex justify-end">
               {!isNumerical && (
-                <AppButton onClick={handleSelectAllToggle} disabled={!selectedVariableId} className="py-1">全選択/全解除</AppButton>
+                <AppButton onClick={handleSelectAllToggle} disabled={!selectedVariableId} isActive={!!selectedVariableId} className="py-1">全選択/全解除</AppButton>
               )}
             </div>
           </div>
@@ -1066,7 +1066,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
             <AppButton
               onClick={handleConfirm}
               className="w-24 py-1"
-              primary
+              isActive={adoptedVariables.size > 0 && selectedSegments.size > 0}
               disabled={!(adoptedVariables.size > 0 && selectedSegments.size > 0)}
             >
               OK

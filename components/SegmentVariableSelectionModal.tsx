@@ -36,5 +36,4 @@ export interface CategoryItem {
   name: string;
   samples: number;
   ratio: number;
-  cumulative: number;
 }

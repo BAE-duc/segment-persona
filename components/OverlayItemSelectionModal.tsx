@@ -271,6 +271,7 @@ export const OverlayItemSelectionModal: React.FC<OverlayItemSelectionModalProps>
               <AppButton
                 onClick={handleSelectAllToggle}
                 disabled={!selectedVariableId || currentChoices.length === 0}
+                isActive={!(!selectedVariableId || currentChoices.length === 0)}
                 className="py-1"
               >
                 全選択/全解除
@@ -284,7 +285,7 @@ export const OverlayItemSelectionModal: React.FC<OverlayItemSelectionModalProps>
             <AppButton
               onClick={handleConfirmClick}
               className="w-24 py-1"
-              primary
+              isActive={selectedChoiceIds.size > 0}
               disabled={selectedChoiceIds.size === 0}
             >
               OK

@@ -109,7 +109,7 @@ const PositioningSettings: React.FC<PositioningSettingsProps> = ({ onExecute, on
       {/* 実行ボタン */}
 
       <div className="pt-0"> {/* ボタンを他のボタンと揃える */}
-        <AppButton className="px-6 whitespace-nowrap" onClick={onExecute} disabled={isExecuteDisabled} primary={!isExecuteDisabled}>実行</AppButton>
+        <AppButton className="px-6 whitespace-nowrap" onClick={onExecute} disabled={isExecuteDisabled} isActive={!isExecuteDisabled}>実行</AppButton>
       </div>
     </div>
   );
@@ -121,32 +121,52 @@ const PositioningSettings: React.FC<PositioningSettingsProps> = ({ onExecute, on
 interface HeatmapSettingsProps {
   onExecute: () => void;
   onOpenConditionsModal: () => void;
-  onAddCondition: () => void;
+  onEditCondition: (index: number) => void;
+  onDeleteCondition: (index: number) => void;
   variableDisplayTexts: string[];
   isExecuteDisabled: boolean;
-  isAddDisabled: boolean;
 }
 
 // ヒートマップタブの設定コンポーネント
 
-const HeatmapSettings: React.FC<HeatmapSettingsProps> = ({ onExecute, onOpenConditionsModal, onAddCondition, variableDisplayTexts, isExecuteDisabled, isAddDisabled }) => {
+const HeatmapSettings: React.FC<HeatmapSettingsProps> = ({ onExecute, onOpenConditionsModal, onEditCondition, onDeleteCondition, variableDisplayTexts, isExecuteDisabled }) => {
   return (
 
     <div className="w-full flex flex-col gap-1 h-full">
       {/* 1行目：設定ボタンと実行ボタン */}
 
       <div className="flex items-center gap-2">
-        <AppButton onClick={onOpenConditionsModal}>ヒートマップの表示条件設定</AppButton>
-        <AppButton onClick={onAddCondition} disabled={isAddDisabled} primary={!isAddDisabled}>追加</AppButton>
-        <AppButton className="px-6 whitespace-nowrap" onClick={onExecute} disabled={isExecuteDisabled} primary={!isExecuteDisabled}>実行</AppButton>
+        <AppButton onClick={onOpenConditionsModal}>ヒートマップの表示条件追加</AppButton>
+        <AppButton className="px-6 whitespace-nowrap" onClick={onExecute} disabled={isExecuteDisabled} isActive={!isExecuteDisabled}>実行</AppButton>
       </div>
       {/* 2行目：条件表示フィールド */}
 
-      <div className="flex gap-2 flex-grow min-h-0">
-        <label className="text-xs font-medium text-[#586365] flex-shrink-0 pt-1">変数：</label>
-        <div className="flex-grow border border-gray-400 bg-white rounded-md px-2 py-1 text-gray-500 text-xs overflow-y-auto break-words">
+      <div className="flex-grow min-h-0">
+        <div className="w-full border border-gray-400 bg-white rounded-md text-gray-500 text-xs overflow-y-auto h-full">
           {variableDisplayTexts.map((text, index) => (
-            <div key={index}>条件{index + 1}: {text}</div>
+            <div key={index} className={`flex items-stretch ${index > 0 ? 'border-t border-gray-300' : ''}`}>
+              {/* 조건 표시 영역 */}
+              <div className="flex-1 px-2 py-2 border-r border-gray-300 min-h-[32px] flex items-center">
+                <span className="break-words">条件{index + 1}: {text}</span>
+              </div>
+              {/* 버튼 표시 영역 (고정 크기) */}
+              <div className="w-20 px-1 py-1 flex gap-1 items-center justify-center bg-gray-50">
+                <button
+                  onClick={() => onEditCondition(index)}
+                  className="px-1 py-0.5 text-[10px] bg-blue-100 hover:bg-blue-200 text-blue-700 rounded border border-blue-300 transition-colors whitespace-nowrap flex-shrink-0"
+                  title="条件を編集"
+                >
+                  編集
+                </button>
+                <button
+                  onClick={() => onDeleteCondition(index)}
+                  className="px-1 py-0.5 text-[10px] bg-red-100 hover:bg-red-200 text-red-700 rounded border border-red-300 transition-colors whitespace-nowrap flex-shrink-0"
+                  title="条件を削除"
+                >
+                  削除
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -175,13 +195,12 @@ const CompositionRatioSettings: React.FC<CompositionRatioSettingsProps> = ({ onE
         <AppButton onClick={onOpenVariableSearchModal}>
           構成比比較グラフの表示条件設定
         </AppButton>
-        <AppButton className="px-6 whitespace-nowrap" onClick={onExecute} disabled={isExecuteDisabled} primary={!isExecuteDisabled}>実行</AppButton>
+        <AppButton className="px-6 whitespace-nowrap" onClick={onExecute} disabled={isExecuteDisabled} isActive={!isExecuteDisabled}>実行</AppButton>
       </div>
       {/* 2行目：条件表示フィールド */}
 
-      <div className="flex gap-2 flex-grow min-h-0">
-        <label className="text-xs font-medium text-[#586365] flex-shrink-0 pt-1">条件：</label>
-        <div className="flex-grow border border-gray-400 bg-white rounded-md px-2 py-1 text-gray-500 text-xs overflow-y-auto break-words">
+      <div className="flex-grow min-h-0">
+        <div className="w-full border border-gray-400 bg-white rounded-md px-2 py-1 text-gray-500 text-xs overflow-y-auto break-words h-full">
           {variableDisplayText}
         </div>
       </div>
@@ -687,10 +706,9 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
   // 各タブの実行ボタンの無効化状態を計算します。
 
   const isPositioningExecuteDisabled = !positioningAxes.vertical || !positioningAxes.horizontal || overlayItemDisplay === '';
-  // ヒートマップ実行ボタンは、条件が設定されている場合のみ有効
-  const isHeatmapExecuteDisabled = heatmapConditionsList.length === 0;
-  // 追加ボタンは最初の条件が追加された後に有効化、最大4個まで
-  const isHeatmapAddDisabled = heatmapConditionsList.length === 0 || heatmapConditionsList.length >= 4;
+  // ヒートマップ実行ボタンは、条件が設定되어 있고 변경사항이 있을 때만 유효
+  const isHeatmapExecuteDisabled = heatmapConditionsList.length === 0 || !heatmapPending;
+
 
   // 構成比比較グラフ実行ボタンは、実際にカテゴリが設定されている場合のみ有効
   const isCompositionRatioExecuteDisabled = !pendingCompositionSelection ||
@@ -723,7 +741,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                     onChange={e => setTempSegmentCount(Number(e.target.value))}
                     className="w-20"
                   >
-                    {Array.from({ length: 20 }, (_, i) => i + 1).map(n => (
+                    {Array.from({ length: 18 }, (_, i) => i + 3).map(n => (
                       <option key={n} value={n}>{n}</option>
                     ))}
                   </AppSelect>
@@ -814,7 +832,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                             className="px-6 whitespace-nowrap"
                             onClick={handleExecuteSegmentComparison}
                             disabled={segmentComparisonConditions.length === 0}
-                            primary={segmentComparisonConditions.length > 0}
+                            isActive={segmentComparisonConditions.length > 0}
                           >
                             実行
                           </AppButton>
@@ -822,12 +840,11 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                             className="px-6 whitespace-nowrap ml-auto"
                             onClick={() => setIsConversionView(!isConversionView)}
                           >
-                            変換
+                            表示切替
                           </AppButton>
                         </div>
-                        <div className="flex gap-2 flex-grow min-h-0">
-                          <label className="text-xs font-medium text-[#586365] flex-shrink-0 pt-1">条件：</label>
-                          <div className="flex-grow border border-gray-400 bg-white rounded-md px-2 py-1 text-gray-500 text-xs overflow-y-auto break-words">
+                        <div className="flex-grow min-h-0">
+                          <div className="w-full border border-gray-400 bg-white rounded-md px-2 py-1 text-gray-500 text-xs overflow-y-auto break-words h-full">
                             {segmentComparisonConditionsText}
                           </div>
                         </div>
@@ -853,6 +870,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                         onExecute={() => {
                           setExecutedHeatmapConditionsList(heatmapConditionsList);
                           setIsHeatmapExecuted(true);
+                          setHeatmapPending(false); // 실행 후 버튼 비활성화
                         }}
                         onOpenConditionsModal={() => {
                           if (!selectedData) {
@@ -862,17 +880,28 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                             setIsHeatmapConditionsModalOpen(true);
                           }
                         }}
-                        onAddCondition={() => {
-                          if (!selectedData) {
-                            onShowWarningModal("選択されたデータがありません。\nデータを先に選択してください。");
-                          } else {
-                            setEditingConditionIndex(null);
-                            setIsHeatmapConditionsModalOpen(true);
+                        onEditCondition={(index) => {
+                          setEditingConditionIndex(index);
+                          setIsHeatmapConditionsModalOpen(true);
+                          setHeatmapPending(true); // 편집 시 버튼 활성화
+                        }}
+                        onDeleteCondition={(index) => {
+                          const newConditionsList = [...heatmapConditionsList];
+                          newConditionsList.splice(index, 1);
+                          setHeatmapConditionsList(newConditionsList);
+                          
+                          // 실행된 조건 리스트에서도 해당 조건을 삭제하여 맵을 제거
+                          const newExecutedList = [...executedHeatmapConditionsList];
+                          newExecutedList.splice(index, 1);
+                          setExecutedHeatmapConditionsList(newExecutedList);
+                          
+                          // 조건이 모두 삭제되면 히트맵 실행 상태를 false로 변경
+                          if (newConditionsList.length === 0) {
+                            setIsHeatmapExecuted(false);
                           }
                         }}
                         variableDisplayTexts={heatmapVariableTexts}
                         isExecuteDisabled={isHeatmapExecuteDisabled}
-                        isAddDisabled={isHeatmapAddDisabled}
                       />
                     )}
                     {activeTab === '構成比比較グラフ' && (
@@ -1052,6 +1081,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
               // 新しい条件を追加
               setHeatmapConditionsList([...heatmapConditionsList, conditions]);
             }
+            // 조건 추가/편집 시 버튼 활성화
             setHeatmapPending(true);
             setIsHeatmapConditionsModalOpen(false);
             setEditingConditionIndex(null);

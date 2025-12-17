@@ -242,7 +242,7 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
             <AppButton
               onClick={handleConfirmClick}
               className="w-24 py-1"
-              primary
+              isActive={!!verticalAxis && !!horizontalAxis}
               disabled={!verticalAxis || !horizontalAxis}
             >
               OK

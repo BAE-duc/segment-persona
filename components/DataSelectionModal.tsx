@@ -72,9 +72,9 @@ interface DataSelectionModalProps {
 }
 
 export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({ onClose, onConfirm }) => {
-  // 画像に基づいてデフォルトの選択を設定します。
+  // 初期状態では何も選択されていない状態に設定します。
 
-  const [selectedId, setSelectedId] = useState<string | null>('item1-1');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const handleConfirm = () => {
     if (!selectedId) return;
@@ -118,28 +118,25 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({ onClose,
             <div className="col-span-4">作成日時</div>
           </div>
           <div className="flex-grow overflow-y-auto mt-2">
-            {modalData.map(group => (
-              <div key={group.id} className="mb-2">
-                <p className="font-bold text-[#586365] underline my-1">{group.name}</p>
-                {group.items.map(item => (
-                  <div
-                    key={item.id}
-                    className={`grid grid-cols-12 items-center cursor-pointer ${modalStyles.interactive.listItem(selectedId === item.id)}`}
-                    onClick={() => setSelectedId(item.id)}
-                  >
-                    <div className="col-span-8 flex items-center py-1">
-                      {/* カスタムラジオボタン */}
+            {modalData.map(group => 
+              group.items.map(item => (
+                <div
+                  key={item.id}
+                  className={`grid grid-cols-12 items-center cursor-pointer ${modalStyles.interactive.listItem(selectedId === item.id)}`}
+                  onClick={() => setSelectedId(item.id)}
+                >
+                  <div className="col-span-8 flex items-center py-1">
+                    {/* カスタムラジオボタン */}
 
-                      <div className="w-4 h-4 rounded-full border-2 border-gray-700 flex items-center justify-center mx-2 flex-shrink-0">
-                        {selectedId === item.id && <div className="w-2 h-2 bg-gray-700 rounded-full" />}
-                      </div>
-                      <span>{item.name}</span>
+                    <div className="w-4 h-4 rounded-full border-2 border-gray-700 flex items-center justify-center mx-2 flex-shrink-0">
+                      {selectedId === item.id && <div className="w-2 h-2 bg-gray-700 rounded-full" />}
                     </div>
-                    <div className="col-span-4 text-gray-600">{item.createdAt}</div>
+                    <span>{item.name}</span>
                   </div>
-                ))}
-              </div>
-            ))}
+                  <div className="col-span-4 text-gray-600">{item.createdAt}</div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -147,7 +144,7 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({ onClose,
 
         <div className={`${modalStyles.footer.container} justify-end`}>
           <div className={modalStyles.footer.buttonGroup}>
-            <AppButton onClick={handleConfirm} className="w-24" disabled={!selectedId}>OK</AppButton>
+            <AppButton onClick={handleConfirm} className="w-24" disabled={!selectedId} isActive={!!selectedId}>OK</AppButton>
             <AppButton onClick={onClose} className="w-24">Cancel</AppButton>
           </div>
         </div>

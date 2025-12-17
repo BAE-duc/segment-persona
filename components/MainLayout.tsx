@@ -328,7 +328,7 @@ export const MainLayout = () => {
                             {/* 背景 */}
 
                             <div
-                                className={`absolute inset-0 bg-black bg-opacity-20 z-30 ${isSegmentPopupMinimized ? 'hidden' : ''}`}
+                                className={`absolute inset-0 bg-black bg-opacity-40 z-30 ${isSegmentPopupMinimized ? 'hidden' : ''}`}
                                 onDrop={handleBackdropDrop}
                                 onDragOver={handleBackdropDragOver}
                                 onClick={() => bringPopupToFront('segment')}

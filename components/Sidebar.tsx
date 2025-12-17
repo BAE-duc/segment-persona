@@ -1,6 +1,7 @@
 import React from 'react';
 import { FilterSection } from './shared/FilterSection';
 import { TreeItem } from './shared/TreeItem';
+import { AppButton } from './shared/FormControls';
 
 // サイドバーコンポーネントのPropsインターフェース。
 // サイドバーの表示制御とフィルターデータの受け渡しを行います。
@@ -83,13 +84,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ onSomExecute, filterCategories
 
             {/* 下部ボタン */}
             <div className={`p-4 flex-shrink-0 bg-[#f8f9fa] ${isCollapsed ? 'hidden' : ''}`}>
-                <button
+                <AppButton
                     onClick={onSomExecute}
-                    className="w-full py-3 text-white font-bold rounded-lg transition-opacity hover:opacity-90"
-                    style={{ backgroundColor: '#00BFFF' }}
+                    className="w-full py-3 font-bold"
+                    isActive
                 >
                     いますぐ分析する
-                </button>
+                </AppButton>
             </div>
         </aside>
     );
