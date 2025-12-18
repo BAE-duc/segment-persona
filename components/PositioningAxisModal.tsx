@@ -203,8 +203,8 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
                 {/* アクションボタン */}
 
                 <div className="flex-shrink-0 p-2 flex justify-end gap-2 bg-gray-50 border-t border-gray-300">
-                  <AppButton onClick={() => handleAddAxis('vertical')} className="py-1 px-3 text-xs" disabled={isAddButtonDisabled}>縦軸追加</AppButton>
-                  <AppButton onClick={() => handleAddAxis('horizontal')} className="py-1 px-3 text-xs" disabled={isAddButtonDisabled}>横軸追加</AppButton>
+                  <AppButton onClick={() => handleAddAxis('vertical')} className="py-1 px-3 text-xs" disabled={isAddButtonDisabled}>縦軸に設定</AppButton>
+                  <AppButton onClick={() => handleAddAxis('horizontal')} className="py-1 px-3 text-xs" disabled={isAddButtonDisabled}>横軸に設定</AppButton>
                 </div>
               </div>
             </div>

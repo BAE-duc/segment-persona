@@ -143,31 +143,37 @@ const HeatmapSettings: React.FC<HeatmapSettingsProps> = ({ onExecute, onOpenCond
 
       <div className="flex-grow min-h-0">
         <div className="w-full border border-gray-400 bg-white rounded-md text-gray-500 text-xs overflow-y-auto h-full">
-          {variableDisplayTexts.map((text, index) => (
-            <div key={index} className={`flex items-stretch ${index > 0 ? 'border-t border-gray-300' : ''}`}>
-              {/* 조건 표시 영역 */}
-              <div className="flex-1 px-2 py-2 border-r border-gray-300 min-h-[32px] flex items-center">
-                <span className="break-words">条件{index + 1}: {text}</span>
+          {variableDisplayTexts.length > 0 ? (
+            variableDisplayTexts.map((text, index) => (
+              <div key={index} className={`flex items-stretch ${index > 0 ? 'border-t border-gray-300' : ''}`}>
+                {/* 조건 표시 영역 */}
+                <div className="flex-1 px-2 py-1 border-r border-gray-300 min-h-[32px] flex items-center">
+                  <span className="break-words">条件{index + 1}: {text}</span>
+                </div>
+                {/* 버튼 표시 영역 (고정 크기) */}
+                <div className="w-20 px-1 py-1 flex gap-1 items-center justify-center bg-gray-50">
+                  <button
+                    onClick={() => onEditCondition(index)}
+                    className="px-1 py-0.5 text-[10px] bg-blue-100 hover:bg-blue-200 text-blue-700 rounded border border-blue-300 transition-colors whitespace-nowrap flex-shrink-0"
+                    title="条件を編集"
+                  >
+                    編集
+                  </button>
+                  <button
+                    onClick={() => onDeleteCondition(index)}
+                    className="px-1 py-0.5 text-[10px] bg-red-100 hover:bg-red-200 text-red-700 rounded border border-red-300 transition-colors whitespace-nowrap flex-shrink-0"
+                    title="条件を削除"
+                  >
+                    削除
+                  </button>
+                </div>
               </div>
-              {/* 버튼 표시 영역 (고정 크기) */}
-              <div className="w-20 px-1 py-1 flex gap-1 items-center justify-center bg-gray-50">
-                <button
-                  onClick={() => onEditCondition(index)}
-                  className="px-1 py-0.5 text-[10px] bg-blue-100 hover:bg-blue-200 text-blue-700 rounded border border-blue-300 transition-colors whitespace-nowrap flex-shrink-0"
-                  title="条件を編集"
-                >
-                  編集
-                </button>
-                <button
-                  onClick={() => onDeleteCondition(index)}
-                  className="px-1 py-0.5 text-[10px] bg-red-100 hover:bg-red-200 text-red-700 rounded border border-red-300 transition-colors whitespace-nowrap flex-shrink-0"
-                  title="条件を削除"
-                >
-                  削除
-                </button>
-              </div>
+            ))
+          ) : (
+            <div className="px-2 py-1 text-gray-500 text-xs break-words">
+              選択した内容が表示されます
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
@@ -193,7 +199,7 @@ const CompositionRatioSettings: React.FC<CompositionRatioSettingsProps> = ({ onE
 
       <div className="flex items-center gap-2">
         <AppButton onClick={onOpenVariableSearchModal}>
-          構成比比較グラフの表示条件設定
+          対象変数の選択
         </AppButton>
         <AppButton className="px-6 whitespace-nowrap" onClick={onExecute} disabled={isExecuteDisabled} isActive={!isExecuteDisabled}>実行</AppButton>
       </div>

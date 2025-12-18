@@ -115,6 +115,7 @@ export const PersonaListPage: React.FC = () => {
     const [isDetailsVisible, setIsDetailsVisible] = useState(false);
     const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(null);
     const [readPersonaIds, setReadPersonaIds] = useState<Set<number>>(new Set());
+    const [isSomMapSelected, setIsSomMapSelected] = useState(false);
 
     const handleSelectPersona = (id: number) => {
         setSelectedPersonaId(id);
@@ -144,11 +145,20 @@ export const PersonaListPage: React.FC = () => {
 
                 {/* SOMMAP エリア */}
                 <div
-                    className="bg-[#EFE8C8] aspect-square flex items-center justify-center relative overflow-hidden border border-gray-300 cursor-pointer hover:opacity-90 transition-opacity"
-                    onClick={() => setIsDetailsVisible(true)}
+                    className={`bg-[#EFE8C8] aspect-square flex items-center justify-center relative overflow-hidden border cursor-pointer transition-all ${
+                        isSomMapSelected 
+                            ? 'border-blue-500 border-4 ring-4 ring-blue-200' 
+                            : 'border-gray-300 hover:border-blue-300'
+                    }`}
+                    onClick={() => setIsSomMapSelected(true)}
                 >
                     <img src={somMapImage} alt="SOMMAP" className="w-full h-full object-contain" />
                     <div className="absolute top-2 left-0 right-0 text-center font-bold text-lg">SOMMAP</div>
+                    {isSomMapSelected && (
+                        <div className="absolute top-2 right-2 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">
+                            ✓
+                        </div>
+                    )}
                 </div>
 
                 {/* トグルボタン */}
@@ -172,8 +182,20 @@ export const PersonaListPage: React.FC = () => {
 
                 {/* 出力ボタン (左下) */}
                 <div className="mt-auto">
-                    <button className="w-full py-2 bg-gray-200 border border-gray-400 rounded shadow-sm hover:bg-gray-300 font-bold text-gray-700">
-                        共通フィルターに出力
+                    <button 
+                        className={`w-full py-2 rounded shadow-sm font-bold transition-colors ${
+                            isSomMapSelected 
+                                ? 'bg-blue-500 border border-blue-600 text-white hover:bg-blue-600' 
+                                : 'bg-gray-200 border border-gray-400 text-gray-400 cursor-not-allowed'
+                        }`}
+                        disabled={!isSomMapSelected}
+                        onClick={() => {
+                            if (isSomMapSelected) {
+                                setIsDetailsVisible(true);
+                            }
+                        }}
+                    >
+                        ペルソナ抽出
                     </button>
                 </div>
             </div>
@@ -294,7 +316,10 @@ export const PersonaListPage: React.FC = () => {
                     </div>
                 ) : (
                     <div className="flex items-center justify-center h-full text-gray-400">
-                        左側のSOMMAPをクリックすると詳細情報が表示されます
+                        {isSomMapSelected 
+                            ? 'ペルソナ抽出ボタンを押してください' 
+                            : '左側のSOMMAP内で、抽出対象とするセグメントまたはノードを選択してください。'
+                        }
                     </div>
                 )}
             </div>

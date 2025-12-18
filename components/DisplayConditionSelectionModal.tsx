@@ -897,10 +897,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
                 <thead className="sticky top-0 bg-gray-50 z-10">
                   <tr>
                     <th className="p-1 font-bold text-center border-b border-r border-gray-300 w-12">
-                      <CustomCheckbox
-                        checked={variables.length > 0 && variables.every(v => adoptedVariables.has(v.id))}
-                        onChange={handleSelectAllVariablesToggle}
-                      />
+                      採用
                     </th>
                     <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">変数名</th>
                     <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">データタイプ</th>
@@ -923,7 +920,12 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
               </table>
             </div>
             <div className="pt-2 flex-shrink-0 flex justify-end">
-              <AppButton onClick={handleSelectAllVariablesToggle} className="py-1">全選択/全解除</AppButton>
+              <AppButton 
+                onClick={handleSelectAllVariablesToggle} 
+                className="py-1 bg-gray-200 border-gray-400 text-gray-700 hover:bg-gray-300"
+              >
+                全選択/全解除
+              </AppButton>
             </div>
           </div>
 
@@ -973,11 +975,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="p-1 font-bold text-center border-b border-r border-gray-300 w-12">
-                          <CustomCheckbox
-                            checked={allCurrentChoicesSelected}
-                            onChange={handleSelectAllToggle}
-                            disabled={!selectedVariableId}
-                          />
+                          採用
                         </th>
                         <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2 w-20">No.</th>
                         <th className="p-1 font-bold text-left border-b border-gray-300 pl-2 flex items-center">
@@ -1010,7 +1008,13 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
             )}
             <div className="pt-2 flex-shrink-0 flex justify-end">
               {!isNumerical && (
-                <AppButton onClick={handleSelectAllToggle} disabled={!selectedVariableId} isActive={!!selectedVariableId} className="py-1">全選択/全解除</AppButton>
+                <AppButton 
+                  onClick={handleSelectAllToggle} 
+                  disabled={!selectedVariableId} 
+                  className={`py-1 ${selectedVariableId ? 'bg-gray-200 border-gray-400 text-gray-700 hover:bg-gray-300' : ''}`}
+                >
+                  全選択/全解除
+                </AppButton>
               )}
             </div>
           </div>
@@ -1024,10 +1028,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="p-1 font-bold text-center border-b border-r border-gray-300 w-12">
-                        <CustomCheckbox
-                          checked={allSegmentsSelected}
-                          onChange={handleSelectAllSegmentsToggle}
-                        />
+                        採用
                       </th>
                       <th className="p-1 font-bold text-left border-b border-gray-300 pl-2">
                         セグメント番号
@@ -1055,7 +1056,12 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
               </div>
             </div>
             <div className="pt-2 flex-shrink-0 flex justify-end">
-              <AppButton onClick={handleSelectAllSegmentsToggle} className="py-1">全選択/全解除</AppButton>
+              <AppButton 
+                onClick={handleSelectAllSegmentsToggle} 
+                className="py-1 bg-gray-200 border-gray-400 text-gray-700 hover:bg-gray-300"
+              >
+                全選択/全解除
+              </AppButton>
             </div>
           </div>
         </div>

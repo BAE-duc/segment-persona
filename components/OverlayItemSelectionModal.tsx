@@ -230,11 +230,7 @@ export const OverlayItemSelectionModal: React.FC<OverlayItemSelectionModalProps>
                   <thead className="sticky top-0 bg-gray-50 z-10">
                     <tr>
                       <th className="p-1 font-semibold text-center border-b border-r border-gray-300 w-12">
-                        <CustomCheckbox
-                          checked={allCurrentChoicesSelected}
-                          onChange={handleSelectAllToggle}
-                          disabled={!selectedVariableId || currentChoices.length === 0}
-                        />
+                        採用
                       </th>
                       <th className="p-1 font-semibold text-center border-b border-r border-gray-300 w-16">No.</th>
                       <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2 flex items-center">
@@ -271,8 +267,7 @@ export const OverlayItemSelectionModal: React.FC<OverlayItemSelectionModalProps>
               <AppButton
                 onClick={handleSelectAllToggle}
                 disabled={!selectedVariableId || currentChoices.length === 0}
-                isActive={!(!selectedVariableId || currentChoices.length === 0)}
-                className="py-1"
+                className={`py-1 ${(selectedVariableId && currentChoices.length > 0) ? 'bg-gray-200 border-gray-400 text-gray-700 hover:bg-gray-300' : ''}`}
               >
                 全選択/全解除
               </AppButton>

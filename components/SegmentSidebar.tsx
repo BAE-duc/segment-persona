@@ -235,20 +235,13 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
           <div className="p-2 flex flex-col flex-grow min-h-0">
             {activeTab === 'セグメントアイテム選択' && (
               <div className="flex flex-col h-full">
-                <div className="flex-shrink-0 flex justify-between items-center">
+                <div className="flex-shrink-0">
                   <button
                     onClick={onOpenItemSelectionModal}
                     className="text-xs text-blue-600 cursor-pointer hover:underline focus:outline-none"
                   >
                     アイテム選択
                   </button>
-                  {/* 選択中のデータ数を表示 */}
-                  {/* 選択中のデータ数を表示 */}
-                  {selectedData && Object.keys(selectedVariables).length > 0 && typeof selectedDataCount === 'number' && (
-                    <span className="text-xs font-medium text-[#586365]">
-                      選択中のアイテム：{selectedDataCount.toLocaleString()}件
-                    </span>
-                  )}
                 </div>
                 <div className="mt-2 flex-shrink-0">
                   <label className="text-xs font-medium text-[#586365]">選択中のアイテム</label>
@@ -304,15 +297,14 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
                   </button>
                 </div>
                 <div className="mt-2 flex-grow overflow-y-auto text-xs space-y-1 pl-1">
-                  <>
-                    <p>マップサイズ: {currentSettings.mapSize === 'auto' ? '自動' : `${currentSettings.customWidth}×${currentSettings.customHeight}`}</p>
-                    <p>学習率: {currentSettings.learningRate}</p>
-                    <p>イテレーション数: {currentSettings.iterations}</p>
-                    <p>距離尺度: {currentSettings.distanceMetric}</p>
-                    <p>近傍半径: {currentSettings.neighborhoodRadius}</p>
-                    <p>近傍関数: {currentSettings.neighborhoodFunction}</p>
-                    <p>減衰関数: {decayFunctionMap[currentSettings.decayFunction] || currentSettings.decayFunction}</p>
-                  </>
+                  <p>マップサイズ: {currentSettings.mapSize === 'auto' ? '自動' : `${currentSettings.customWidth}×${currentSettings.customHeight}`}</p>
+                  <p>学習率: {currentSettings.learningRate}</p>
+                  <p>イテレーション数: {currentSettings.iterations}</p>
+                  <p>距離尺度: {currentSettings.distanceMetric}</p>
+                  <p>近傍半径: {currentSettings.neighborhoodRadius}</p>
+                  <p>近傍関数: {currentSettings.neighborhoodFunction}</p>
+                  <p>階層クラスタ-距離関数: {currentSettings.hierarchicalDistanceFunction || 'Euclidean'}</p>
+                  <p>階層クラスタ-結合方法: {currentSettings.hierarchicalLinkageMethod || '最短距離法'}</p>
                 </div>
               </div>
             )}

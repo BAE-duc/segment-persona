@@ -84,6 +84,10 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
     const [minRange, setMinRange] = useState(String(currentRange.min));
     const [maxRange, setMaxRange] = useState(String(currentRange.max));
     const [errors, setErrors] = useState<{ min: string | null; max: string | null }>({ min: null, max: null });
+    
+    // 外れ値検知の状態
+    const [outlierDetection, setOutlierDetection] = useState('カスタム');
+    const [isEditable, setIsEditable] = useState(true);
 
     const [tableData, setTableData] = useState({
         total: 1000,
@@ -98,6 +102,23 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
     // コンテナのサイズを管理するstate
 
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+    // IQR 계산 함수
+    const calculateIQR = useMemo(() => {
+        if (!numericData || numericData.length < 4) return null;
+        
+        const sortedData = [...numericData].sort((a, b) => a - b);
+        const n = sortedData.length;
+        
+        const q1Index = Math.floor(n * 0.25);
+        const q3Index = Math.floor(n * 0.75);
+        
+        const q1 = sortedData[q1Index];
+        const q3 = sortedData[q3Index];
+        const iqr = q3 - q1;
+        
+        return { q1, q3, iqr };
+    }, [numericData]);
 
     // ヒストグラム用データ生成
 
@@ -303,11 +324,13 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
 
     const minRangeRef = useRef(minRange);
     const maxRangeRef = useRef(maxRange);
+    const isEditableRef = useRef(isEditable);
 
     useEffect(() => {
         minRangeRef.current = minRange;
         maxRangeRef.current = maxRange;
-    }, [minRange, maxRange]);
+        isEditableRef.current = isEditable;
+    }, [minRange, maxRange, isEditable]);
 
 
     // D3 ヒストグラム描画（構造とドラッグハンドラの設定）
@@ -421,6 +444,9 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
         // ドラッグイベント定義
         const dragMin = d3.drag<SVGGElement, unknown>()
             .on("drag", (event) => {
+                // 編集可能性チェック
+                if (!isEditableRef.current) return;
+                
                 // Refから現在の最大値を取得
                 const currentMaxVal = parseInt(maxRangeRef.current, 10);
                 let newVal = Math.round(x.invert(event.x));
@@ -432,24 +458,32 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                 setMinRange(String(newVal));
             });
 
-        const dragMax = d3.drag<SVGGElement, unknown>()
-            .on("drag", (event) => {
-                // Refから現在の最小値を取得
-                const currentMinVal = parseInt(minRangeRef.current, 10);
-                let rawVal = x.invert(event.x);
-                let newVal = Math.round(rawVal) - 1; // 視覚的な位置から値を逆算（ドメインが+1されているため）
+            const dragMax = d3.drag<SVGGElement, unknown>()
+                .on("drag", (event) => {
+                    // 編集可能性チェック
+                    if (!isEditableRef.current) return;
+                    
+                    // Refから現在の最小値を取得
+                    const currentMinVal = parseInt(minRangeRef.current, 10);
+                    let rawVal = x.invert(event.x);
+                    let newVal = Math.round(rawVal) - 1; // 視覚적な位置から値を逆算（ドメインが+1されているため）
 
-                // 制約
-                const minLimit = isNaN(currentMinVal) ? globalMin : currentMinVal;
-                newVal = Math.max(minLimit, Math.min(newVal, globalMax));
+                    // 制約
+                    const minLimit = isNaN(currentMinVal) ? globalMin : currentMinVal;
+                    newVal = Math.max(minLimit, Math.min(newVal, globalMax));
 
-                setMaxRange(String(newVal));
-            });
+                    setMaxRange(String(newVal));
+                });
 
         minLineGroup.call(dragMin);
         maxLineGroup.call(dragMax);
+        
+        // 編集可能性に応じたカーソルスタイル設定
+        minLineGroup.attr("cursor", isEditable ? "ew-resize" : "not-allowed");
+        maxLineGroup.attr("cursor", isEditable ? "ew-resize" : "not-allowed");
 
-    }, [itemId, somDataType, rangeConfig, histData, dimensions]); // minRange, maxRangeは依存配列に含めない
+
+    }, [itemId, somDataType, rangeConfig, histData, dimensions, isEditable]); // minRange, maxRangeは依存配列に含めない
 
 
     // D3 ビジュアル更新（バーの色変更、ライン移動）
@@ -476,6 +510,14 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
 
         const currentMinVal = parseInt(minRange, 10);
         const currentMaxVal = parseInt(maxRange, 10);
+        
+        console.log('📈 히스토그램 업데이트:', {
+            minRange, maxRange,
+            currentMinVal, currentMaxVal,
+            globalMin, globalMax,
+            isNaN_min: isNaN(currentMinVal),
+            isNaN_max: isNaN(currentMaxVal)
+        });
 
         // ビンサイズ計算（等間隔と仮定）
         const binCount = histData.length;
@@ -501,13 +543,60 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
         // Maxラインは選択範囲の「終わり」を示すため、safeMax + 1 の位置に表示
         g.select(".drag-max").attr("transform", `translate(${x(safeMax + 1)}, 0)`);
 
-    }, [minRange, maxRange, somDataType, dimensions, rangeConfig, histData]);
+    }, [minRange, maxRange, somDataType, dimensions, rangeConfig, histData, isEditable]); // isEditable 추가하여 커스텀 모드 변경 시에도 업데이트
 
 
     // 項目をソートするヘルパー関数
     const sortItems = (items: CategoryItem[]): CategoryItem[] => {
         return [...items].sort((a, b) => a.no - b.no);
     };
+
+    // 外れ値検知 방법 변경 시 처리 (외부값 검지 드롭다운 변경 시에만 실행)
+    const handleOutlierDetectionChange = (newValue: string) => {
+        console.log('🔍 외부값 검지 변경:', newValue);
+        
+        if (somDataType !== '数値型') {
+            setOutlierDetection(newValue);
+            return;
+        }
+        
+        if (newValue === '1.5×IQR' || newValue === '3×IQR') {
+            if (!calculateIQR) {
+                console.log('❌ calculateIQR이 없음');
+                setOutlierDetection(newValue);
+                return;
+            }
+            
+            const multiplier = newValue === '1.5×IQR' ? 1.5 : 3.0;
+            const { q1, q3, iqr } = calculateIQR;
+            
+            const globalMin = rangeConfig?.min || 1;
+            const globalMax = rangeConfig?.max || 100;
+            const lowerBound = Math.max(globalMin, Math.floor(q1 - multiplier * iqr));
+            const upperBound = Math.min(globalMax, Math.ceil(q3 + multiplier * iqr));
+            
+            console.log('📊 IQR 계산 결과:', {
+                q1, q3, iqr, multiplier,
+                globalMin, globalMax,
+                lowerBound, upperBound,
+                currentMinRange: minRange,
+                currentMaxRange: maxRange
+            });
+            
+            // 상태를 한 번에 업데이트하여 동기화 문제 해결
+            setOutlierDetection(newValue);
+            setMinRange(String(lowerBound));
+            setMaxRange(String(upperBound));
+            setIsEditable(false);
+        } else if (newValue === 'カスタム') {
+            console.log('✏️ 커스텀 모드로 변경');
+            // 커스텀 모드에서는 편집만 가능하게 하고 값은 유지
+            setOutlierDetection(newValue);
+            setIsEditable(true);
+        }
+    };
+
+
 
     // 以前に保存した設定でモーダルを初期化するか、デフォルト値を設定します。
     // 以前に保存した設定でモーダルを初期化するか、デフォルト値を設定します。
@@ -527,10 +616,12 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
             }
         } else { // '数値型'
             const range = rangeConfig || { min: 1, max: 100 };
-            setMinRange(String(initialSettings?.range?.min ?? range.min));
-            setMaxRange(String(initialSettings?.range?.max ?? range.max));
+            const initMin = String(initialSettings?.range?.min ?? range.min);
+            const initMax = String(initialSettings?.range?.max ?? range.max);
+            setMinRange(initMin);
+            setMaxRange(initMax);
         }
-    }, [itemId, somDataType, initialSettings, categoryData, rangeConfig]);
+    }, [itemId, somDataType, initialSettings, categoryData]); // rangeConfig 제거하여 불필요한 재실행 방지
 
 
     const handleToggleLeftSelection = (no: number) => {
@@ -763,7 +854,11 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                         </div>
                         <div className="flex items-center gap-2">
                             <label className="w-24 text-right flex-shrink-0">外れ値検知</label>
-                            <AppSelect defaultValue="1.5×IQR" className="w-full">
+                            <AppSelect 
+                                value={outlierDetection} 
+                                onChange={(e) => handleOutlierDetectionChange(e.target.value)} 
+                                className="w-full"
+                            >
                                 <option>1.5×IQR</option>
                                 <option>3×IQR</option>
                                 <option>カスタム</option>
@@ -797,7 +892,8 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                                     <StyledNumInput
                                         value={minRange}
                                         onChange={handleMinRangeChange}
-                                        className={`${errors.min ? 'bg-red-100' : ''}`}
+                                        disabled={!isEditable}
+                                        className={`${errors.min ? 'bg-red-100' : ''} ${!isEditable ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                                     />
                                     {errors.min && <span className="text-red-600 text-xs mt-1">{errors.min}</span>}
                                 </div>
@@ -806,7 +902,8 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                                     <StyledNumInput
                                         value={maxRange}
                                         onChange={handleMaxRangeChange}
-                                        className={`${errors.max ? 'bg-red-100' : ''}`}
+                                        disabled={!isEditable}
+                                        className={`${errors.max ? 'bg-red-100' : ''} ${!isEditable ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                                     />
                                     {errors.max && <span className="text-red-600 text-xs mt-1">{errors.max}</span>}
                                 </div>
