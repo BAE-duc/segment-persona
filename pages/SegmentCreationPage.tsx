@@ -35,10 +35,11 @@ const defaultSettings: SegmentSettings = {
   customHeight: '',
   learningRate: '0.5',
   iterations: '1000',
-  distanceMetric: 'Euclidean',
+  distanceMetric: 'ユークリッド距離',
   neighborhoodRadius: '0.3',
-  neighborhoodFunction: 'Gaussian',
-  decayFunction: 'none',
+  neighborhoodFunction: 'ガウス関数',
+  hierarchicalDistanceFunction: 'ユークリッド距離',
+  hierarchicalLinkageMethod: 'ウォード法',
 };
 
 // --- Test Data Parsing Logic ---

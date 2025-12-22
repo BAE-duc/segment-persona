@@ -154,10 +154,10 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
                     // このセルが最大値かどうかを確認 (同点の場合はすべて強調)
                     const isMaxInRow = ratio === maxRatio && maxRatio > 0;
                     
-                    // 差分モードでの背景色計算
+                    // 背景色計算
                     let cellBgColor = '';
                     if (isConversionView) {
-                      // 差分値を計算
+                      // 差分モードでの背景色計算
                       const differences = row.segmentRatios.map(r => r - row.totalRatio);
                       const maxDiff = Math.max(...differences);
                       const minDiff = Math.min(...differences);
@@ -170,8 +170,13 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
                         cellBgColor = 'bg-red-100';
                       }
                     } else {
-                      // 絶対値モードでは最大値に赤背景
-                      cellBgColor = isMaxInRow ? 'bg-red-100' : '';
+                      // 絶対値モードでの背景色計算: 全体値との差이 5 이상인 경우
+                      const difference = ratio - row.totalRatio;
+                      if (difference >= 5) {
+                        cellBgColor = 'bg-blue-100'; // 전체보다 5 이상 크면 파란 배경
+                      } else if (difference <= -5) {
+                        cellBgColor = 'bg-red-100'; // 전체보다 5 이상 작으면 빨간 배경
+                      }
                     }
                     
                     return (

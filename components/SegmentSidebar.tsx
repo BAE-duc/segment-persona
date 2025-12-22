@@ -303,8 +303,8 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
                   <p>距離尺度: {currentSettings.distanceMetric}</p>
                   <p>近傍半径: {currentSettings.neighborhoodRadius}</p>
                   <p>近傍関数: {currentSettings.neighborhoodFunction}</p>
-                  <p>階層クラスタ-距離関数: {currentSettings.hierarchicalDistanceFunction || 'Euclidean'}</p>
-                  <p>階層クラスタ-結合方法: {currentSettings.hierarchicalLinkageMethod || '最短距離法'}</p>
+                  <p>階層クラスタ-距離関数: {currentSettings.hierarchicalDistanceFunction}</p>
+                  <p>階層クラスタ-結合方法: {currentSettings.hierarchicalLinkageMethod}</p>
                 </div>
               </div>
             )}
