@@ -145,11 +145,11 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
   const [customHeight, setCustomHeight] = useState(initialSettings.customHeight);
   const [learningRate, setLearningRate] = useState(initialSettings.learningRate);
   const [iterations, setIterations] = useState(initialSettings.iterations);
-  const [distanceMetric, setDistanceMetric] = useState(initialSettings.distanceMetric);
+  const [distanceMetric, setDistanceMetric] = useState(initialSettings.distanceMetric || 'ユークリッド距離');
   const [neighborhoodRadius, setNeighborhoodRadius] = useState(initialSettings.neighborhoodRadius);
-  const [neighborhoodFunction, setNeighborhoodFunction] = useState(initialSettings.neighborhoodFunction);
-  const [hierarchicalDistanceFunction, setHierarchicalDistanceFunction] = useState(initialSettings.hierarchicalDistanceFunction || 'Euclidean');
-  const [hierarchicalLinkageMethod, setHierarchicalLinkageMethod] = useState(initialSettings.hierarchicalLinkageMethod || '最短距離法');
+  const [neighborhoodFunction, setNeighborhoodFunction] = useState(initialSettings.neighborhoodFunction || 'ガウス関数');
+  const [hierarchicalDistanceFunction, setHierarchicalDistanceFunction] = useState(initialSettings.hierarchicalDistanceFunction || 'ユークリッド距離');
+  const [hierarchicalLinkageMethod, setHierarchicalLinkageMethod] = useState(initialSettings.hierarchicalLinkageMethod || 'ウォード法');
 
   // 警告ポップアップの状態管理
   const [showWarning, setShowWarning] = useState(false);
@@ -429,9 +429,9 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
 
           <FormRow label="SOM-距離関数" tooltipKey="distanceMetric">
             <AppSelect value={distanceMetric} onChange={(e) => setDistanceMetric(e.target.value)} className="w-40">
-              <option>Euclidean</option>
-              <option>Manhattan</option>
-              <option>Cosine</option>
+              <option>ユークリッド距離</option>
+              <option>マンハッタン距離</option>
+              <option>コサイン距離</option>
             </AppSelect>
           </FormRow>
 
@@ -441,17 +441,17 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
 
           <FormRow label="SOM-近傍関数" tooltipKey="neighborhoodFunction">
             <AppSelect value={neighborhoodFunction} onChange={(e) => setNeighborhoodFunction(e.target.value)} className="w-40">
-              <option>Gaussian</option>
-              <option>Bubble</option>
-              <option>Mexican Hat</option>
+              <option>ガウス関数</option>
+              <option>バブル関数</option>
+              <option>メキシカンハット関数</option>
             </AppSelect>
           </FormRow>
 
           <FormRow label="階層クラスタ-距離関数" tooltipKey="hierarchicalDistanceFunction">
             <AppSelect value={hierarchicalDistanceFunction} onChange={(e) => setHierarchicalDistanceFunction(e.target.value)} className="w-40">
-              <option>Euclidean</option>
-              <option>Manhattan</option>
-              <option>Cosine</option>
+              <option>ユークリッド距離</option>
+              <option>マンハッタン距離</option>
+              <option>コサイン距離</option>
             </AppSelect>
           </FormRow>
 

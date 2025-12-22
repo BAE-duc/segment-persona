@@ -8,7 +8,7 @@ import { PositioningAxisModal, type AxisSelection } from './PositioningAxisModal
 import { OverlayItemSelectionModal, type OverlaySelection } from './OverlayItemSelectionModal';
 import { FilterEditModal, type ConditionListItem } from './shared/FilterEditModal';
 import type { ItemDetail } from './ItemSelectionModal';
-import { CompositionRatioVariableModal, type CompositionRatioSelection } from './CompositionRatioVariableModal';
+import { TargetVariableModal, type TargetVariableSelection } from './TargetVariableModal';
 import { HeatmapVariableModal } from './HeatmapVariableModal';
 import { ComparisonTable, type ComparisonRow } from './ComparisonTable';
 import { TEST_CSV_RAW } from '../data/testData';
@@ -199,7 +199,7 @@ const CompositionRatioSettings: React.FC<CompositionRatioSettingsProps> = ({ onE
 
       <div className="flex items-center gap-2">
         <AppButton onClick={onOpenVariableSearchModal}>
-          対象変数の選択
+          対象変数設定
         </AppButton>
         <AppButton className="px-6 whitespace-nowrap" onClick={onExecute} disabled={isExecuteDisabled} isActive={!isExecuteDisabled}>実行</AppButton>
       </div>
@@ -239,10 +239,13 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
   const [isDisplayConditionModalOpen, setIsDisplayConditionModalOpen] = useState(false);
 
   // Manage the number of applied segments.
-  const [segmentCount, setSegmentCount] = useState(8);
+  const [segmentCount, setSegmentCount] = useState(5);
 
   // Manage the temporary segment count selected in the dropdown.
   const [tempSegmentCount, setTempSegmentCount] = useState(segmentCount);
+
+  // 적用 버튼의 활성화 상태를 관리
+  const [isApplyButtonActive, setIsApplyButtonActive] = useState(false);
 
 
   // Positioning axis settings modal state
@@ -267,11 +270,11 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
   const [heatmapPending, setHeatmapPending] = useState(true);
 
 
-  const [isCompositionRatioModalOpen, setIsCompositionRatioModalOpen] = useState(false);
+  const [isTargetVariableModalOpen, setIsTargetVariableModalOpen] = useState(false);
 
-  const [pendingCompositionSelection, setPendingCompositionSelection] = useState<CompositionRatioSelection | null>(null);
+  const [pendingTargetSelection, setPendingTargetSelection] = useState<TargetVariableSelection | null>(null);
 
-  const [executedCompositionSelection, setExecutedCompositionSelection] = useState<CompositionRatioSelection | null>(null);
+  const [executedTargetSelection, setExecutedTargetSelection] = useState<TargetVariableSelection | null>(null);
 
 
   const [compositionRatioPending, setCompositionRatioPending] = useState(false);
@@ -575,8 +578,8 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       setHeatmapPending(true);
 
       // 構成比比較の設定をリセット
-      setPendingCompositionSelection(null);
-      setExecutedCompositionSelection(null);
+      setPendingTargetSelection(null);
+      setExecutedTargetSelection(null);
       setCompositionRatioPending(false);
       setIsCompositionRatioExecuted(false);
     }
@@ -633,10 +636,17 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     setActiveTab(buttonName);
   };
 
+  // セグメント数の変更を監視して適用ボタンの状態を更新
+  const handleSegmentCountChange = (value: number) => {
+    setTempSegmentCount(value);
+    setIsApplyButtonActive(value !== segmentCount);
+  };
+
   // 「適用」ボタンがクリックされたときに、一時的なセグメント数を実際のセグメント数に適用します。
   // When the "Apply" button is clicked, apply the temporary segment count to the actual segment count.
   const handleApplySegmentCount = () => {
     setSegmentCount(tempSegmentCount);
+    setIsApplyButtonActive(false); // 適用後にボタンを非活性化
 
     // セグメント実行ボタンと同じ初期化処理を実行
     // 集計表タブを選択
@@ -665,8 +675,8 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     setHeatmapPending(true);
 
     // 構成比比較の設定をリセット
-    setPendingCompositionSelection(null);
-    setExecutedCompositionSelection(null);
+    setPendingTargetSelection(null);
+    setExecutedTargetSelection(null);
     setCompositionRatioPending(false);
     setIsCompositionRatioExecuted(false);
   };
@@ -701,8 +711,8 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     }).join(' ');
   });
 
-  const compositionRatioVariableText = pendingCompositionSelection
-    ? `${pendingCompositionSelection.variable.name} : ${pendingCompositionSelection.adoptedChoices.map(c => c.content).join(', ')}`
+  const targetVariableText = pendingTargetSelection
+    ? `${pendingTargetSelection.variable.name} : ${pendingTargetSelection.adoptedChoices.map(c => c.content).join(', ')}`
     : "選択した内容が表示されます";
 
   const segmentComparisonConditionsText = segmentComparisonConditions.length > 0
@@ -717,8 +727,8 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
 
   // 構成比比較グラフ実行ボタンは、実際にカテゴリが設定されている場合のみ有効
-  const isCompositionRatioExecuteDisabled = !pendingCompositionSelection ||
-    !pendingCompositionSelection.adoptedChoices?.length;
+  const isCompositionRatioExecuteDisabled = !pendingTargetSelection ||
+    !pendingTargetSelection.adoptedChoices?.length;
 
   return (
     <main
@@ -744,14 +754,21 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                   <AppSelect
                     id="segment-count"
                     value={tempSegmentCount}
-                    onChange={e => setTempSegmentCount(Number(e.target.value))}
+                    onChange={e => handleSegmentCountChange(Number(e.target.value))}
                     className="w-20"
                   >
                     {Array.from({ length: 18 }, (_, i) => i + 3).map(n => (
                       <option key={n} value={n}>{n}</option>
                     ))}
                   </AppSelect>
-                  <AppButton className="px-6 whitespace-nowrap" onClick={handleApplySegmentCount}>適用</AppButton>
+                  <AppButton 
+                    className="px-6 whitespace-nowrap" 
+                    onClick={handleApplySegmentCount}
+                    disabled={!isApplyButtonActive}
+                    isActive={isApplyButtonActive}
+                  >
+                    適用
+                  </AppButton>
                 </div>
               </div>
 
@@ -913,17 +930,17 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                     {activeTab === '構成比比較グラフ' && (
                       <CompositionRatioSettings
                         onExecute={() => {
-                          setExecutedCompositionSelection(pendingCompositionSelection);
+                          setExecutedTargetSelection(pendingTargetSelection);
                           setIsCompositionRatioExecuted(true);
                         }}
                         onOpenVariableSearchModal={() => {
                           if (!selectedData) {
                             onShowWarningModal("選択されたデータがありません。\nデータを先に選択してください。");
                           } else {
-                            setIsCompositionRatioModalOpen(true);
+                            setIsTargetVariableModalOpen(true);
                           }
                         }}
-                        variableDisplayText={compositionRatioVariableText}
+                        variableDisplayText={targetVariableText}
                         isExecuteDisabled={isCompositionRatioExecuteDisabled}
                       />
                     )}
@@ -980,10 +997,10 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                       )}
                     </div>
                     <div id="composition-ratio-comparison-graph-area" className={`absolute inset-0 flex items-center justify-center ${activeTab === '構成比比較グラフ' ? '' : 'hidden'}`}>
-                      {isCompositionRatioExecuted && executedCompositionSelection ? (
+                      {isCompositionRatioExecuted && executedTargetSelection ? (
                         <CompositionRatioGraph
-                          variable={executedCompositionSelection.variable}
-                          adoptedChoices={executedCompositionSelection.adoptedChoices}
+                          variable={executedTargetSelection.variable}
+                          adoptedChoices={executedTargetSelection.adoptedChoices}
                           segmentCount={segmentCount}
                           rangeConfigs={rangeConfigs}
                           displayCategoryConfigs={displayCategoryConfigs}
@@ -1096,17 +1113,17 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
           onShowInfo={onShowWarningModal}
         />
       )}
-      {isCompositionRatioModalOpen && (
-        <CompositionRatioVariableModal
-          onClose={() => setIsCompositionRatioModalOpen(false)}
+      {isTargetVariableModalOpen && (
+        <TargetVariableModal
+          onClose={() => setIsTargetVariableModalOpen(false)}
           onConfirm={(selection) => {
-            setPendingCompositionSelection(selection);
-            setIsCompositionRatioModalOpen(false);
+            setPendingTargetSelection(selection);
+            setIsTargetVariableModalOpen(false);
             setCompositionRatioPending(true);
           }}
           items={itemDetails}
           choicesData={choicesData}
-          initialSelection={pendingCompositionSelection}
+          initialSelection={pendingTargetSelection}
         />
       )}
     </main>

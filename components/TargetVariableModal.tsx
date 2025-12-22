@@ -1,11 +1,9 @@
-
 import React, { useState, useMemo } from 'react';
 import { AppButton } from './shared/FormControls';
 import { modalStyles } from './shared/modalStyles';
 import type { ConversionSettings } from './SegmentVariableSelectionModal';
 import { TEST_CSV_RAW } from '../data/testData';
 
-// このモーダルで使われる型定義
 // このモーダルで使われる型定義
 // Type definitions used in this modal
 export interface ItemDetail {
@@ -25,17 +23,17 @@ export interface SelectedChoice {
   content: string;
 }
 
-export interface CompositionRatioSelection {
+export interface TargetVariableSelection {
   variable: ItemDetail;
   adoptedChoices: SelectedChoice[];
 }
 
-interface CompositionRatioVariableModalProps {
+interface TargetVariableModalProps {
   onClose: () => void;
-  onConfirm: (selection: CompositionRatioSelection) => void;
+  onConfirm: (selection: TargetVariableSelection) => void;
   items: ItemDetail[];
   choicesData: { [key: string]: SelectedChoice[] };
-  initialSelection: CompositionRatioSelection | null;
+  initialSelection: TargetVariableSelection | null;
 }
 
 
@@ -84,7 +82,7 @@ const CustomCheckbox = ({
 );
 
 
-export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableModalProps> = ({
+export const TargetVariableModal: React.FC<TargetVariableModalProps> = ({
   onClose,
   onConfirm,
   items,
@@ -92,7 +90,6 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
   initialSelection
 }) => {
   // 年齢(age)のカテゴリをCSVから動的に生成するロジック
-
   // state初期化で使用するため、定義を上に移動しました。
   const ageChoices = useMemo(() => {
     const lines = TEST_CSV_RAW.trim().split('\n');
@@ -136,7 +133,6 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
   const [selectedChoiceIds, setSelectedChoiceIds] = useState<Set<number>>(() => {
     if (initialSelection && initialSelection.adoptedChoices) {
       // ageの場合はコンテンツマッチングでIDを再取得する
-
       if (initialSelection.variable.id === 'age') {
         const remappedIds = new Set<number>();
         initialSelection.adoptedChoices.forEach(prevChoice => {
@@ -156,7 +152,6 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
     if (itemId !== selectedItemId) {
       setSelectedItemId(itemId);
       setSelectedChoiceIds(new Set()); // 変数が変更されたらカテゴリをクリア
-
     }
   };
 
@@ -174,7 +169,6 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
 
   const handleConfirmClick = () => {
     if (!selectedItemId) {
-      // 何も選択されていない場合はモーダルを閉じるだけ
       // 何も選択されていない場合はモーダルを閉じるだけ
       onClose();
       return;
@@ -195,7 +189,6 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
   };
 
   // 選択されたアイテムに応じてカテゴリを切り替え
-
   const currentChoices = selectedItemId
     ? (selectedItemId === 'age' ? ageChoices : (choicesData[selectedItemId] || []))
     : [];
@@ -227,7 +220,7 @@ export const CompositionRatioVariableModal: React.FC<CompositionRatioVariableMod
       >
         {/* Header */}
         <div className={modalStyles.header.container}>
-          <h2 className={modalStyles.header.title}>構成比比較グラフの表示条件設定</h2>
+          <h2 className={modalStyles.header.title}>対象変数設定</h2>
           <button onClick={onClose} className={modalStyles.header.closeButton}>{modalStyles.header.closeButtonIcon}</button>
         </div>
 

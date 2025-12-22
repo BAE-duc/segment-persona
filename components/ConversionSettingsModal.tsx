@@ -866,10 +866,8 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                         </div>
                         <div className="flex items-center gap-2">
                             <label className="w-24 text-right flex-shrink-0">外れ値処理</label>
-                            <AppSelect defaultValue="閾値補完" className="w-full">
-                                <option>閾値補完</option>
-                                <option>平均値</option>
-                                <option>中央値</option>
+                            <AppSelect defaultValue="最小値最大値置換" className="w-full">
+                                <option>最小値最大値置換</option>
                                 <option>削除</option>
                             </AppSelect>
                         </div>

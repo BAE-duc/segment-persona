@@ -319,7 +319,7 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
                       フィルター編集
                     </button>
                     {selectedData && (
-                      <span className="text-xs font-medium text-[#586365]">サンプルサイズ：1000人</span>
+                      <span className="text-xs font-medium text-[#586365]">サンプルサイズ：1000</span>
                     )}
                   </div>
                   <div className="pl-4 my-1 text-xs">
