@@ -182,8 +182,6 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
         ];
         const color = d3.scaleOrdinal<string, string>().domain(segmentKeys).range(colors);
 
-        const stack = d3.stack<any>().keys(segmentKeys)(chartData);
-
         // Axes
         g.append("g")
             .attr("transform", `translate(0,${height})`)
@@ -195,67 +193,75 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
         g.append("g")
             .call(d3.axisLeft(y).ticks(5).tickFormat(d => `${d}%`));
 
+        // Line generator
+        const line = d3.line<any>()
+            .x(d => x(d.choice)! + x.bandwidth() / 2)
+            .y(d => y(d.value));
+
+        // Draw Lines and Points for each segment
+        segmentKeys.forEach((key) => {
+            const segmentData = chartData.map(d => ({
+                choice: d.choice,
+                value: d[key],
+                segmentKey: key
+            }));
+
+            // Append Path
+            g.append("path")
+                .datum(segmentData)
+                .attr("fill", "none")
+                .attr("stroke", color(key))
+                .attr("stroke-width", 3)
+                .attr("d", line);
+
+            // Append Circles for interactivity
+            g.selectAll(`.dot-${key}`)
+                .data(segmentData)
+                .enter().append("circle")
+                .attr("class", `dot-${key}`)
+                .attr("cx", d => x(d.choice)! + x.bandwidth() / 2)
+                .attr("cy", d => y(d.value))
+                .attr("r", 5)
+                .attr("fill", color(key))
+                .attr("stroke", "white")
+                .attr("stroke-width", 1.5)
+                .on("mouseover", function (event, d) {
+                    d3.select(this).attr("r", 8).attr("stroke-width", 2);
+
+                    // Show all segments for this category in tooltip
+                    const choiceData = chartData.find(cd => cd.choice === d.choice);
+                    const items = segmentKeys.slice().reverse().map(k => ({
+                        label: k,
+                        value: `${(choiceData[k] as number).toFixed(0)}%`,
+                        color: color(k),
+                        rawVal: choiceData[k] as number
+                    })).filter(item => item.rawVal > 0);
+
+                    setTooltipData({
+                        x: event.clientX,
+                        y: event.clientY,
+                        title: d.choice,
+                        items: items,
+                        activeSegment: d.segmentKey
+                    });
+                })
+                .on("mousemove", function (event) {
+                    setTooltipData(prev => prev ? { ...prev, x: event.clientX, y: event.clientY } : null);
+                })
+                .on("mouseout", function () {
+                    d3.select(this).attr("r", 5).attr("stroke-width", 1.5);
+                    setTooltipData(null);
+                });
+        });
+
         // Title
         svg.append("text")
-            .attr("x", width / 2)
-            .attr("y", -15)
+            .attr("x", width / 2 + margin.left)
+            .attr("y", 20)
             .attr("text-anchor", "middle")
             .style("font-size", "16px")
             .style("font-weight", "bold")
-            .text("セグメント構成比");
-
-        // Stacked Bars
-        const layer = g.selectAll(".layer")
-            .data(stack)
-            .enter().append("g")
-            .attr("class", "layer")
-            .attr("fill", (d) => color(d.key));
-
-        layer.selectAll("rect")
-            .data(d => d)
-            .enter().append("rect")
-            .attr("x", d => x(d.data.choice)!)
-            .attr("y", d => y(d[1]))
-            .attr("height", d => y(d[0]) - y(d[1]))
-            .attr("width", x.bandwidth())
-            .attr("stroke", "white")
-            .attr("stroke-width", "0.5px")
-            .on("mouseover", function (event, d) {
-                d3.select(this).attr("opacity", "0.8");
-
-                // Retrieve key (segment name) from parent node (series data)
-                const parentNode = this.parentNode as Element;
-                const seriesData = d3.select(parentNode).datum() as any;
-                const activeSegment = seriesData.key;
-
-                // Tooltip logic
-                const choiceData = d.data;
-                // Show all segments for this column
-                const items = segmentKeys.slice().reverse().map(key => {
-                    const val = choiceData[key] as number;
-                    return {
-                        label: key,
-                        value: `${val.toFixed(0)}%`,
-                        color: color(key),
-                        rawVal: val
-                    };
-                }).filter(item => item.rawVal > 0); // only show present segments
-
-                setTooltipData({
-                    x: event.clientX,
-                    y: event.clientY,
-                    title: choiceData.choice,
-                    items: items,
-                    activeSegment: activeSegment // Pass active segment for highlighting
-                });
-            })
-            .on("mousemove", function (event) {
-                setTooltipData(prev => prev ? { ...prev, x: event.clientX, y: event.clientY } : null);
-            })
-            .on("mouseout", function () {
-                d3.select(this).attr("opacity", "1");
-                setTooltipData(null);
-            });
+            .text("セグメント構成比 (推移)");
 
     }, [chartData, segmentCount]);
 
