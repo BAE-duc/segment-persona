@@ -967,72 +967,80 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                     )}
                   </div>
                   <div className="flex-grow relative overflow-hidden">
-                    <div id="segment-comparison-graph-area" className={`absolute inset-0 overflow-auto ${activeTab === '集計表' ? '' : 'hidden'}`}>
-                      {isSegmentComparisonExecuted && comparisonData ? (
-                        <ComparisonTable data={comparisonData.rows} segmentSizes={comparisonData.segmentSizes} isConversionView={isConversionView} />
-                      ) : (
-                        <div className="flex items-center justify-center h-full">
+                    {activeTab === '集計表' && (
+                      <div id="segment-comparison-graph-area" className="absolute inset-0 overflow-auto">
+                        {isSegmentComparisonExecuted && comparisonData ? (
+                          <ComparisonTable data={comparisonData.rows} segmentSizes={comparisonData.segmentSizes} isConversionView={isConversionView} />
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <span className="text-gray-500">表示設定が完了したら実行ボタンを押してください</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {activeTab === 'ポジショニングマップ' && (
+                      <div id="positioning-graph-area" className="absolute inset-0 flex items-center justify-center">
+                        {isPositioningExecuted ? (
+                          positioningAxes.vertical && positioningAxes.horizontal ? (
+                            <PositioningMapGraph
+                              segmentedRows={segmentedRows}
+                              verticalAxis={executedPositioningAxes.vertical}
+                              horizontalAxis={executedPositioningAxes.horizontal}
+                              overlaySelection={executedOverlaySelection}
+                              segmentCount={segmentCount}
+                            />
+                          ) : (
+                            <span className="text-gray-500">軸を設定してください</span>
+                          )
+                        ) : (
                           <span className="text-gray-500">表示設定が完了したら実行ボタンを押してください</span>
-                        </div>
-                      )}
-                    </div>
-                    <div id="positioning-graph-area" className={`absolute inset-0 flex items-center justify-center ${activeTab === 'ポジショニングマップ' ? '' : 'hidden'}`}>
-                      {isPositioningExecuted ? (
-                        positioningAxes.vertical && positioningAxes.horizontal ? (
-                          <PositioningMapGraph
-                            segmentedRows={segmentedRows}
-                            verticalAxis={executedPositioningAxes.vertical}
-                            horizontalAxis={executedPositioningAxes.horizontal}
-                            overlaySelection={executedOverlaySelection}
+                        )}
+                      </div>
+                    )}
+                    {activeTab === 'ヒートマップ' && (
+                      <div id="heatmap-graph-area" className="absolute inset-0 p-4">
+                        {isHeatmapExecuted && executedHeatmapConditionsList.length > 0 ? (
+                          <div className={`grid gap-4 h-full ${
+                            executedHeatmapConditionsList.length === 1 ? 'grid-cols-1' :
+                            executedHeatmapConditionsList.length === 2 ? 'grid-cols-2' :
+                            'grid-cols-2 grid-rows-2'
+                          }`}>
+                            {executedHeatmapConditionsList.map((conditions, index) => (
+                              <div key={index} className="flex flex-col">
+                                <div className="text-center font-semibold text-sm mb-2">
+                                  条件{index + 1}
+                                </div>
+                                <div className="flex-1 flex items-center justify-center border border-gray-300 rounded">
+                                  <img src={heatmapImage} alt={`Heatmap ${index + 1}`} className="max-w-full max-h-full object-contain" />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <span className="text-gray-500">表示設定が完了したら実行ボタンを押してください</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {activeTab === '構成比比較グラフ' && (
+                      <div id="composition-ratio-comparison-graph-area" className="absolute inset-0 flex items-center justify-center">
+                        {isCompositionRatioExecuted && executedTargetSelection ? (
+                          <CompositionRatioGraph
+                            variable={executedTargetSelection.variable}
+                            adoptedChoices={executedTargetSelection.adoptedChoices}
                             segmentCount={segmentCount}
+                            rangeConfigs={rangeConfigs}
+                            displayCategoryConfigs={displayCategoryConfigs}
+                            isCountView={isCompositionRatioCountView}
                           />
                         ) : (
-                          <span className="text-gray-500">軸を設定してください</span>
-                        )
-                      ) : (
-                        <span className="text-gray-500">表示設定が完了したら実行ボタンを押してください</span>
-                      )}
-                    </div>
-                    <div id="heatmap-graph-area" className={`absolute inset-0 p-4 ${activeTab === 'ヒートマップ' ? '' : 'hidden'}`}>
-                      {isHeatmapExecuted && executedHeatmapConditionsList.length > 0 ? (
-                        <div className={`grid gap-4 h-full ${
-                          executedHeatmapConditionsList.length === 1 ? 'grid-cols-1' :
-                          executedHeatmapConditionsList.length === 2 ? 'grid-cols-2' :
-                          'grid-cols-2 grid-rows-2'
-                        }`}>
-                          {executedHeatmapConditionsList.map((conditions, index) => (
-                            <div key={index} className="flex flex-col">
-                              <div className="text-center font-semibold text-sm mb-2">
-                                条件{index + 1}
-                              </div>
-                              <div className="flex-1 flex items-center justify-center border border-gray-300 rounded">
-                                <img src={heatmapImage} alt={`Heatmap ${index + 1}`} className="max-w-full max-h-full object-contain" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center h-full">
-                          <span className="text-gray-500">表示設定が完了したら実行ボタンを押してください</span>
-                        </div>
-                      )}
-                    </div>
-                    <div id="composition-ratio-comparison-graph-area" className={`absolute inset-0 flex items-center justify-center ${activeTab === '構成比比較グラフ' ? '' : 'hidden'}`}>
-                      {isCompositionRatioExecuted && executedTargetSelection ? (
-                        <CompositionRatioGraph
-                          variable={executedTargetSelection.variable}
-                          adoptedChoices={executedTargetSelection.adoptedChoices}
-                          segmentCount={segmentCount}
-                          rangeConfigs={rangeConfigs}
-                          displayCategoryConfigs={displayCategoryConfigs}
-                          isCountView={isCompositionRatioCountView}
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center h-full">
-                          <span className="text-gray-500">表示設定가 완료되면 실행 버튼을 눌러주세요</span>
-                        </div>
-                      )}
-                    </div>
+                          <div className="flex items-center justify-center h-full">
+                            <span className="text-gray-500">表示設定가 완료되면 실행 버튼을 눌러주세요</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (

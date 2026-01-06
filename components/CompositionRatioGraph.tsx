@@ -140,7 +140,7 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
 
         return data;
 
-    }, [variable, segmentCount, displayCategoryConfigs, adoptedChoices]);
+    }, [variable, segmentCount, displayCategoryConfigs, adoptedChoices, isCountView]);
 
     // D3 Rendering
     useEffect(() => {
@@ -160,6 +160,8 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
         }
 
         const { width: containerWidth, height: containerHeight } = containerRef.current.getBoundingClientRect();
+        if (containerWidth <= 0 || containerHeight <= 0) return;
+
         // Adjusted bottom margin since legend is now outside the SVG area
         const margin = { top: 40, right: 20, bottom: 50, left: 50 };
         const width = containerWidth - margin.left - margin.right;
