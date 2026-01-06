@@ -146,11 +146,11 @@ const HeatmapSettings: React.FC<HeatmapSettingsProps> = ({ onExecute, onOpenCond
           {variableDisplayTexts.length > 0 ? (
             variableDisplayTexts.map((text, index) => (
               <div key={index} className={`flex items-stretch ${index > 0 ? 'border-t border-gray-300' : ''}`}>
-                {/* 조건 표시 영역 */}
+                {/* 条件表示領域 */}
                 <div className="flex-1 px-2 py-1 border-r border-gray-300 min-h-[32px] flex items-center">
                   <span className="break-words">条件{index + 1}: {text}</span>
                 </div>
-                {/* 버튼 표시 영역 (고정 크기) */}
+                {/* ボタン表示領域 (固定サイズ) */}
                 <div className="w-20 px-1 py-1 flex gap-1 items-center justify-center bg-gray-50">
                   <button
                     onClick={() => onEditCondition(index)}
@@ -260,7 +260,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
   // Manage the temporary segment count selected in the dropdown.
   const [tempSegmentCount, setTempSegmentCount] = useState(segmentCount);
 
-  // 적用 버튼의 활성화 상태를 관리
+  // 適用ボタンの活性化状態を管理
   const [isApplyButtonActive, setIsApplyButtonActive] = useState(false);
 
 
@@ -741,7 +741,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
   // 各タブの実行ボタンの無効化状態を計算します。
 
   const isPositioningExecuteDisabled = !positioningAxes.vertical || !positioningAxes.horizontal || overlayItemDisplay === '';
-  // ヒートマップ実行ボタンは、条件が設定되어 있고 변경사항이 있을 때만 유효
+  // ヒートマップ実行ボタンは、条件が設定されており、変更事項があるときのみ有効
   const isHeatmapExecuteDisabled = heatmapConditionsList.length === 0 || !heatmapPending;
 
 
@@ -912,7 +912,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                         onExecute={() => {
                           setExecutedHeatmapConditionsList(heatmapConditionsList);
                           setIsHeatmapExecuted(true);
-                          setHeatmapPending(false); // 실행 후 버튼 비활성화
+                          setHeatmapPending(false); // 実行後ボタン非活性化
                         }}
                         onOpenConditionsModal={() => {
                           if (!selectedData) {
@@ -925,19 +925,19 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                         onEditCondition={(index) => {
                           setEditingConditionIndex(index);
                           setIsHeatmapConditionsModalOpen(true);
-                          setHeatmapPending(true); // 편집 시 버튼 활성화
+                          setHeatmapPending(true); // 編集時にボタン活性化
                         }}
                         onDeleteCondition={(index) => {
                           const newConditionsList = [...heatmapConditionsList];
                           newConditionsList.splice(index, 1);
                           setHeatmapConditionsList(newConditionsList);
                           
-                          // 실행된 조건 리스트에서도 해당 조건을 삭제하여 맵을 제거
+                          // 実行された条件リストからも該当の条件を削除し、マップを除去
                           const newExecutedList = [...executedHeatmapConditionsList];
                           newExecutedList.splice(index, 1);
                           setExecutedHeatmapConditionsList(newExecutedList);
                           
-                          // 조건이 모두 삭제되면 히트맵 실행 상태를 false로 변경
+                          // 条件がすべて削除されたら、ヒートマップ実行状態をfalseに変更
                           if (newConditionsList.length === 0) {
                             setIsHeatmapExecuted(false);
                           }
@@ -1036,7 +1036,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                           />
                         ) : (
                           <div className="flex items-center justify-center h-full">
-                            <span className="text-gray-500">表示設定가 완료되면 실행 버튼을 눌러주세요</span>
+                            <span className="text-gray-500">表示設定が完了したら実行ボタンを押してください</span>
                           </div>
                         )}
                       </div>
@@ -1134,7 +1134,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
               // 新しい条件を追加
               setHeatmapConditionsList([...heatmapConditionsList, conditions]);
             }
-            // 조건 추가/편집 시 버튼 활성화
+            // 条件の追加・編集時にボタンを活性化
             setHeatmapPending(true);
             setIsHeatmapConditionsModalOpen(false);
             setEditingConditionIndex(null);

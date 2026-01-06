@@ -247,7 +247,7 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
                     const choiceData = chartData.find(cd => cd.choice === d.choice);
                     const items = segmentKeys.slice().reverse().map(k => ({
                         label: k,
-                        value: isCountView ? `${(choiceData[k] as number).toFixed(0)}건` : `${(choiceData[k] as number).toFixed(0)}%`,
+                        value: isCountView ? `${(choiceData[k] as number).toFixed(0)}件` : `${(choiceData[k] as number).toFixed(0)}%`,
                         color: color(k),
                         rawVal: choiceData[k] as number
                     })).filter(item => item.rawVal > 0);

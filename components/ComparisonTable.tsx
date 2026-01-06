@@ -170,12 +170,12 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
                         cellBgColor = 'bg-red-100';
                       }
                     } else {
-                      // 絶対値モードでの背景色計算: 全体値との差이 5 이상인 경우
+                      // 絶対値モードでの背景色計算: 全体値との差が5以上の場合
                       const difference = ratio - row.totalRatio;
                       if (difference >= 5) {
-                        cellBgColor = 'bg-blue-100'; // 전체보다 5 이상 크면 파란 배경
+                        cellBgColor = 'bg-blue-100'; // 全体より5以上大きい場合は青背景
                       } else if (difference <= -5) {
-                        cellBgColor = 'bg-red-100'; // 전체보다 5 이상 작으면 빨간 배경
+                        cellBgColor = 'bg-red-100'; // 全体より5以上小さい場合は赤背景
                       }
                     }
                     

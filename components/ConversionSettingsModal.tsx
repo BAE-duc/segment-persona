@@ -103,7 +103,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
 
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
-    // IQR 계산 함수
+    // IQR計算関数
     const calculateIQR = useMemo(() => {
         if (!numericData || numericData.length < 4) return null;
         
@@ -466,7 +466,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                     // Refから現在の最小値を取得
                     const currentMinVal = parseInt(minRangeRef.current, 10);
                     let rawVal = x.invert(event.x);
-                    let newVal = Math.round(rawVal) - 1; // 視覚적な位置から値を逆算（ドメインが+1されているため）
+                    let newVal = Math.round(rawVal) - 1; // 視覚的な位置から値を逆算（ドメインが+1されているため）
 
                     // 制約
                     const minLimit = isNaN(currentMinVal) ? globalMin : currentMinVal;
@@ -511,7 +511,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
         const currentMinVal = parseInt(minRange, 10);
         const currentMaxVal = parseInt(maxRange, 10);
         
-        console.log('📈 히스토그램 업데이트:', {
+        console.log('📈 ヒストグラム更新:', {
             minRange, maxRange,
             currentMinVal, currentMaxVal,
             globalMin, globalMax,
@@ -543,7 +543,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
         // Maxラインは選択範囲の「終わり」を示すため、safeMax + 1 の位置に表示
         g.select(".drag-max").attr("transform", `translate(${x(safeMax + 1)}, 0)`);
 
-    }, [minRange, maxRange, somDataType, dimensions, rangeConfig, histData, isEditable]); // isEditable 추가하여 커스텀 모드 변경 시에도 업데이트
+    }, [minRange, maxRange, somDataType, dimensions, rangeConfig, histData, isEditable]); // isEditableを追加し、カスタムモード変更時にも更新
 
 
     // 項目をソートするヘルパー関数
@@ -551,9 +551,9 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
         return [...items].sort((a, b) => a.no - b.no);
     };
 
-    // 外れ値検知 방법 변경 시 처리 (외부값 검지 드롭다운 변경 시에만 실행)
+    // 外れ値検知方法の変更時の処理（外れ値検知ドロップダウン変更時のみ実行）
     const handleOutlierDetectionChange = (newValue: string) => {
-        console.log('🔍 외부값 검지 변경:', newValue);
+        console.log('🔍 外れ値検知変更:', newValue);
         
         if (somDataType !== '数値型') {
             setOutlierDetection(newValue);
@@ -562,7 +562,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
         
         if (newValue === '1.5×IQR' || newValue === '3×IQR') {
             if (!calculateIQR) {
-                console.log('❌ calculateIQR이 없음');
+                console.log('❌ calculateIQRがない');
                 setOutlierDetection(newValue);
                 return;
             }
@@ -575,7 +575,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
             const lowerBound = Math.max(globalMin, Math.floor(q1 - multiplier * iqr));
             const upperBound = Math.min(globalMax, Math.ceil(q3 + multiplier * iqr));
             
-            console.log('📊 IQR 계산 결과:', {
+            console.log('📊 IQR計算結果:', {
                 q1, q3, iqr, multiplier,
                 globalMin, globalMax,
                 lowerBound, upperBound,
@@ -583,14 +583,14 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                 currentMaxRange: maxRange
             });
             
-            // 상태를 한 번에 업데이트하여 동기화 문제 해결
+            // 状態を一度に更新して同期問題を解決
             setOutlierDetection(newValue);
             setMinRange(String(lowerBound));
             setMaxRange(String(upperBound));
             setIsEditable(false);
         } else if (newValue === 'カスタム') {
-            console.log('✏️ 커스텀 모드로 변경');
-            // 커스텀 모드에서는 편집만 가능하게 하고 값은 유지
+            console.log('✏️ カスタムモードへ変更');
+            // カスタムモードでは編集のみ可能にし、値は維持
             setOutlierDetection(newValue);
             setIsEditable(true);
         }
@@ -621,7 +621,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
             setMinRange(initMin);
             setMaxRange(initMax);
         }
-    }, [itemId, somDataType, initialSettings, categoryData]); // rangeConfig 제거하여 불필요한 재실행 방지
+    }, [itemId, somDataType, initialSettings, categoryData]); // rangeConfigを除去して不要な再実行を防止
 
 
     const handleToggleLeftSelection = (no: number) => {

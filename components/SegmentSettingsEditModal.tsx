@@ -283,7 +283,7 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
       }
     }
 
-    // 4. SOM-近傍半径の検証 (UI순서: 5번목)
+    // 4. SOM-近傍半径の検証 (UI順序: 5番目)
     const radiusNum = parseFloat(neighborhoodRadius);
     if (!isNaN(radiusNum)) {
       if (radiusNum <= 0) {
