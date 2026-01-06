@@ -187,11 +187,20 @@ interface CompositionRatioSettingsProps {
   onOpenVariableSearchModal: () => void;
   variableDisplayText: string;
   isExecuteDisabled: boolean;
+  isCountView: boolean;
+  onToggleCountView: () => void;
 }
 
 // 構成比比較タブの設定コンポーネント
 
-const CompositionRatioSettings: React.FC<CompositionRatioSettingsProps> = ({ onExecute, onOpenVariableSearchModal, variableDisplayText, isExecuteDisabled }) => {
+const CompositionRatioSettings: React.FC<CompositionRatioSettingsProps> = ({ 
+  onExecute, 
+  onOpenVariableSearchModal, 
+  variableDisplayText, 
+  isExecuteDisabled,
+  isCountView,
+  onToggleCountView
+}) => {
   return (
 
     <div className="flex flex-col gap-1 w-full h-full">
@@ -202,6 +211,13 @@ const CompositionRatioSettings: React.FC<CompositionRatioSettingsProps> = ({ onE
           対象変数設定
         </AppButton>
         <AppButton className="px-6 whitespace-nowrap" onClick={onExecute} disabled={isExecuteDisabled} isActive={!isExecuteDisabled}>実行</AppButton>
+        
+        <AppButton 
+          className="px-6 whitespace-nowrap ml-auto" 
+          onClick={onToggleCountView}
+        >
+          {isCountView ? '%' : 'n数'}
+        </AppButton>
       </div>
       {/* 2行目：条件表示フィールド */}
 
@@ -278,6 +294,9 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
 
   const [compositionRatioPending, setCompositionRatioPending] = useState(false);
+
+  // 構成比比較グラフの表示モード（n数 or %）
+  const [isCompositionRatioCountView, setIsCompositionRatioCountView] = useState(false);
 
   const [segmentComparisonConditions, setSegmentComparisonConditions] = useState<string[]>([]);
 
@@ -942,6 +961,8 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                         }}
                         variableDisplayText={targetVariableText}
                         isExecuteDisabled={isCompositionRatioExecuteDisabled}
+                        isCountView={isCompositionRatioCountView}
+                        onToggleCountView={() => setIsCompositionRatioCountView(!isCompositionRatioCountView)}
                       />
                     )}
                   </div>
@@ -1004,10 +1025,11 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                           segmentCount={segmentCount}
                           rangeConfigs={rangeConfigs}
                           displayCategoryConfigs={displayCategoryConfigs}
+                          isCountView={isCompositionRatioCountView}
                         />
                       ) : (
                         <div className="flex items-center justify-center h-full">
-                          <span className="text-gray-500">表示設定が完了したら実行ボタンを押してください</span>
+                          <span className="text-gray-500">表示設定가 완료되면 실행 버튼을 눌러주세요</span>
                         </div>
                       )}
                     </div>

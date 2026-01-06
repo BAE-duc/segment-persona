@@ -12,6 +12,7 @@ interface CompositionRatioGraphProps {
     // 選択されたカテゴリを受け取るためのPropを追加
 
     adoptedChoices?: { id: number; content: string }[];
+    isCountView?: boolean;
 }
 
 export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
@@ -19,7 +20,8 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
     segmentCount,
     rangeConfigs,
     displayCategoryConfigs,
-    adoptedChoices
+    adoptedChoices,
+    isCountView = false
 }) => {
     const svgRef = useRef<SVGSVGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -104,8 +106,12 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
             const counts = choiceCounts[choice];
             for (let i = 1; i <= segmentCount; i++) {
                 const count = counts.segments[i];
-                const ratio = counts.total > 0 ? (count / counts.total) * 100 : 0;
-                entry[`segment${i}`] = ratio;
+                if (isCountView) {
+                    entry[`segment${i}`] = count;
+                } else {
+                    const ratio = counts.total > 0 ? (count / counts.total) * 100 : 0;
+                    entry[`segment${i}`] = ratio;
+                }
             }
             return entry;
         });
@@ -167,11 +173,18 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
             .range([0, width])
             .padding(0.2);
 
-        const y = d3.scaleLinear()
-            .domain([0, 100])
-            .range([height, 0]);
-
+        // Find max value for Y domain
         const segmentKeys = Array.from({ length: segmentCount }, (_, i) => `segment${i + 1}`);
+        let maxY = 100;
+        if (isCountView) {
+            const maxVal = d3.max(chartData, d => d3.max(segmentKeys, k => d[k] as number)) || 0;
+            maxY = Math.ceil(maxVal / 10) * 10;
+            if (maxY === 0) maxY = 10;
+        }
+
+        const y = d3.scaleLinear()
+            .domain([0, maxY])
+            .range([height, 0]);
 
         // Custom pastel-like colors similar to the image
         const colors = [
@@ -191,7 +204,7 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
             .attr("dy", "1em");
 
         g.append("g")
-            .call(d3.axisLeft(y).ticks(5).tickFormat(d => `${d}%`));
+            .call(d3.axisLeft(y).ticks(5).tickFormat(d => isCountView ? `${d}` : `${d}%`));
 
         // Line generator
         const line = d3.line<any>()
@@ -232,7 +245,7 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
                     const choiceData = chartData.find(cd => cd.choice === d.choice);
                     const items = segmentKeys.slice().reverse().map(k => ({
                         label: k,
-                        value: `${(choiceData[k] as number).toFixed(0)}%`,
+                        value: isCountView ? `${(choiceData[k] as number).toFixed(0)}건` : `${(choiceData[k] as number).toFixed(0)}%`,
                         color: color(k),
                         rawVal: choiceData[k] as number
                     })).filter(item => item.rawVal > 0);
@@ -261,9 +274,9 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
             .attr("text-anchor", "middle")
             .style("font-size", "16px")
             .style("font-weight", "bold")
-            .text("セグメント構成比 (推移)");
+            .text(`セグメント${isCountView ? 'n数' : '構成比 (%)'} (推移)`);
 
-    }, [chartData, segmentCount]);
+    }, [chartData, segmentCount, isCountView]);
 
     return (
         <div className="w-full h-full flex flex-col bg-white">
