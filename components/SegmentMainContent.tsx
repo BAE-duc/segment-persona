@@ -8,7 +8,7 @@ import { PositioningAxisModal, type AxisSelection } from './PositioningAxisModal
 import { OverlayItemSelectionModal, type OverlaySelection } from './OverlayItemSelectionModal';
 import { FilterEditModal, type ConditionListItem } from './shared/FilterEditModal';
 import type { ItemDetail } from './ItemSelectionModal';
-import { TargetVariableModal, type TargetVariableSelection } from './TargetVariableModal';
+import { TargetVariableModal } from './TargetVariableModal';
 import { HeatmapVariableModal } from './HeatmapVariableModal';
 import { ComparisonTable, type ComparisonRow } from './ComparisonTable';
 import { TEST_CSV_RAW } from '../data/testData';
@@ -20,7 +20,7 @@ import heatmapImage from '../data/hitmap.png';
 
 // 右パネルのタブボタンのラベルを定義します。
 
-const rightPanelTabs = ['集計表', 'ポジショニングマップ', 'ヒートマップ', '構成比比較グラフ'];
+const rightPanelTabs = ['集計表', '構成比比較グラフ', 'ポジショニングマップ', 'ヒートマップ'];
 
 interface SegmentMainContentProps {
   isSegmentationExecuted: boolean;
@@ -222,7 +222,7 @@ const CompositionRatioSettings: React.FC<CompositionRatioSettingsProps> = ({
       {/* 2行目：条件表示フィールド */}
 
       <div className="flex-grow min-h-0">
-        <div className="w-full border border-gray-400 bg-white rounded-md px-2 py-1 text-gray-500 text-xs overflow-y-auto break-words h-full">
+        <div className="w-full border border-gray-400 bg-white rounded-md px-2 py-1 text-gray-500 text-xs overflow-y-auto break-words h-full whitespace-pre-wrap">
           {variableDisplayText}
         </div>
       </div>
@@ -288,13 +288,6 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
   const [isTargetVariableModalOpen, setIsTargetVariableModalOpen] = useState(false);
 
-  const [pendingTargetSelection, setPendingTargetSelection] = useState<TargetVariableSelection | null>(null);
-
-  const [executedTargetSelection, setExecutedTargetSelection] = useState<TargetVariableSelection | null>(null);
-
-
-  const [compositionRatioPending, setCompositionRatioPending] = useState(false);
-
   // 構成比比較グラフの表示モード（n数 or %）
   const [isCompositionRatioCountView, setIsCompositionRatioCountView] = useState(false);
 
@@ -313,17 +306,29 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
 
   const [displayAdoptedVariableIds, setDisplayAdoptedVariableIds] = useState<Set<string> | null>(null);
+  const [displaySelectedSegments, setDisplaySelectedSegments] = useState<number[] | null>(null);
 
-
-
+  // 構成比比較グラフ専用の表示設定
+  const [graphRangeConfigs, setGraphRangeConfigs] = useState<Record<string, { min: number; max: number }>>({});
+  const [graphCategoryConfigs, setGraphCategoryConfigs] = useState<Record<string, string[]>>({});
+  const [graphAdoptedVariableIds, setGraphAdoptedVariableIds] = useState<Set<string> | null>(null);
+  const [graphSelectedSegments, setGraphSelectedSegments] = useState<number[] | null>(null);
+  const [graphComparisonConditions, setGraphComparisonConditions] = useState<string[]>([]);
 
   const [pendingRangeConfigs, setPendingRangeConfigs] = useState<Record<string, { min: number; max: number }>>({});
   const [pendingCategoryConfigs, setPendingCategoryConfigs] = useState<Record<string, string[]>>({});
   const [pendingAdoptedVariableIds, setPendingAdoptedVariableIds] = useState<Set<string> | null>(null);
+  const [pendingSelectedSegments, setPendingSelectedSegments] = useState<number[] | null>(null);
+
+  // 構成比比較グラフ用の保留設定
+  const [pendingGraphRangeConfigs, setPendingGraphRangeConfigs] = useState<Record<string, { min: number; max: number }>>({});
+  const [pendingGraphCategoryConfigs, setPendingGraphCategoryConfigs] = useState<Record<string, string[]>>({});
+  const [pendingGraphAdoptedVariableIds, setPendingGraphAdoptedVariableIds] = useState<Set<string> | null>(null);
+  const [pendingGraphSelectedSegments, setPendingGraphSelectedSegments] = useState<number[] | null>(null);
 
   // 変更が保留中かどうか（実行ボタンの活性化に使用）
-
   const [hasPendingChanges, setHasPendingChanges] = useState(false);
+  const [hasGraphPendingChanges, setHasGraphPendingChanges] = useState(false);
 
 
   // セグメント比較用データ
@@ -555,15 +560,29 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     setDisplayRangeConfigs({});
     setDisplayCategoryConfigs({});
     setDisplayAdoptedVariableIds(null);
+    setDisplaySelectedSegments(null);
 
     setPendingRangeConfigs({});
     setPendingCategoryConfigs({});
     setPendingAdoptedVariableIds(null);
+    setPendingSelectedSegments(null);
 
     setHasPendingChanges(false);
 
     // 条件テキストもリセット（初期状態は全選択なので）
     setSegmentComparisonConditions([]);
+
+    // 構成比比較グラフの設定もリセット
+    setGraphRangeConfigs({});
+    setGraphCategoryConfigs({});
+    setGraphAdoptedVariableIds(null);
+    setGraphSelectedSegments(null);
+    setGraphComparisonConditions([]);
+    setPendingGraphRangeConfigs({});
+    setPendingGraphCategoryConfigs({});
+    setPendingGraphAdoptedVariableIds(null);
+    setPendingGraphSelectedSegments(null);
+    setHasGraphPendingChanges(false);
   }, [selectedVariables]);
 
 
@@ -578,9 +597,11 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       setDisplayRangeConfigs({});
       setDisplayCategoryConfigs({});
       setDisplayAdoptedVariableIds(null);
+      setDisplaySelectedSegments(null);
       setPendingRangeConfigs({});
       setPendingCategoryConfigs({});
       setPendingAdoptedVariableIds(null);
+      setPendingSelectedSegments(null);
       setSegmentComparisonConditions([]);
       setHasPendingChanges(false);
       setIsSegmentComparisonExecuted(true);
@@ -596,11 +617,17 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       setIsHeatmapExecuted(false);
       setHeatmapPending(true);
 
-      // 構成比比較の設定をリセット
-      setPendingTargetSelection(null);
-      setExecutedTargetSelection(null);
-      setCompositionRatioPending(false);
-      setIsCompositionRatioExecuted(false);
+      // 構成比比較グラフの表示設定をリセット
+      setGraphRangeConfigs({});
+      setGraphCategoryConfigs({});
+      setGraphAdoptedVariableIds(null);
+      setGraphSelectedSegments(null);
+      setGraphComparisonConditions([]);
+      setPendingGraphRangeConfigs({});
+      setPendingGraphCategoryConfigs({});
+      setPendingGraphAdoptedVariableIds(null);
+      setPendingGraphSelectedSegments(null);
+      setHasGraphPendingChanges(false);
     }
   }, [executionTrigger]);
 
@@ -646,10 +673,24 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
       // 選択された変数と条件に基づいてデータを生成
       const result = generateRealDataFromCSV(segmentCount, targetVariables, displayRangeConfigs, displayCategoryConfigs);
-      setComparisonData({ rows: result.rows, segmentSizes: result.segmentSizes });
+      
+      let filteredRows = result.rows;
+      let filteredSegmentSizes = result.segmentSizes;
+
+      if (displaySelectedSegments && displaySelectedSegments.length > 0) {
+        // 各行の比率データを選択されたセグ먼트 인덱스에 따라 필터링
+        filteredRows = result.rows.map(row => ({
+          ...row,
+          segmentRatios: displaySelectedSegments.map(segNum => row.segmentRatios[segNum - 1])
+        }));
+        // 세그먼트 사이즈 필터링
+        filteredSegmentSizes = displaySelectedSegments.map(segNum => result.segmentSizes[segNum - 1]);
+      }
+
+      setComparisonData({ rows: filteredRows, segmentSizes: filteredSegmentSizes });
       setSegmentedRows(result.rowsWithSegment);
     }
-  }, [isSegmentComparisonExecuted, segmentCount, selectedVariables, displayRangeConfigs, displayCategoryConfigs, displayAdoptedVariableIds, itemDetails, choicesData]);
+  }, [isSegmentComparisonExecuted, segmentCount, selectedVariables, displayRangeConfigs, displayCategoryConfigs, displayAdoptedVariableIds, displaySelectedSegments, itemDetails, choicesData]);
 
   const handleTabClick = (buttonName: string) => {
     setActiveTab(buttonName);
@@ -675,9 +716,11 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     setDisplayRangeConfigs({});
     setDisplayCategoryConfigs({});
     setDisplayAdoptedVariableIds(null);
+    setDisplaySelectedSegments(null);
     setPendingRangeConfigs({});
     setPendingCategoryConfigs({});
     setPendingAdoptedVariableIds(null);
+    setPendingSelectedSegments(null);
     setSegmentComparisonConditions([]);
     setHasPendingChanges(false);
     setIsSegmentComparisonExecuted(true);
@@ -693,11 +736,17 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     setIsHeatmapExecuted(false);
     setHeatmapPending(true);
 
-    // 構成比比較の設定をリセット
-    setPendingTargetSelection(null);
-    setExecutedTargetSelection(null);
-    setCompositionRatioPending(false);
-    setIsCompositionRatioExecuted(false);
+    // 構成比比較グラフの表示設定をリセット
+    setGraphRangeConfigs({});
+    setGraphCategoryConfigs({});
+    setGraphAdoptedVariableIds(null);
+    setGraphSelectedSegments(null);
+    setGraphComparisonConditions([]);
+    setPendingGraphRangeConfigs({});
+    setPendingGraphCategoryConfigs({});
+    setPendingGraphAdoptedVariableIds(null);
+    setPendingGraphSelectedSegments(null);
+    setHasGraphPendingChanges(false);
   };
 
   // セグメント比較の実行ボタンハンドラ
@@ -707,9 +756,81 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     setDisplayRangeConfigs(pendingRangeConfigs);
     setDisplayCategoryConfigs(pendingCategoryConfigs);
     setDisplayAdoptedVariableIds(pendingAdoptedVariableIds);
+    setDisplaySelectedSegments(pendingSelectedSegments);
 
     setIsSegmentComparisonExecuted(true);
     setHasPendingChanges(false);
+  };
+
+  const handleVariableClickFromTable = (variableId: string) => {
+    // 変数名からアイテムを検索（IDは大文字小文字を区別せず比較）
+    const targetItem = itemDetails.find(item => item.id.toLowerCase() === variableId.toLowerCase());
+    if (!targetItem) return;
+
+    // カテゴリデータを取得（ageは特別な処理が必要な場合があるが、基本はchoicesDataから）
+    // TargetVariableModal.tsx の ageChoices ロ직을 참고하여 처리
+    let choices = choicesData[targetItem.id] || [];
+    
+    // age変数の場合、CSVから動的にビンを生成する（TargetVariableModalと同様のロ직）
+    if (targetItem.id.toLowerCase() === 'age') {
+      const lines = TEST_CSV_RAW.trim().split('\n');
+      const headers = lines[0].split(',').map(h => h.trim());
+      const ageIndex = headers.indexOf('age');
+      if (ageIndex !== -1) {
+        const getAgeBin = (val: number): string => {
+          if (val <= 19) return '19歳以下';
+          if (val >= 60) return '60歳以上';
+          const lower = Math.floor(val / 5) * 5;
+          return `${lower}-${lower + 4}歳`;
+        };
+        const bins = new Set<string>();
+        for (let i = 1; i < lines.length; i++) {
+          const row = lines[i].split(',').map(v => v.trim());
+          const ageVal = parseInt(row[ageIndex], 10);
+          if (!isNaN(ageVal)) bins.add(getAgeBin(ageVal));
+        }
+        const getAgeSortOrder = (bin: string): number => {
+          if (bin === '19歳以下') return 0;
+          if (bin === '60歳以上') return 100;
+          if (bin === 'NA') return 999;
+          const match = bin.match(/^(\d+)/);
+          return match ? parseInt(match[1], 10) : 50;
+        };
+        choices = Array.from(bins)
+          .sort((a, b) => getAgeSortOrder(a) - getAgeSortOrder(b))
+          .map((bin, index) => ({ id: index + 1000, content: bin }));
+      }
+    }
+
+    const formatted: string[] = [];
+    formatted.push(`・${targetItem.name} : ${choices.map(c => c.content).join(', ')}`);
+    
+    // 集計表で選択されているセグメント情報を連動させる
+    const segmentsToUse = displaySelectedSegments && displaySelectedSegments.length > 0 
+      ? displaySelectedSegments 
+      : Array.from({ length: segmentCount }, (_, i) => i + 1);
+      
+    formatted.push(`・選択されたセグメント : ${segmentsToUse.join(', ')}`);
+
+    setGraphComparisonConditions(formatted);
+
+    // 構成比比較グラフの設定を更新
+    setGraphAdoptedVariableIds(new Set([targetItem.id]));
+    setGraphCategoryConfigs({ [targetItem.id]: choices.map(c => c.content) });
+    setGraphSelectedSegments(segmentsToUse);
+    
+    setPendingGraphAdoptedVariableIds(new Set([targetItem.id]));
+    setPendingGraphCategoryConfigs({ [targetItem.id]: choices.map(c => c.content) });
+    setPendingGraphSelectedSegments(segmentsToUse);
+
+    setIsCompositionRatioExecuted(true);
+    setHasGraphPendingChanges(false);
+    
+    // 新しいフィルタ設定時は%表示（n数表示オフ）にする
+    setIsCompositionRatioCountView(false);
+
+    // 構成比比較グラフタブへ移動
+    setActiveTab('構成比比較グラフ');
   };
 
   const verticalAxisDisplay = positioningAxes.vertical
@@ -730,12 +851,12 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     }).join(' ');
   });
 
-  const targetVariableText = pendingTargetSelection
-    ? `${pendingTargetSelection.variable.name} : ${pendingTargetSelection.adoptedChoices.map(c => c.content).join(', ')}`
-    : "選択した内容が表示されます";
+  const graphComparisonConditionsText = graphComparisonConditions.length > 0
+    ? graphComparisonConditions.join('\n')
+    : '選択した内容が表示されます';
 
   const segmentComparisonConditionsText = segmentComparisonConditions.length > 0
-    ? segmentComparisonConditions.join(', ')
+    ? segmentComparisonConditions.join('\n')
     : '選択した内容が表示されます';
 
   // 各タブの実行ボタンの無効化状態を計算します。
@@ -744,10 +865,6 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
   // ヒートマップ実行ボタンは、条件が設定されており、変更事項があるときのみ有効
   const isHeatmapExecuteDisabled = heatmapConditionsList.length === 0 || !heatmapPending;
 
-
-  // 構成比比較グラフ実行ボタンは、実際にカテゴリが設定されている場合のみ有効
-  const isCompositionRatioExecuteDisabled = !pendingTargetSelection ||
-    !pendingTargetSelection.adoptedChoices?.length;
 
   return (
     <main
@@ -886,7 +1003,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                           </AppButton>
                         </div>
                         <div className="flex-grow min-h-0">
-                          <div className="w-full border border-gray-400 bg-white rounded-md px-2 py-1 text-gray-500 text-xs overflow-y-auto break-words h-full">
+                          <div className="w-full border border-gray-400 bg-white rounded-md px-2 py-1 text-gray-500 text-xs overflow-y-auto break-words h-full whitespace-pre-wrap">
                             {segmentComparisonConditionsText}
                           </div>
                         </div>
@@ -949,18 +1066,25 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                     {activeTab === '構成比比較グラフ' && (
                       <CompositionRatioSettings
                         onExecute={() => {
-                          setExecutedTargetSelection(pendingTargetSelection);
+                          setGraphRangeConfigs(pendingGraphRangeConfigs);
+                          setGraphCategoryConfigs(pendingGraphCategoryConfigs);
+                          setGraphAdoptedVariableIds(pendingGraphAdoptedVariableIds);
+                          setGraphSelectedSegments(pendingGraphSelectedSegments);
                           setIsCompositionRatioExecuted(true);
+                          setHasGraphPendingChanges(false);
+                          
+                          // 実行ボタン（設定反映）時も%表示にリ체트
+                          setIsCompositionRatioCountView(false);
                         }}
                         onOpenVariableSearchModal={() => {
                           if (!selectedData) {
-                            onShowWarningModal("選択されたデータがありません。\nデータを先に選択してください。");
+                            onShowWarningModal("選択されたデータ가 ありません。\nデータを先に選択してください。");
                           } else {
                             setIsTargetVariableModalOpen(true);
                           }
                         }}
-                        variableDisplayText={targetVariableText}
-                        isExecuteDisabled={isCompositionRatioExecuteDisabled}
+                        variableDisplayText={graphComparisonConditionsText}
+                        isExecuteDisabled={!hasGraphPendingChanges || !pendingGraphAdoptedVariableIds?.size}
                         isCountView={isCompositionRatioCountView}
                         onToggleCountView={() => setIsCompositionRatioCountView(!isCompositionRatioCountView)}
                       />
@@ -970,7 +1094,13 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                     {activeTab === '集計表' && (
                       <div id="segment-comparison-graph-area" className="absolute inset-0 overflow-auto">
                         {isSegmentComparisonExecuted && comparisonData ? (
-                          <ComparisonTable data={comparisonData.rows} segmentSizes={comparisonData.segmentSizes} isConversionView={isConversionView} />
+                          <ComparisonTable 
+                            data={comparisonData.rows} 
+                            segmentSizes={comparisonData.segmentSizes} 
+                            segmentIds={displaySelectedSegments || undefined}
+                            isConversionView={isConversionView} 
+                            onVariableClick={handleVariableClickFromTable}
+                          />
                         ) : (
                           <div className="flex items-center justify-center h-full">
                             <span className="text-gray-500">表示設定が完了したら実行ボタンを押してください</span>
@@ -1025,13 +1155,18 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                     )}
                     {activeTab === '構成比比較グラフ' && (
                       <div id="composition-ratio-comparison-graph-area" className="absolute inset-0 flex items-center justify-center">
-                        {isCompositionRatioExecuted && executedTargetSelection ? (
+                        {isCompositionRatioExecuted && graphAdoptedVariableIds && Array.from(graphAdoptedVariableIds).length > 0 ? (
                           <CompositionRatioGraph
-                            variable={executedTargetSelection.variable}
-                            adoptedChoices={executedTargetSelection.adoptedChoices}
+                            variable={itemDetails.find(i => i.id === Array.from(graphAdoptedVariableIds)[0])!}
+                            adoptedChoices={(() => {
+                              const varId = Array.from(graphAdoptedVariableIds)[0];
+                              const categories = graphCategoryConfigs[varId] || [];
+                              return categories.map((content, idx) => ({ id: idx, content }));
+                            })()}
                             segmentCount={segmentCount}
-                            rangeConfigs={rangeConfigs}
-                            displayCategoryConfigs={displayCategoryConfigs}
+                            selectedSegments={graphSelectedSegments || undefined}
+                            rangeConfigs={graphRangeConfigs}
+                            displayCategoryConfigs={graphCategoryConfigs}
                             isCountView={isCompositionRatioCountView}
                           />
                         ) : (
@@ -1058,8 +1193,29 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       {isDisplayConditionModalOpen && (
         <DisplayConditionSelectionModal
           onClose={() => setIsDisplayConditionModalOpen(false)}
-          onConfirm={(adoptedVariableIds, adoptedVariableNames, newRangeConfigs, newCategoryConfigs) => {
-            setSegmentComparisonConditions(adoptedVariableNames);
+          onConfirm={(adoptedVariableIds, adoptedVariableNames, newRangeConfigs, newCategoryConfigs, selectedSegments) => {
+            const formattedConditions: string[] = [];
+            
+            // アイテム一覧の順序を維持するために itemDetails を基準にループします
+            itemDetails.forEach(item => {
+              if (adoptedVariableIds.has(item.id)) {
+                if (newCategoryConfigs[item.id]) {
+                  formattedConditions.push(`・${item.name} : ${newCategoryConfigs[item.id].join(', ')}`);
+                } else if (newRangeConfigs[item.id]) {
+                  formattedConditions.push(`・${item.name} : ${newRangeConfigs[item.id].min} ~ ${newRangeConfigs[item.id].max}`);
+                } else {
+                  // カテゴリも範囲設定もない場合は、全ての選択肢가 採用されているとみなす
+                  formattedConditions.push(`・${item.name} : 全て`);
+                }
+              }
+            });
+
+            // 最後に選択されたセグメント番号を追加
+            if (selectedSegments && selectedSegments.length > 0) {
+              formattedConditions.push(`・選択されたセグメント : ${selectedSegments.join(', ')}`);
+            }
+
+            setSegmentComparisonConditions(formattedConditions);
 
             // モーダルで設定された範囲設定を保留状態として保存
             setPendingRangeConfigs(prev => ({
@@ -1073,8 +1229,10 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
             }));
             // モーダルで採用された変数を保留状態として保存
             setPendingAdoptedVariableIds(adoptedVariableIds);
+            // モーダルで選択されたセ그メントを保留状態として保存
+            setPendingSelectedSegments(selectedSegments);
 
-            // 保留中の変更があるフラグを立てる
+            // 保留中の変更があるフラ그を立てる
             setHasPendingChanges(true);
             setIsDisplayConditionModalOpen(false);
           }}
@@ -1089,6 +1247,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
           displayRangeConfigs={hasPendingChanges ? pendingRangeConfigs : displayRangeConfigs}
           displayCategoryConfigs={hasPendingChanges ? pendingCategoryConfigs : displayCategoryConfigs}
           displayAdoptedIds={hasPendingChanges ? pendingAdoptedVariableIds : displayAdoptedVariableIds}
+          displaySelectedSegments={hasPendingChanges ? pendingSelectedSegments : displaySelectedSegments}
         />
       )}
       {isPositioningAxisModalOpen && (
@@ -1146,14 +1305,47 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       {isTargetVariableModalOpen && (
         <TargetVariableModal
           onClose={() => setIsTargetVariableModalOpen(false)}
-          onConfirm={(selection) => {
-            setPendingTargetSelection(selection);
+          onConfirm={(adoptedVariableIds, adoptedVariableNames, newRangeConfigs, newCategoryConfigs, selectedSegments) => {
+            const formattedConditions: string[] = [];
+            
+            itemDetails.forEach(item => {
+              if (adoptedVariableIds.has(item.id)) {
+                if (newCategoryConfigs[item.id]) {
+                  formattedConditions.push(`・${item.name} : ${newCategoryConfigs[item.id].join(', ')}`);
+                } else if (newRangeConfigs[item.id]) {
+                  formattedConditions.push(`・${item.name} : ${newRangeConfigs[item.id].min} ~ ${newRangeConfigs[item.id].max}`);
+                } else {
+                  formattedConditions.push(`・${item.name} : 全て`);
+                }
+              }
+            });
+
+            if (selectedSegments && selectedSegments.length > 0) {
+              formattedConditions.push(`・選択されたセグメント : ${selectedSegments.join(', ')}`);
+            }
+
+            setGraphComparisonConditions(formattedConditions);
+
+            setPendingGraphRangeConfigs(prev => ({ ...prev, ...newRangeConfigs }));
+            setPendingGraphCategoryConfigs(prev => ({ ...prev, ...newCategoryConfigs }));
+            setPendingGraphAdoptedVariableIds(adoptedVariableIds);
+            setPendingGraphSelectedSegments(selectedSegments);
+
+            setHasGraphPendingChanges(true);
             setIsTargetVariableModalOpen(false);
-            setCompositionRatioPending(true);
+            
+            // モーダルで新しい設定を確定した際も%表示にリセット
+            setIsCompositionRatioCountView(false);
           }}
+          initialSelectedItems={selectedVariables}
+          segmentCount={segmentCount}
           items={itemDetails}
           choicesData={choicesData}
-          initialSelection={pendingTargetSelection}
+          rangeConfigs={rangeConfigs}
+          displayRangeConfigs={hasGraphPendingChanges ? pendingGraphRangeConfigs : graphRangeConfigs}
+          displayCategoryConfigs={hasGraphPendingChanges ? pendingGraphCategoryConfigs : graphCategoryConfigs}
+          displayAdoptedIds={hasGraphPendingChanges ? pendingGraphAdoptedVariableIds : graphAdoptedVariableIds}
+          displaySelectedSegments={hasGraphPendingChanges ? pendingGraphSelectedSegments : graphSelectedSegments}
         />
       )}
     </main>

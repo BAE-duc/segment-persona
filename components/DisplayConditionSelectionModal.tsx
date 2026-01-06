@@ -42,7 +42,8 @@ interface DisplayConditionSelectionModalProps {
     adoptedVariableIds: Set<string>,
     adoptedVariableNames: string[],
     newRangeConfigs: Record<string, { min: number; max: number }>,
-    newCategoryConfigs: Record<string, string[]>
+    newCategoryConfigs: Record<string, string[]>,
+    selectedSegments: number[]
   ) => void;
   initialSelectedItems: SelectedItemsMap;
   segmentCount: number;
@@ -57,6 +58,7 @@ interface DisplayConditionSelectionModalProps {
   displayRangeConfigs?: Record<string, { min: number; max: number }>;
   displayCategoryConfigs?: Record<string, string[]>;
   displayAdoptedIds?: Set<string> | null;
+  displaySelectedSegments?: number[] | null;
 }
 
 const CustomCheckbox = ({
@@ -153,7 +155,8 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
   rangeConfigs,
   displayRangeConfigs,
   displayCategoryConfigs,
-  displayAdoptedIds
+  displayAdoptedIds,
+  displaySelectedSegments
 }) => {
   // initialSelectedItems ではなく、items (全変数) から変数リストを生成します。
 
@@ -330,7 +333,12 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
 
   // セグメント選択の状態を管理します。初期状態ですべて選択にします。
 
-  const [selectedSegments, setSelectedSegments] = useState<Set<number>>(() => new Set(segmentNumbers));
+  const [selectedSegments, setSelectedSegments] = useState<Set<number>>(() => {
+    if (displaySelectedSegments && displaySelectedSegments.length > 0) {
+      return new Set(displaySelectedSegments);
+    }
+    return new Set(segmentNumbers);
+  });
 
   // D3 ヒストグラム用
   const histogramRef = useRef<SVGSVGElement>(null);
@@ -624,7 +632,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
     }
 
     // adoptedVariables (IDのSet) も返す
-    onConfirm(adoptedVariables, adoptedVariableNames, rangesToReturn, categoriesToReturn);
+    onConfirm(adoptedVariables, adoptedVariableNames, rangesToReturn, categoriesToReturn, Array.from(selectedSegments).sort((a, b) => a - b));
   };
 
   const selectedVariableItem = selectedVariableId ? items.find(i => i.id === selectedVariableId) : null;

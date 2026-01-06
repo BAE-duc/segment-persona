@@ -7,10 +7,10 @@ import type { ItemDetail } from './ItemSelectionModal';
 interface CompositionRatioGraphProps {
     variable: ItemDetail;
     segmentCount: number;
+    selectedSegments?: number[];
     rangeConfigs?: Record<string, { min: number; max: number }>;
     displayCategoryConfigs?: Record<string, string[]>;
     // 選択されたカテゴリを受け取るためのPropを追加
-
     adoptedChoices?: { id: number; content: string }[];
     isCountView?: boolean;
 }
@@ -18,6 +18,7 @@ interface CompositionRatioGraphProps {
 export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
     variable,
     segmentCount,
+    selectedSegments,
     rangeConfigs,
     displayCategoryConfigs,
     adoptedChoices,
@@ -176,7 +177,13 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
             .padding(0.2);
 
         // Find max value for Y domain
-        const segmentKeys = Array.from({ length: segmentCount }, (_, i) => `segment${i + 1}`);
+        // 選択されたセグメントのみを表示対象にする
+        const displayedSegments = selectedSegments && selectedSegments.length > 0 
+            ? selectedSegments 
+            : Array.from({ length: segmentCount }, (_, i) => i + 1);
+            
+        const segmentKeys = displayedSegments.map(num => `segment${num}`);
+        
         let maxY = 100;
         if (isCountView) {
             const maxVal = d3.max(chartData, d => d3.max(segmentKeys, k => d[k] as number)) || 0;
@@ -278,7 +285,7 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
             .style("font-weight", "bold")
             .text(`セグメント${isCountView ? 'n数' : '構成比 (%)'} (推移)`);
 
-    }, [chartData, segmentCount, isCountView]);
+    }, [chartData, segmentCount, selectedSegments, isCountView]);
 
     return (
         <div className="w-full h-full flex flex-col bg-white">
@@ -290,8 +297,12 @@ export const CompositionRatioGraph: React.FC<CompositionRatioGraphProps> = ({
             {/* Legend Area - flex-shrink-0 sits at the bottom outside graph area */}
             <div className="flex-shrink-0 p-2 border-t border-gray-200 bg-gray-50 max-h-[150px] overflow-y-auto">
                 <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-4">
-                    {Array.from({ length: segmentCount }, (_, i) => {
-                        const segmentName = `segment${i + 1}`;
+                    {(selectedSegments && selectedSegments.length > 0 
+                        ? selectedSegments 
+                        : Array.from({ length: segmentCount }, (_, i) => i + 1)
+                    ).map((num) => {
+                        const i = num - 1;
+                        const segmentName = `segment${num}`;
                         const colors = [
                             '#AEC7E8', '#FFBB78', '#98DF8A', '#FF9896', '#C5B0D5', '#C49C94',
                             '#F7B6D2', '#C7C7C7', '#DBDB8D', '#9EDAE5', '#1F77B4', '#FF7F0E',

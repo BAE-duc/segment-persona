@@ -15,10 +15,12 @@ export interface ComparisonRow {
 interface ComparisonTableProps {
   data: ComparisonRow[];
   segmentSizes: number[];
+  segmentIds?: number[];
   isConversionView?: boolean;
+  onVariableClick?: (variableId: string) => void;
 }
 
-export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentSizes, isConversionView = false }) => {
+export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentSizes, segmentIds, isConversionView = false, onVariableClick }) => {
   // 変数IDでデータをグループ化します。
 
   const groupedData = useMemo(() => {
@@ -110,7 +112,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
             </th>
             {segmentSizes.map((size, i) => (
               <th key={i} className="border-b border-r border-gray-300 bg-gray-50 p-1 text-center w-16 min-w-[4rem]">
-                <div className="text-[10px] text-gray-500">{i + 1}</div>
+                <div className="text-[10px] text-gray-500">{segmentIds ? segmentIds[i] : i + 1}</div>
                 <div>{size.toLocaleString()}</div>
               </th>
             ))}
@@ -120,7 +122,9 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
             <th className="border-b border-r border-gray-300 bg-gray-50 p-1 font-semibold w-24">選択肢</th>
             <th className="border-b border-r border-gray-300 bg-gray-50 p-1 font-semibold text-center">全体</th>
             {segmentSizes.map((_, i) => (
-              <th key={i} className="border-b border-r border-gray-300 bg-gray-50 p-1 font-semibold text-center">セグメント{i + 1}</th>
+              <th key={i} className="border-b border-r border-gray-300 bg-gray-50 p-1 font-semibold text-center">
+                セグメント{segmentIds ? segmentIds[i] : i + 1}
+              </th>
             ))}
           </tr>
         </thead>
@@ -134,7 +138,11 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
               return (
                 <tr key={`${varId}-${row.choiceId}`} className="hover:bg-gray-50">
                   {rowIndex === 0 && (
-                    <td rowSpan={rows.length} className="border-r border-b border-gray-300 p-2 align-middle bg-white font-bold text-gray-700">
+                    <td 
+                      rowSpan={rows.length} 
+                      className="border-r border-b border-gray-300 p-2 align-middle bg-white font-bold text-gray-700 cursor-pointer hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      onClick={() => onVariableClick && onVariableClick(row.variableId.toLowerCase())}
+                    >
                       <div className="flex flex-col">
                         <span className="text-[10px] text-gray-400">{row.variableId}</span>
                         <span>{row.variableName}</span>
