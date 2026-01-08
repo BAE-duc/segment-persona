@@ -5,6 +5,7 @@ import { ProductSelectionModal } from './ProductSelectionModal';
 import { TabSystem } from './TabSystem';
 import { SegmentCreationPage } from '../pages/SegmentCreationPage';
 import { PersonaListPage } from '../pages/PersonaListPage';
+import { PersonaListPage2 } from '../pages/PersonaListPage2';
 
 // ヘッダーコンポーネント。
 
@@ -57,9 +58,10 @@ export const MainLayout = () => {
     // ペルソナ一覧ポップアップを管理するstate（複数インスタンス対応）
 
     const [personaPopups, setPersonaPopups] = useState<PersonaPopup[]>([]);
+    const [personaPopups2, setPersonaPopups2] = useState<PersonaPopup[]>([]);
     const personaPopupCounterRef = useRef(0);
 
-    const dragTargetRef = useRef<{ type: 'segment' | 'segmentMin' | 'persona', id?: string } | null>(null);
+    const dragTargetRef = useRef<{ type: 'segment' | 'segmentMin' | 'persona' | 'personaMin', id?: string } | null>(null);
     const dragStartInfoRef = useRef({ mouseX: 0, mouseY: 0, elementX: 0, elementY: 0 });
     const wasDraggedRef = useRef(false);
 
@@ -105,44 +107,85 @@ export const MainLayout = () => {
         setTimeout(() => bringPopupToFront(newId), 0);
     };
 
+    const handleOpenPersonaPopup2 = () => {
+        const newId = `persona2-${personaPopupCounterRef.current++}`;
+        setPersonaPopups2(prev => [...prev, {
+            id: newId,
+            position: null,
+            isMinimized: false,
+            minimizedPosition: null
+        }]);
+        // スタックの先頭に追加
+
+        setTimeout(() => bringPopupToFront(newId), 0);
+    };
+
     // ペルソナポップアップを閉じる
 
     const handleClosePersonaPopup = (id: string) => {
-        setPersonaPopups(prev => prev.filter(p => p.id !== id));
+        if (id.startsWith('persona2-')) {
+            setPersonaPopups2(prev => prev.filter(p => p.id !== id));
+        } else {
+            setPersonaPopups(prev => prev.filter(p => p.id !== id));
+        }
         setPopupStack(prev => prev.filter(popupId => popupId !== id));
     };
 
     // ペルソナポップアップを最小化
 
     const handleMinimizePersonaPopup = (id: string) => {
-        setPersonaPopups(prev => prev.map(p =>
-            p.id === id ? { ...p, isMinimized: true } : p
-        ));
+        if (id.startsWith('persona2-')) {
+            setPersonaPopups2(prev => prev.map(p =>
+                p.id === id ? { ...p, isMinimized: true } : p
+            ));
+        } else {
+            setPersonaPopups(prev => prev.map(p =>
+                p.id === id ? { ...p, isMinimized: true } : p
+            ));
+        }
     };
 
     // ペルソナポップアップを復元
 
     const handleRestorePersonaPopup = (id: string) => {
-        setPersonaPopups(prev => prev.map(p =>
-            p.id === id ? { ...p, isMinimized: false } : p
-        ));
+        if (id.startsWith('persona2-')) {
+            setPersonaPopups2(prev => prev.map(p =>
+                p.id === id ? { ...p, isMinimized: false } : p
+            ));
+        } else {
+            setPersonaPopups(prev => prev.map(p =>
+                p.id === id ? { ...p, isMinimized: false } : p
+            ));
+        }
         bringPopupToFront(id);
     };
 
     // ペルソナポップアップの位置を更新
 
     const updatePersonaPopupPosition = (id: string, position: { x: number, y: number }) => {
-        setPersonaPopups(prev => prev.map(p =>
-            p.id === id ? { ...p, position } : p
-        ));
+        if (id.startsWith('persona2-')) {
+            setPersonaPopups2(prev => prev.map(p =>
+                p.id === id ? { ...p, position } : p
+            ));
+        } else {
+            setPersonaPopups(prev => prev.map(p =>
+                p.id === id ? { ...p, position } : p
+            ));
+        }
     };
 
     // ペルソナポップアップの最小化位置を更新
 
     const updatePersonaMinimizedPosition = (id: string, position: { x: number, y: number }) => {
-        setPersonaPopups(prev => prev.map(p =>
-            p.id === id ? { ...p, minimizedPosition: position } : p
-        ));
+        if (id.startsWith('persona2-')) {
+            setPersonaPopups2(prev => prev.map(p =>
+                p.id === id ? { ...p, minimizedPosition: position } : p
+            ));
+        } else {
+            setPersonaPopups(prev => prev.map(p =>
+                p.id === id ? { ...p, minimizedPosition: position } : p
+            ));
+        }
     };
 
     const handleMouseDown = (e: React.MouseEvent<HTMLElement>, type: 'segment' | 'segmentMin' | 'persona' | 'personaMin', id?: string) => {
@@ -171,7 +214,9 @@ export const MainLayout = () => {
                 elementY: minimizedPosition.y,
             };
         } else if (type === 'persona' && id) {
-            const popup = personaPopups.find(p => p.id === id);
+            const popup = id.startsWith('persona2-')
+                ? personaPopups2.find(p => p.id === id)
+                : personaPopups.find(p => p.id === id);
             if (popup?.position) {
                 dragStartInfoRef.current = {
                     mouseX: e.clientX,
@@ -181,7 +226,9 @@ export const MainLayout = () => {
                 };
             }
         } else if (type === 'personaMin' && id) {
-            const popup = personaPopups.find(p => p.id === id);
+            const popup = id.startsWith('persona2-')
+                ? personaPopups2.find(p => p.id === id)
+                : personaPopups.find(p => p.id === id);
             if (popup?.minimizedPosition) {
                 dragStartInfoRef.current = {
                     mouseX: e.clientX,
@@ -227,7 +274,7 @@ export const MainLayout = () => {
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [personaPopups]);
+    }, [personaPopups, personaPopups2]);
 
     useEffect(() => {
         // ポップアップの初期中央位置を計算するeffect。
@@ -268,7 +315,19 @@ export const MainLayout = () => {
                 updatePersonaPopupPosition(popup.id, { x: Math.max(0, x), y: Math.max(0, y) });
             }
         });
-    }, [personaPopups.map(p => p.id).join(',')]);
+
+        personaPopups2.forEach((popup, index) => {
+            if (!popup.isMinimized && popup.position === null && mainAreaRef.current) {
+                const popupWidth = 1450;
+                const popupHeight = 730;
+                const { offsetWidth: mainWidth, offsetHeight: mainHeight } = mainAreaRef.current;
+                const offset = (index + 1 + personaPopups.length) * 50;
+                const x = (mainWidth - popupWidth) / 2 + offset;
+                const y = (mainHeight - popupHeight) / 2 + offset;
+                updatePersonaPopupPosition(popup.id, { x: Math.max(0, x), y: Math.max(0, y) });
+            }
+        });
+    }, [personaPopups.map(p => p.id).join(','), personaPopups2.map(p => p.id).join(',')]);
 
     useEffect(() => {
         // ペルソナ最小化バーの初期位置
@@ -368,12 +427,34 @@ export const MainLayout = () => {
                             onClick={() => bringPopupToFront(popup.id)}
                         >
                             <TabSystem
-                                title="ペルソナ"
+                                title="セグメント-ペルソナ"
                                 onHeaderMouseDown={(e) => handleMouseDown(e, 'persona', popup.id)}
                                 onClose={() => handleClosePersonaPopup(popup.id)}
                                 onMinimize={() => handleMinimizePersonaPopup(popup.id)}
                             >
                                 <PersonaListPage />
+                            </TabSystem>
+                        </div>
+                    ))}
+
+                    {/* ペルソナ抽出ポップアップ (Product Modalから) */}
+                    {personaPopups2.map((popup) => (
+                        <div
+                            key={popup.id}
+                            className={`absolute w-[1450px] h-[730px] shadow-2xl border border-gray-400 flex flex-col ${popup.isMinimized ? 'hidden' : ''}`}
+                            style={{
+                                ...(popup.position ? { top: `${popup.position.y}px`, left: `${popup.position.x}px` } : { visibility: 'hidden' as const }),
+                                zIndex: 50 - popupStack.indexOf(popup.id)
+                            }}
+                            onClick={() => bringPopupToFront(popup.id)}
+                        >
+                            <TabSystem
+                                title="ペルソナ"
+                                onHeaderMouseDown={(e) => handleMouseDown(e, 'persona', popup.id)}
+                                onClose={() => handleClosePersonaPopup(popup.id)}
+                                onMinimize={() => handleMinimizePersonaPopup(popup.id)}
+                            >
+                                <PersonaListPage2 />
                             </TabSystem>
                         </div>
                     ))}
@@ -386,6 +467,10 @@ export const MainLayout = () => {
                 <ProductSelectionModal
                     onClose={() => setProductModalOpen(false)}
                     onSelectSegment={handleSelectSegment}
+                    onSelectPersona={() => {
+                        setProductModalOpen(false);
+                        handleOpenPersonaPopup2(); // Changed to handleOpenPersonaPopup2
+                    }}
                 />
             )}
 
@@ -442,7 +527,47 @@ export const MainLayout = () => {
                         className="font-bold flex-grow h-full flex items-center"
                         onClick={() => !wasDraggedRef.current && handleRestorePersonaPopup(popup.id)}
                     >
-                        ペルソナ #{index + 1}
+                        セグメント-ペルソナ #{index + 1}
+                    </span>
+                    <div className="flex items-center space-x-2">
+                        <button
+                            className="p-1"
+                            aria-label="復元"
+                            onClick={() => handleRestorePersonaPopup(popup.id)}
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="8" y="8" width="12" height="12" rx="2" ry="2"></rect>
+                                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                            </svg>
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleClosePersonaPopup(popup.id); }}
+                            className="p-1 hover:bg-red-500 rounded"
+                            aria-label="閉じる"
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            ))}
+
+            {/* 最小化されたペルソナ抽出ポップアップバー (PersonaListPage2用) */}
+
+            {personaPopups2.filter(p => p.isMinimized).map((popup, index) => (
+                <div
+                    key={popup.id}
+                    className="fixed w-80 h-10 bg-gray-700 text-white flex items-center justify-between px-4 cursor-move z-50 rounded-t-md"
+                    style={popup.minimizedPosition ? { top: `${popup.minimizedPosition.y}px`, left: `${popup.minimizedPosition.x}px` } : { visibility: 'hidden' }}
+                    onMouseDown={(e) => handleMouseDown(e, 'personaMin', popup.id)}
+                >
+                    <span
+                        className="font-bold flex-grow h-full flex items-center"
+                        onClick={() => !wasDraggedRef.current && handleRestorePersonaPopup(popup.id)}
+                    >
+                        ペルソ나 #{index + 1}
                     </span>
                     <div className="flex items-center space-x-2">
                         <button

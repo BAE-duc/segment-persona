@@ -175,7 +175,6 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
   const [isSegmentComparisonExecuted, setIsSegmentComparisonExecuted] = useState(false);
   const [isPositioningExecuted, setIsPositioningExecuted] = useState(false);
   const [isHeatmapExecuted, setIsHeatmapExecuted] = useState(false);
-  const [isCompositionRatioExecuted, setIsCompositionRatioExecuted] = useState(false);
 
   // モーダルの状態管理
   const [isDataSelectionModalOpen, setIsDataSelectionModalOpen] = useState(false);
@@ -503,9 +502,6 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
     if (isHeatmapExecuted) {
       sectionsToCapture.push({ id: 'heatmap-graph-area', title: 'ヒートマップ' });
     }
-    if (isCompositionRatioExecuted) {
-      sectionsToCapture.push({ id: 'composition-ratio-comparison-graph-area', title: '構成比比較' });
-    }
 
     try {
       const canvasesWithTitles: { canvas: HTMLCanvasElement, title: string }[] = [];
@@ -776,8 +772,6 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
         setIsPositioningExecuted={setIsPositioningExecuted}
         isHeatmapExecuted={isHeatmapExecuted}
         setIsHeatmapExecuted={setIsHeatmapExecuted}
-        isCompositionRatioExecuted={isCompositionRatioExecuted}
-        setIsCompositionRatioExecuted={setIsCompositionRatioExecuted}
         onExportCommonFilter={handleExportCommonFilter}
         // rangeConfigsプロパティを渡す
         rangeConfigs={itemRangeConfig}

@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 interface ProductSelectionModalProps {
     onClose: () => void;
     onSelectSegment: () => void;
+    onSelectPersona: () => void;
 }
 
 // カテゴリボタン
@@ -25,7 +26,7 @@ const ProductCard = ({ title, englishTitle, onClick }: { title: string; englishT
     </div>
 );
 
-export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({ onClose, onSelectSegment }) => {
+export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({ onClose, onSelectSegment, onSelectPersona }) => {
     const [activeCategory, setActiveCategory] = useState('すべて');
 
     return (
@@ -61,8 +62,8 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({ on
                                 key={category}
                                 onClick={() => setActiveCategory(category)}
                                 className={`px-4 py-1.5 text-xs font-semibold rounded-full border transition-colors ${activeCategory === category
-                                        ? 'bg-gray-600 text-white border-gray-600'
-                                        : 'bg-white text-[#586365] border-gray-300 hover:bg-gray-200'
+                                    ? 'bg-gray-600 text-white border-gray-600'
+                                    : 'bg-white text-[#586365] border-gray-300 hover:bg-gray-200'
                                     }`}
                             >
                                 {category}
@@ -75,11 +76,18 @@ export const ProductSelectionModal: React.FC<ProductSelectionModalProps> = ({ on
                     <div className="flex-grow overflow-y-auto pr-2">
                         <div className="flex flex-wrap gap-4">
                             {(activeCategory === 'すべて' || activeCategory === 'データ分析') && (
-                                <ProductCard
-                                    title="セグメント"
-                                    englishTitle="Segment"
-                                    onClick={onSelectSegment}
-                                />
+                                <>
+                                    <ProductCard
+                                        title="セグメント"
+                                        englishTitle="Segment"
+                                        onClick={onSelectSegment}
+                                    />
+                                    <ProductCard
+                                        title="ペルソナ"
+                                        englishTitle="Persona"
+                                        onClick={onSelectPersona}
+                                    />
+                                </>
                             )}
                         </div>
                     </div>
