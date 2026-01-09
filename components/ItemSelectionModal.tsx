@@ -21,7 +21,7 @@ export interface ItemDetail {
   itemType: string;
   conversionSetting: string;
   somDataType: string;
-  variance: number;
+  variance: number | string;
   validResponseRate: number;
   conversionDetails?: ConversionSettings;
 }

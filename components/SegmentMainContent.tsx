@@ -176,56 +176,6 @@ const HeatmapSettings: React.FC<HeatmapSettingsProps> = ({ onExecute, onOpenCond
   );
 };
 
-// 構成比比較タブの設定コンポーネントのPropsインターフェース
-
-interface CompositionRatioSettingsProps {
-  onExecute: () => void;
-  onOpenVariableSearchModal: () => void;
-  variableDisplayText: string;
-  isExecuteDisabled: boolean;
-  isCountView: boolean;
-  onToggleCountView: () => void;
-}
-
-// 構成比比較タブの設定コンポーネント
-
-const CompositionRatioSettings: React.FC<CompositionRatioSettingsProps> = ({
-  onExecute,
-  onOpenVariableSearchModal,
-  variableDisplayText,
-  isExecuteDisabled,
-  isCountView,
-  onToggleCountView
-}) => {
-  return (
-
-    <div className="flex flex-col gap-1 w-full h-full">
-      {/* 1行目：設定ボタンと実行ボタン */}
-
-      <div className="flex items-center gap-2">
-        <AppButton onClick={onOpenVariableSearchModal}>
-          対象変数設定
-        </AppButton>
-        <AppButton className="px-6 whitespace-nowrap" onClick={onExecute} disabled={isExecuteDisabled} isActive={!isExecuteDisabled}>実行</AppButton>
-
-        <AppButton
-          className="px-6 whitespace-nowrap ml-auto"
-          onClick={onToggleCountView}
-        >
-          {isCountView ? '%' : 'n数'}
-        </AppButton>
-      </div>
-      {/* 2行目：条件表示フィールド */}
-
-      <div className="flex-grow min-h-0">
-        <div className="w-full border border-gray-400 bg-white rounded-md px-2 py-1 text-gray-500 text-xs overflow-y-auto break-words h-full whitespace-pre-wrap">
-          {variableDisplayText}
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
   isSegmentationExecuted,
   executionTrigger,
@@ -254,6 +204,9 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
   // Manage the temporary segment count selected in the dropdown.
   const [tempSegmentCount, setTempSegmentCount] = useState(segmentCount);
 
+  // SOMマップの選択状態を管理
+  const [isSomMapSelected, setIsSomMapSelected] = useState(false);
+
   // 適用ボタンの活性化状態を管理
   const [isApplyButtonActive, setIsApplyButtonActive] = useState(false);
 
@@ -281,8 +234,9 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
   const [segmentComparisonConditions, setSegmentComparisonConditions] = useState<string[]>([]);
 
-  // 集計表の変換ビュー状態（差分表示）
-  const [isConversionView, setIsConversionView] = useState(false);
+  // 集計表の表示モード
+  type TableDisplayMode = 'percentage' | 'difference' | 'count';
+  const [tableDisplayMode, setTableDisplayMode] = useState<TableDisplayMode>('percentage');
 
 
   const [displayRangeConfigs, setDisplayRangeConfigs] = useState<Record<string, { min: number; max: number }>>({});
@@ -488,19 +442,21 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
         const totalRatio = totalSamples > 0 ? (totalCount / totalSamples) * 100 : 0;
 
-        // セグメントごとの比率
-
-        const segmentRatios = segmentSizes.map((size, segIndex) => {
-          if (size === 0) return 0;
+        // セグメントごとのカウントと比率
+        const segCounts = segmentSizes.map((size, segIndex) => {
           const segId = segIndex + 1;
-          const segCount = rowsWithSegment.filter(r => {
+          return rowsWithSegment.filter(r => {
             if (r.segmentId !== segId) return false;
             let val = r[target.id];
             if (target.type === 'age') val = getAgeBin(val);
             else if (!val || val === '') val = 'NA';
             return val === choiceName;
           }).length;
-          return (segCount / size) * 100;
+        });
+
+        const segmentRatios = segCounts.map((count, i) => {
+          const size = segmentSizes[i];
+          return size > 0 ? (count / size) * 100 : 0;
         });
 
         resultRows.push({
@@ -509,7 +465,9 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
           choiceId: String(idx + 1),
           choiceName: choiceName,
           totalRatio: totalRatio,
-          segmentRatios: segmentRatios
+          segmentRatios: segmentRatios,
+          totalCount: totalCount,
+          segmentCounts: segCounts
         });
       });
     });
@@ -574,9 +532,13 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       setOverlayItemDisplay('');
       setIsPositioningExecuted(false);
 
+      // ヒートマップの設定をリセット
       setHeatmapConditionsList([]);
       setIsHeatmapExecuted(false);
       setHeatmapPending(true);
+
+      // SOMマップの選択状態をリセット
+      setIsSomMapSelected(false);
     }
   }, [executionTrigger]);
 
@@ -622,17 +584,18 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
       // 選択された変数と条件に基づいてデータを生成
       const result = generateRealDataFromCSV(segmentCount, targetVariables, displayRangeConfigs, displayCategoryConfigs);
-
+      
       let filteredRows = result.rows;
       let filteredSegmentSizes = result.segmentSizes;
 
       if (displaySelectedSegments && displaySelectedSegments.length > 0) {
-        // 各行の比率データを選択されたセグ먼트 인덱스에 따라 필터リング
+        // 各行의 데이터를 選択されたセグメント インデックスに従って フィルタリング
         filteredRows = result.rows.map(row => ({
           ...row,
-          segmentRatios: displaySelectedSegments.map(segNum => row.segmentRatios[segNum - 1])
+          segmentRatios: displaySelectedSegments.map(segNum => row.segmentRatios[segNum - 1]),
+          segmentCounts: row.segmentCounts ? displaySelectedSegments.map(segNum => row.segmentCounts![segNum - 1]) : undefined
         }));
-        // 세그먼트 사이즈 필터링
+        // セグメントサイズをフィルタリング
         filteredSegmentSizes = displaySelectedSegments.map(segNum => result.segmentSizes[segNum - 1]);
       }
 
@@ -684,6 +647,9 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     setHeatmapConditionsList([]);
     setIsHeatmapExecuted(false);
     setHeatmapPending(true);
+
+    // SOMマップの選択状態をリセット
+    setIsSomMapSelected(false);
   };
 
   // セグメント比較の実行ボタンハンドラ
@@ -697,11 +663,6 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
     setIsSegmentComparisonExecuted(true);
     setHasPendingChanges(false);
-  };
-
-  const handleVariableClickFromTable = (variableId: string) => {
-    // 集計表タブへ移動
-    setActiveTab('集計表');
   };
 
   const verticalAxisDisplay = positioningAxes.vertical
@@ -735,7 +696,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
   return (
     <main
-      className="flex-grow p-2 flex gap-2"
+      className="flex-grow py-2 pr-2 pl-1 flex gap-2 bg-[#ECECEC]"
     >
       {/* 左パネル */}
 
@@ -744,7 +705,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
           <>
             {/* 実行完了テキスト */}
 
-            <div className="flex-shrink-0 h-[30px] flex items-center">
+            <div className="flex-shrink-0 h-[30px] flex items-center px-4">
               <span className="text-sm">実行完了</span>
             </div>
 
@@ -764,8 +725,8 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                       <option key={n} value={n}>{n}</option>
                     ))}
                   </AppSelect>
-                  <AppButton
-                    className="px-6 whitespace-nowrap"
+                  <AppButton 
+                    className="px-6 whitespace-nowrap" 
                     onClick={handleApplySegmentCount}
                     disabled={!isApplyButtonActive}
                     isActive={isApplyButtonActive}
@@ -779,7 +740,10 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
               <div
                 id="sommap-area"
-                className="flex-grow flex items-center justify-center bg-white overflow-hidden"
+                className={`flex-grow flex items-center justify-center bg-white overflow-hidden cursor-pointer transition-all duration-200 ${
+                  isSomMapSelected ? 'border-4 border-blue-500' : 'border-4 border-transparent'
+                }`}
+                onClick={() => setIsSomMapSelected(!isSomMapSelected)}
               >
                 <img src={somMapImage} alt="SOM Map" className="max-w-full max-h-full object-contain" />
               </div>
@@ -793,12 +757,16 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                   <AppButton
                     className="w-full"
                     onClick={onOpenPersonaPopup}
+                    disabled={!isSomMapSelected}
+                    isActive={isSomMapSelected}
                   >
                     ペルソナ確認
                   </AppButton>
                   <AppButton
                     className="w-full"
                     onClick={onExportCommonFilter}
+                    disabled={!isSomMapSelected}
+                    isActive={isSomMapSelected}
                   >
                     共通フィルターに出力
                   </AppButton>
@@ -864,9 +832,24 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                           </AppButton>
                           <AppButton
                             className="px-6 whitespace-nowrap ml-auto"
-                            onClick={() => setIsConversionView(!isConversionView)}
+                            onClick={() => {
+                              // TODO: 横縦変換の機能をここに実装する
+                            }}
                           >
-                            表示切替
+                            横縦変換
+                          </AppButton>
+                          <AppButton
+                            className="px-6 whitespace-nowrap"
+                            onClick={() => {
+                              setTableDisplayMode(prev => {
+                                if (prev === 'percentage') return 'difference';
+                                if (prev === 'difference') return 'count';
+                                return 'percentage';
+                              });
+                            }}
+                          >
+                            {tableDisplayMode === 'percentage' ? '差分表示' : 
+                             tableDisplayMode === 'difference' ? 'n数表示' : '%表示'}
                           </AppButton>
                         </div>
                         <div className="flex-grow min-h-0">
@@ -915,12 +898,12 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                           const newConditionsList = [...heatmapConditionsList];
                           newConditionsList.splice(index, 1);
                           setHeatmapConditionsList(newConditionsList);
-
+                          
                           // 実行された条件リストからも該当の条件を削除し、マップを除去
                           const newExecutedList = [...executedHeatmapConditionsList];
                           newExecutedList.splice(index, 1);
                           setExecutedHeatmapConditionsList(newExecutedList);
-
+                          
                           // 条件がすべて削除されたら、ヒートマップ実行状態をfalseに変更
                           if (newConditionsList.length === 0) {
                             setIsHeatmapExecuted(false);
@@ -935,12 +918,11 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                     {activeTab === '集計表' && (
                       <div id="segment-comparison-graph-area" className="absolute inset-0 overflow-auto">
                         {isSegmentComparisonExecuted && comparisonData ? (
-                          <ComparisonTable
-                            data={comparisonData.rows}
-                            segmentSizes={comparisonData.segmentSizes}
+                          <ComparisonTable 
+                            data={comparisonData.rows} 
+                            segmentSizes={comparisonData.segmentSizes} 
                             segmentIds={displaySelectedSegments || undefined}
-                            isConversionView={isConversionView}
-                            onVariableClick={handleVariableClickFromTable}
+                            displayMode={tableDisplayMode} 
                           />
                         ) : (
                           <div className="flex items-center justify-center h-full">
@@ -971,10 +953,11 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                     {activeTab === 'ヒートマップ' && (
                       <div id="heatmap-graph-area" className="absolute inset-0 p-4">
                         {isHeatmapExecuted && executedHeatmapConditionsList.length > 0 ? (
-                          <div className={`grid gap-4 h-full ${executedHeatmapConditionsList.length === 1 ? 'grid-cols-1' :
+                          <div className={`grid gap-4 h-full ${
+                            executedHeatmapConditionsList.length === 1 ? 'grid-cols-1' :
                             executedHeatmapConditionsList.length === 2 ? 'grid-cols-2' :
-                              'grid-cols-2 grid-rows-2'
-                            }`}>
+                            'grid-cols-2 grid-rows-2'
+                          }`}>
                             {executedHeatmapConditionsList.map((conditions, index) => (
                               <div key={index} className="flex flex-col">
                                 <div className="text-center font-semibold text-sm mb-2">
@@ -1012,7 +995,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
           onClose={() => setIsDisplayConditionModalOpen(false)}
           onConfirm={(adoptedVariableIds, adoptedVariableNames, newRangeConfigs, newCategoryConfigs, selectedSegments) => {
             const formattedConditions: string[] = [];
-
+            
             // アイテム一覧の順序を維持するために itemDetails を基準にループします
             itemDetails.forEach(item => {
               if (adoptedVariableIds.has(item.id)) {

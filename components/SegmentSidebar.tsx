@@ -138,33 +138,11 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
     }));
   };
 
-  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, category: string, item: string) => {
-    const dragData = JSON.stringify({ category, item });
-    // 'application/json' を使用して、カスタムデータであることを示します。
-    // 'application/json' を使用して、カスタムデータであることを示します。
-    e.dataTransfer.setData('application/json', dragData);
-  };
-
-  const handleSidebarDragOver = (e: React.DragEvent<HTMLElement>) => {
-    // ここでのドロップは許可しますが、親へのイベント伝播は防ぎます。
-    // ここでのドロップは許可しますが、親へのイベント伝播は防ぎます。
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleSidebarDrop = (e: React.DragEvent<HTMLElement>) => {
-    // 親の削除ロジックが発火しないようにイベントの伝播を停止します。
-    // 親の削除ロジックが発火しないようにイベントの伝播を停止します。
-    e.stopPropagation();
-  };
-
   const currentSettings = segmentSettings || defaultSettings;
 
   return (
     <aside
-      className="w-[290px] p-2 flex flex-col flex-shrink-0"
-      onDragOver={handleSidebarDragOver}
-      onDrop={handleSidebarDrop}
+      className="w-[290px] pt-2 pb-2 pl-2 pr-1 flex flex-col flex-shrink-0 bg-[#ECECEC]"
     >
       <div className="flex justify-start gap-2 mb-1 -mt-1">
         <button
@@ -343,9 +321,7 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
                           {filterCategories[name].map(child => (
                             <div
                               key={child}
-                              className="py-1 text-xs cursor-grab"
-                              draggable="true"
-                              onDragStart={(e) => handleDragStart(e, name, child)}
+                              className="py-1 text-xs"
                             >
                               {child}
                             </div>

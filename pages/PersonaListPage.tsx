@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { AppButton } from '../components/shared/FormControls';
 import somMapImage from '../data/sommap.png';
 import personaMale60sHokkaido from '../data/persona_male_60s_hokkaido.png';
 import personaMale60sIndifferent from '../data/persona_male_60s_indifferent.png';
@@ -180,15 +181,12 @@ export const PersonaListPage: React.FC = () => {
                 {/* ナビゲーションボタン */}
 
 
-                {/* 出力ボタン (左下) */}
+                {/* 출력 버튼 (왼쪽 하단) */}
                 <div className="mt-auto">
-                    <button 
-                        className={`w-full py-2 rounded shadow-sm font-bold transition-colors ${
-                            isSomMapSelected 
-                                ? 'bg-blue-500 border border-blue-600 text-white hover:bg-blue-600' 
-                                : 'bg-gray-200 border border-gray-400 text-gray-400 cursor-not-allowed'
-                        }`}
+                    <AppButton
+                        className="w-full"
                         disabled={!isSomMapSelected}
+                        isActive={isSomMapSelected}
                         onClick={() => {
                             if (isSomMapSelected) {
                                 setIsDetailsVisible(true);
@@ -196,23 +194,23 @@ export const PersonaListPage: React.FC = () => {
                         }}
                     >
                         ペルソナ抽出
-                    </button>
+                    </AppButton>
                 </div>
             </div>
 
             {/* 右パネル - ペルソナ一覧 */}
-            <div className="w-3/4 pl-4 overflow-auto">
+            <div className="w-3/4 pl-4 pr-6 overflow-auto">
                 {isDetailsVisible ? (
                     <div className="min-w-[800px]">
                         {/* ヘッダー行 */}
-                        <div className="grid grid-cols-[120px_1fr] border-b border-transparent">
+                        <div className="grid grid-cols-[110px_1fr] border-b border-transparent">
                             <div className="p-2"></div>
-                            <div className="grid grid-cols-6 gap-2 text-center text-xs font-bold text-gray-600">
+                            <div className="grid grid-cols-6 gap-1.5 text-center text-xs font-bold text-gray-600">
                                 {personaData.map(p => (
                                     <div key={p.id} className="flex items-center justify-center gap-1">
-                                        <span>{p.name}</span>
+                                        <span className="truncate">{p.name}</span>
                                         {!readPersonaIds.has(p.id) && (
-                                            <span className="w-2 h-2 bg-pink-500 rounded-full"></span>
+                                            <span className="w-2 h-2 bg-pink-500 rounded-full flex-shrink-0"></span>
                                         )}
                                     </div>
                                 ))}
@@ -220,11 +218,11 @@ export const PersonaListPage: React.FC = () => {
                         </div>
 
                         {/* 画像行 */}
-                        <div className="grid grid-cols-[120px_1fr] mb-4">
-                            <div className="p-2 text-[10px] text-gray-400 flex items-end pb-0">
+                        <div className="grid grid-cols-[110px_1fr] mb-4">
+                            <div className="p-2 text-[10px] text-gray-400 flex items-end pb-0 leading-tight">
                                 ※Microsoft Copilotで生成した画像を表示しています
                             </div>
-                            <div className="grid grid-cols-6 gap-2">
+                            <div className="grid grid-cols-6 gap-1.5">
                                 {personaData.map(p => (
                                     <div
                                         key={p.id}
@@ -238,15 +236,15 @@ export const PersonaListPage: React.FC = () => {
                         </div>
 
                         {/* 属性テーブル */}
-                        <div className="w-full text-xs">
+                        <div className="w-full text-xs text-gray-700">
                             {/* セグメント名 */}
-                            <div className="grid grid-cols-[120px_1fr] border-b border-gray-200">
+                            <div className="grid grid-cols-[110px_1fr] border-b border-gray-200">
                                 <div className="p-2 font-bold text-gray-600 flex items-center">セグメント</div>
-                                <div className="grid grid-cols-6 gap-2">
+                                <div className="grid grid-cols-6 gap-1.5">
                                     {personaData.map(p => (
-                                        <div key={p.id} className="p-2 text-center flex items-center justify-center text-[10px] gap-1 relative group">
-                                            <span>{p.segmentName}</span>
-                                            <span className="inline-flex items-center justify-center w-3 h-3 rounded-full bg-blue-500 text-white text-[8px] cursor-help">
+                                        <div key={p.id} className="p-2 text-center flex items-center justify-center text-[10px] gap-1 relative group leading-tight">
+                                            <span className="break-all">{p.segmentName}</span>
+                                            <span className="inline-flex items-center justify-center w-3 h-3 rounded-full bg-blue-500 text-white text-[8px] cursor-help flex-shrink-0">
                                                 i
                                             </span>
                                             <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-[9px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
@@ -260,21 +258,21 @@ export const PersonaListPage: React.FC = () => {
                             </div>
 
                             {/* イノベーター度 */}
-                            <div className="grid grid-cols-[120px_1fr] border-b border-gray-200 py-2">
+                            <div className="grid grid-cols-[110px_1fr] border-b border-gray-200 py-2">
                                 <div className="p-2 font-bold text-gray-600 flex flex-col justify-center">
                                     <span>イノベーター度</span>
                                     <span className="text-[9px] font-normal text-gray-400">※1~7点で表示</span>
                                     <span className="text-[9px] font-normal text-gray-400">数字が大きいほど</span>
-                                    <span className="text-[9px] font-normal text-gray-400">イノベーター度が高い</span>
+                                    <span className="text-[9px] font-normal text-gray-400">高い</span>
                                     <span className="text-[9px] font-normal text-gray-400 mt-1">全体平均 .......</span>
                                 </div>
-                                <div className="grid grid-cols-6 gap-2 items-end relative">
+                                <div className="grid grid-cols-6 gap-1.5 items-end relative mr-2">
                                     {/* 平均線 (点線) */}
                                     <div className="absolute left-0 right-0 top-1/2 border-t border-dotted border-gray-400 z-0"></div>
 
                                     {personaData.map(p => (
                                         <div key={p.id} className="flex flex-col items-center justify-end h-24 z-10 relative group">
-                                            <span className="mb-1 text-[10px]">{p.innovatorScore}</span>
+                                            <span className="mb-1 text-[10px] text-gray-500">{p.innovatorScore}</span>
                                             <div
                                                 className="w-full bg-[#2CA0F0] cursor-help"
                                                 style={{ height: `${(p.innovatorScore / 7) * 100}%` }}
@@ -299,13 +297,13 @@ export const PersonaListPage: React.FC = () => {
                                 { label: '購入意向車', key: 'carIntent' },
                                 { label: '現保有車', key: 'currentCar' },
                             ].map((attr) => (
-                                <div key={attr.key} className="grid grid-cols-[120px_1fr] border-b border-gray-200">
-                                    <div className="p-2 font-bold text-gray-600 flex items-center">
+                                <div key={attr.key} className="grid grid-cols-[110px_1fr] border-b border-gray-200">
+                                    <div className="p-2 font-bold text-gray-600 flex items-center leading-tight text-[11px]">
                                         {attr.label.split('\n').map((line, i) => <div key={i}>{line}</div>)}
                                     </div>
-                                    <div className="grid grid-cols-6 gap-2">
+                                    <div className="grid grid-cols-6 gap-1.5">
                                         {personaData.map((p: any) => (
-                                            <div key={p.id} className="p-2 text-center flex items-center justify-center text-[10px] break-words">
+                                            <div key={p.id} className="p-2 text-center flex items-center justify-center text-[10px] break-words leading-tight">
                                                 {p[attr.key]}
                                             </div>
                                         ))}

@@ -124,7 +124,7 @@ headers.forEach((header, colIndex) => {
   }
 
   // Variance (簡易計算)
-  let variance = 0;
+  let variance: number | string = 0;
   if (isNumeric) {
     const nums = validValues.map(Number);
     if (nums.length > 0) {
@@ -133,7 +133,7 @@ headers.forEach((header, colIndex) => {
       variance = parseFloat(stdDev.toFixed(2));
     }
   } else {
-    variance = 0.5; // カテゴリ型のダミー分散
+    variance = "-"; // カテゴリ型は分散計算不可のため"-"表示
   }
 
   generatedItemDetails.push({
@@ -713,7 +713,7 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
   return (
     // モーダル表示時にサイドバーも含めて全体が非アクティブになるように、コンテナにrelativeを追加します。
     <div
-      className="flex h-full w-full bg-[#ECECEC] relative"
+      className="flex h-full w-full bg-white relative"
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import * as d3 from 'd3';
 
-// データ行インターフェース定義
+// 데이터 행 인터페이스 정의
 
 export interface ComparisonRow {
   variableId: string;
@@ -10,17 +10,24 @@ export interface ComparisonRow {
   choiceName: string;
   totalRatio: number;
   segmentRatios: number[];
+  // n수 표시를 위한 실제 건수 데이터 추가
+  totalCount?: number;
+  segmentCounts?: number[];
 }
 
 interface ComparisonTableProps {
   data: ComparisonRow[];
   segmentSizes: number[];
   segmentIds?: number[];
-  isConversionView?: boolean;
-  onVariableClick?: (variableId: string) => void;
+  displayMode?: 'percentage' | 'difference' | 'count'; // 새로운 prop 추가
 }
 
-export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentSizes, segmentIds, isConversionView = false, onVariableClick }) => {
+export const ComparisonTable: React.FC<ComparisonTableProps> = ({ 
+  data, 
+  segmentSizes, 
+  segmentIds, 
+  displayMode = 'percentage'
+}) => {
   // 変数IDでデータをグループ化します。
 
   const groupedData = useMemo(() => {
@@ -93,6 +100,28 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
     );
   };
 
+  // n수 표시를 위한 렌더링 함수 (색상은 percentage 기준으로 유지)
+  const renderCountBar = (count: number, percentage: number, isTotal: boolean) => {
+    const widthPct = xScale(percentage); // 색상과 바 길이는 percentage 기준
+
+    return (
+      <div className="relative w-full h-6 flex items-center px-1">
+        {/* バー背景 */}
+        <div className="absolute inset-y-1 left-0 bg-gray-100 w-full z-0 rounded-sm overflow-hidden">
+          {/* 실제 바 (percentage 기준 길이와 색상) */}
+          <div
+            style={{ width: `${widthPct}%` }}
+            className={`h-full ${isTotal ? 'bg-gray-400' : 'bg-[#8ab0e6]'} transition-all duration-500`}
+          ></div>
+        </div>
+        {/* 건수 텍스트 표시 */}
+        <span className={`relative z-10 ml-auto text-xs font-medium text-gray-700`}>
+          {count}
+        </span>
+      </div>
+    );
+  };
+
   const totalSample = segmentSizes.reduce((a, b) => a + b, 0);
 
   return (
@@ -103,7 +132,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
             <th colSpan={2} className="border-b border-r border-gray-300 bg-gray-50 p-1 text-center font-bold min-w-[200px]">
               <div>セグメントサイズ→</div>
               <div className="text-[10px] text-gray-500 mt-1">
-                {isConversionView ? '(差分)' : '(絶対値)'}
+                {displayMode === 'difference' ? '(差分)' : displayMode === 'count' ? '(n数)' : '(絶対値)'}
               </div>
             </th>
             <th className="border-b border-r border-gray-300 bg-gray-50 p-1 text-center w-16">
@@ -140,8 +169,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
                   {rowIndex === 0 && (
                     <td 
                       rowSpan={rows.length} 
-                      className="border-r border-b border-gray-300 p-2 align-middle bg-white font-bold text-gray-700 cursor-pointer hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                      onClick={() => onVariableClick && onVariableClick(row.variableId.toLowerCase())}
+                      className="border-r border-b border-gray-300 p-2 align-middle bg-white font-bold text-gray-700"
                     >
                       <div className="flex flex-col">
                         <span className="text-[10px] text-gray-400">{row.variableId}</span>
@@ -156,40 +184,53 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ data, segmentS
                     </div>
                   </td>
                   <td className="border-r border-b border-gray-300 p-1">
-                    {renderBar(row.totalRatio, true, false)}
+                    {displayMode === 'count' 
+                      ? renderCountBar(row.totalCount || 0, row.totalRatio, true)
+                      : renderBar(row.totalRatio, true, false)
+                    }
                   </td>
                   {row.segmentRatios.map((ratio, i) => {
-                    // このセルが最大値かどうかを確認 (同点の場合はすべて強調)
+                    // このセルが最大値かどうかを確인 (동점의 경우는 모두 강조)
                     const isMaxInRow = ratio === maxRatio && maxRatio > 0;
                     
-                    // 背景色計算
+                    // 배경색 계산 (항상 percentage 기준)
                     let cellBgColor = '';
-                    if (isConversionView) {
-                      // 差分モードでの背景色計算
+                    if (displayMode === 'difference') {
+                      // 차분 모드에서의 배경색 계산
                       const differences = row.segmentRatios.map(r => r - row.totalRatio);
                       const maxDiff = Math.max(...differences);
                       const minDiff = Math.min(...differences);
                       const currentDiff = ratio - row.totalRatio;
                       
-                      // 最大プラス値は青背景、最大マイナス値は赤背景
+                      // 최대 플러스값은 파란 배경, 최대 마이너스값은 빨간 배경
                       if (currentDiff === maxDiff && maxDiff > 0) {
                         cellBgColor = 'bg-blue-100';
                       } else if (currentDiff === minDiff && minDiff < 0) {
                         cellBgColor = 'bg-red-100';
                       }
                     } else {
-                      // 絶対値モードでの背景色計算: 全体値との差が5以上の場合
+                      // 절대값 모드(percentage, count)에서의 배경색 계산: 전체값과의 차이가 5 이상인 경우
                       const difference = ratio - row.totalRatio;
                       if (difference >= 5) {
-                        cellBgColor = 'bg-blue-100'; // 全体より5以上大きい場合は青背景
+                        cellBgColor = 'bg-blue-100'; // 전체보다 5 이상 큰 경우는 파란 배경
                       } else if (difference <= -5) {
-                        cellBgColor = 'bg-red-100'; // 全体より5以上小さい場合は赤背景
+                        cellBgColor = 'bg-red-100'; // 전체보다 5 이상 작은 경우는 빨간 배경
                       }
+                    }
+                    
+                    // 표시 모드에 따른 렌더링 분기
+                    let cellContent;
+                    if (displayMode === 'difference') {
+                      cellContent = renderDifferenceBar(ratio, row.totalRatio);
+                    } else if (displayMode === 'count') {
+                      cellContent = renderCountBar(row.segmentCounts?.[i] || 0, ratio, false);
+                    } else {
+                      cellContent = renderBar(ratio, false, isMaxInRow);
                     }
                     
                     return (
                       <td key={i} className={`border-r border-b border-gray-300 p-1 border-l-2 border-l-blue-100 ${cellBgColor}`}>
-                        {isConversionView ? renderDifferenceBar(ratio, row.totalRatio) : renderBar(ratio, false, isMaxInRow)}
+                        {cellContent}
                       </td>
                     );
                   })}
