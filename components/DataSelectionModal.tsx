@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AppButton } from './shared/FormControls';
 import { modalStyles } from './shared/modalStyles';
+import { CaretIcon } from './shared/CaretIcon';
 
 // データアイテムの構造を定義します。
 
@@ -19,49 +20,18 @@ interface DataGroup {
   items: Omit<DataItem, 'groupName'>[];
 }
 
-// モーダルに表示するダミーデータ。
+// モーダル에 표시할 고정 데이터 (사용자 요청에 따라 변경)
 
 const modalData: DataGroup[] = [
   {
     id: 'group1',
-    name: '調査データ(調査部)',
+    name: '調査データ',
     items: [
       { id: 'item1-1', name: 'NCBS Japan 結合データ (2010-2021, 2023年)', createdAt: '2024-01-01 T00:00:00' },
       { id: 'item1-2', name: 'NCBS Japan 結合データ (2010-2021, 2023-2024年)', createdAt: '2025-10-02 T00:00:00' },
       { id: 'item1-3', name: '新動態結合データ[乗用:01/04-20/12]', createdAt: '2025-02-10 T00:00:00' },
+      { id: 'item1-4', name: 'デザイン感性研究調査 2024年 日本', createdAt: '2024-12-16 T00:00:00' },
     ],
-  },
-  {
-    id: 'group2',
-    name: '調査データ(デザイン部)',
-    items: [
-      { id: 'item2-1', name: 'デザイン感性研究調査 2024年 日本', createdAt: '2024-12-16 T00:00:00' },
-    ],
-  },
-  {
-    id: 'group3',
-    name: '追加データ(テスト)',
-    items: [
-      { id: 'item3-1', name: 'テストデータセット A', createdAt: '2023-05-20 T10:30:00' },
-      { id: 'item3-2', name: 'テストデータセット B', createdAt: '2023-06-15 T11:00:00' },
-      { id: 'item3-3', name: 'テストデータセット C', createdAt: '2023-07-01 T14:00:00' },
-      { id: 'item3-4', name: 'テストデータセット D', createdAt: '2023-08-10 T09:45:00' },
-      { id: 'item3-5', name: 'テストデータセット E', createdAt: '2023-09-05 T16:20:00' },
-      { id: 'item3-6', name: 'テストデータセット F', createdAt: '2023-09-06 T16:20:00' },
-      { id: 'item3-7', name: 'テストデータセット G', createdAt: '2023-09-07 T16:20:00' },
-      { id: 'item3-8', name: 'テストデータセット H', createdAt: '2023-09-08 T16:20:00' },
-      { id: 'item3-9', name: 'テストデータセット I', createdAt: '2023-09-09 T16:20:00' },
-      { id: 'item3-10', name: 'テストデータセット J', createdAt: '2023-09-10 T16:20:00' },
-      { id: 'item3-11', name: 'テストデータセット K', createdAt: '2023-09-11 T16:20:00' },
-      { id: 'item3-12', name: 'テストデータセット L', createdAt: '2023-09-12 T16:20:00' },
-    ],
-  },
-  {
-    id: 'group-test',
-    name: 'テストデータ',
-    items: [
-      { id: 'test-csv-data', name: 'Test CSV Data (ID, sex, child, age, year)', createdAt: '2025-01-01 T00:00:00' }
-    ]
   }
 ];
 
@@ -73,8 +43,16 @@ interface DataSelectionModalProps {
 
 export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({ onClose, onConfirm }) => {
   // 初期状態では何も選択されていない状態に設定します。
-
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // ツリーの展開状態を管理します（デフォルトは展開）
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({ 'group1': true });
+
+  const toggleGroup = (groupId: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupId]: !prev[groupId]
+    }));
+  };
 
   const handleConfirm = () => {
     if (!selectedId) return;
@@ -100,7 +78,7 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({ onClose,
       className={modalStyles.overlay}
     >
       <div
-        className={`${modalStyles.container} w-[700px] h-[500px]`}
+        className={`${modalStyles.container} w-[800px] h-[500px]`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* ヘッダー */}
@@ -113,30 +91,48 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({ onClose,
         {/* ボディ */}
 
         <div className={`${modalStyles.body.container} overflow-hidden flex flex-col`}>
-          <div className="grid grid-cols-12 pb-2 border-b border-gray-300 text-gray-500 flex-shrink-0">
-            <div className="col-span-8 pl-8">データ名</div>
-            <div className="col-span-4">作成日時</div>
+          {/* カラムヘッダー */}
+          <div className="grid grid-cols-12 pb-2 border-b border-gray-300 text-gray-700 font-medium flex-shrink-0 text-sm">
+            <div className="col-span-3">データ種別</div>
+            <div className="col-span-6">データ名</div>
+            <div className="col-span-3">作成日時</div>
           </div>
-          <div className="flex-grow overflow-y-auto mt-2">
-            {modalData.map(group => 
-              group.items.map(item => (
-                <div
-                  key={item.id}
-                  className={`grid grid-cols-12 items-center cursor-pointer ${modalStyles.interactive.listItem(selectedId === item.id)}`}
-                  onClick={() => setSelectedId(item.id)}
-                >
-                  <div className="col-span-8 flex items-center py-1">
-                    {/* カスタムラジオボタン */}
 
-                    <div className="w-4 h-4 rounded-full border-2 border-gray-700 flex items-center justify-center mx-2 flex-shrink-0">
-                      {selectedId === item.id && <div className="w-2 h-2 bg-gray-700 rounded-full" />}
-                    </div>
-                    <span>{item.name}</span>
+          <div className="flex-grow overflow-y-auto mt-2">
+            {modalData.map(group => (
+              <div key={group.id} className="mb-1">
+                {/* 최상위 트리: 데이터 종별 */}
+                <div 
+                  className="grid grid-cols-12 items-center py-1 bg-gray-100 hover:bg-gray-200 cursor-pointer border-y border-gray-200"
+                  onClick={() => toggleGroup(group.id)}
+                >
+                  <div className="col-span-3 flex items-center">
+                    <CaretIcon expanded={!!expandedGroups[group.id]} />
+                    <span className="text-sm font-bold">{group.name}</span>
                   </div>
-                  <div className="col-span-4 text-gray-600">{item.createdAt}</div>
+                  <div className="col-span-9"></div>
                 </div>
-              ))
-            )}
+
+                {/* 하위 항목: 데이터명 및 작성일시 */}
+                {expandedGroups[group.id] && group.items.map(item => (
+                  <div
+                    key={item.id}
+                    className={`grid grid-cols-12 items-center cursor-pointer py-1 ${selectedId === item.id ? 'bg-blue-100' : 'hover:bg-gray-200'}`}
+                    onClick={() => setSelectedId(item.id)}
+                  >
+                    <div className="col-span-3"></div>
+                    <div className="col-span-6 flex items-center pl-4">
+                      {/* 커스텀 라디오 버튼 */}
+                      <div className="w-4 h-4 rounded-full border-2 border-gray-400 flex items-center justify-center mr-3 flex-shrink-0 bg-white">
+                        {selectedId === item.id && <div className="w-2 h-2 bg-gray-700 rounded-full" />}
+                      </div>
+                      <span className="text-sm">{item.name}</span>
+                    </div>
+                    <div className="col-span-3 text-sm text-gray-600">{item.createdAt}</div>
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
 
