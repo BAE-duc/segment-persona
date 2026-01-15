@@ -161,10 +161,10 @@ const initialFilterCategories: FilterCategory = {
 };
 
 /**
- * PersonaListPage2 コンポーネント。
+ * ProductPersonaListPage コンポーネント。
  * プロダクト選択モーダルから直接遷移する、独立したペルソナ管理画面。
  */
-export const PersonaListPage2: React.FC = () => {
+export const ProductPersonaListPage: React.FC = () => {
     const [isDetailsVisible, setIsDetailsVisible] = useState(false);
     const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(null);
     const [readPersonaIds, setReadPersonaIds] = useState<Set<number>>(new Set());
@@ -220,7 +220,8 @@ export const PersonaListPage2: React.FC = () => {
             {/* 左パネル: データ選択およびフィルター設定 */}
             <div className="w-[290px] flex flex-col flex-shrink-0 border-r border-gray-200 bg-[#ECECEC] p-2">
                 {/* 上端アイコングループ（ダウンロード削除済み） */}
-                <div className="flex justify-start gap-2 mb-1 -mt-1">
+                <div className="flex items-center justify-between gap-2 mb-1 -mt-1">
+                    <div className="flex justify-start gap-2">
                     <button
                         className="h-[30px] w-[30px] flex items-center justify-center text-gray-600 hover:bg-gray-300 transition-colors rounded-md"
                         aria-label="データベース"
@@ -230,6 +231,8 @@ export const PersonaListPage2: React.FC = () => {
                             <path d="M12,3C7.58,3,4,4.79,4,7s3.58,4,8,4,8-1.79,8-4S16.42,3,12,3z M4,9v3c0,2.21,3.58,4,8,4s8-1.79,8-4V9c0,2.21-3.58,4-8,4S4,11.21,4,9z M4,15v3c0,2.21,3.58,4,8,4s8-1.79,8-4v-3c0,2.21-3.58,4-8,4S4,17.21,4,15z" />
                         </svg>
                     </button>
+                    </div>
+                    <div className="text-xs text-gray-500 select-none">v1.0.0</div>
                 </div>
 
                 {/* データ情報セクション（SegmentSidebarのデザインを完全適用） */}
@@ -322,7 +325,7 @@ export const PersonaListPage2: React.FC = () => {
                     </div>
                 </div>
 
-                {/* 하단 ペルソナ抽출 버튼 */}
+                {/* 하단 ペルソナ抽出 버튼 */}
                 <div className="flex-shrink-0 pt-2 bg-transparent">
                     <AppButton
                         className="w-full"
@@ -457,9 +460,7 @@ export const PersonaListPage2: React.FC = () => {
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-4">
                         <p className="text-sm font-medium">
-                            {selectedData
-                                ? '「ペルソナ抽出を実行」ボタンをクリックして開始してください'
-                                : 'データを選択してください'}
+                            {selectedData ? '「ペルソナ抽出を実行」ボタンをクリックして開始してください' : 'データを選択してください'}
                         </p>
                     </div>
                 )}
@@ -495,3 +496,4 @@ export const PersonaListPage2: React.FC = () => {
         </div>
     );
 };
+

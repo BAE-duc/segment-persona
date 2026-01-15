@@ -144,7 +144,8 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
     <aside
       className="w-[290px] pt-2 pb-2 pl-2 pr-1 flex flex-col flex-shrink-0 bg-[#ECECEC]"
     >
-      <div className="flex justify-start gap-2 mb-1 -mt-1">
+      <div className="flex items-center justify-between gap-2 mb-1 -mt-1">
+        <div className="flex justify-start gap-2">
         <button
           className="h-[30px] w-[30px] flex items-center justify-center text-gray-600 hover:bg-gray-300 transition-colors rounded-md"
           aria-label="データベース"
@@ -165,6 +166,8 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
             <circle cx="17.5" cy="18.5" r="1.2" fill="#ffffff" />
           </svg>
         </button>
+        </div>
+        <div className="text-xs text-gray-500 select-none">v1.0.0</div>
       </div>
 
       {/* テキスト表示エリア */}

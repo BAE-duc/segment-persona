@@ -111,7 +111,7 @@ const personaData: PersonaData[] = [
     }
 ];
 
-export const PersonaListPage: React.FC = () => {
+export const SegmentPersonaListPage: React.FC = () => {
     const [viewMode, setViewMode] = useState<'segment' | 'node'>('segment');
     const [isDetailsVisible, setIsDetailsVisible] = useState(false);
     const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(null);
@@ -142,15 +142,14 @@ export const PersonaListPage: React.FC = () => {
         <div className="flex h-full w-full bg-white p-4 overflow-hidden">
             {/* 左パネル */}
             <div className="w-1/4 flex flex-col gap-4 pr-4 border-r border-gray-200">
-                <h2 className="text-xl font-bold text-gray-700">セグメント選択</h2>
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-gray-700">セグメント選択</h2>
+                    <div className="text-xs text-gray-500 select-none">v1.0.0</div>
+                </div>
 
                 {/* SOMMAP エリア */}
                 <div
-                    className={`bg-[#EFE8C8] aspect-square flex items-center justify-center relative overflow-hidden border cursor-pointer transition-all ${
-                        isSomMapSelected 
-                            ? 'border-blue-500 border-4 ring-4 ring-blue-200' 
-                            : 'border-gray-300 hover:border-blue-300'
-                    }`}
+                    className={`bg-[#EFE8C8] aspect-square flex items-center justify-center relative overflow-hidden border cursor-pointer transition-all ${isSomMapSelected ? 'border-blue-500 border-4 ring-4 ring-blue-200' : 'border-gray-300 hover:border-blue-300'}`}
                     onClick={() => setIsSomMapSelected(true)}
                 >
                     <img src={somMapImage} alt="SOMMAP" className="w-full h-full object-contain" />
@@ -177,9 +176,6 @@ export const PersonaListPage: React.FC = () => {
                         ノード
                     </button>
                 </div>
-
-                {/* ナビゲーションボタン */}
-
 
                 {/* 출력 버튼 (왼쪽 하단) */}
                 <div className="mt-auto">
@@ -314,13 +310,11 @@ export const PersonaListPage: React.FC = () => {
                     </div>
                 ) : (
                     <div className="flex items-center justify-center h-full text-gray-400">
-                        {isSomMapSelected 
-                            ? 'ペルソナ抽出ボタンを押してください' 
-                            : '左側のSOMMAP内で、抽出対象とするセグメントまたはノードを選択してください。'
-                        }
+                        {isSomMapSelected ? 'ペルソナ抽出ボタンを押してください' : '左側のSOMMAP内で、抽出対象とするセグメントまたはノードを選択してください。'}
                     </div>
                 )}
             </div>
         </div>
     );
 };
+
