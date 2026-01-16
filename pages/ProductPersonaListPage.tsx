@@ -337,7 +337,7 @@ export const ProductPersonaListPage: React.FC = () => {
                             }
                         }}
                     >
-                        ペルソナ抽出を実行
+                        ペルソナ抽出
                     </AppButton>
                 </div>
             </div>
@@ -460,7 +460,7 @@ export const ProductPersonaListPage: React.FC = () => {
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-gray-400 space-y-4">
                         <p className="text-sm font-medium">
-                            {selectedData ? '「ペルソナ抽出を実行」ボタンをクリックして開始してください' : 'データを選択してください'}
+                            {selectedData ? 'ペルソナ抽出ボタンを押してください' : 'データを選択してください'}
                         </p>
                     </div>
                 )}

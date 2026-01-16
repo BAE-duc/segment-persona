@@ -310,7 +310,9 @@ export const SegmentPersonaListPage: React.FC = () => {
                     </div>
                 ) : (
                     <div className="flex items-center justify-center h-full text-gray-400">
-                        {isSomMapSelected ? 'ペルソナ抽出ボタンを押してください' : '左側のSOMMAP内で、抽出対象とするセグメントまたはノードを選択してください。'}
+                        <p className="text-sm font-medium">
+                           {isSomMapSelected ? 'ペルソナ抽出ボタンを押してください' : '左側のSOMMAP内で、抽出対象とするセグメントまたはノードを選択してください。'}
+                        </p>
                     </div>
                 )}
             </div>
