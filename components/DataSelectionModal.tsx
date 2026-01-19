@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { AppButton } from './shared/FormControls';
 import { modalStyles } from './shared/modalStyles';
-import { CaretIcon } from './shared/CaretIcon';
 
 // データアイテムの構造を定義します。
 
@@ -20,17 +19,17 @@ interface DataGroup {
   items: Omit<DataItem, 'groupName'>[];
 }
 
-// モーダル에 표시할 고정 데이터 (사용자 요청에 따라 변경)
+// モーダルに 표시할 고정 데이터 (사용자 요청에 따라 변경)
 
 const modalData: DataGroup[] = [
   {
     id: 'group1',
     name: '調査データ',
     items: [
-      { id: 'item1-1', name: 'NCBS Japan 結合データ (2010-2021, 2023年)', createdAt: '2024-01-01 T00:00:00' },
-      { id: 'item1-2', name: 'NCBS Japan 結合データ (2010-2021, 2023-2024年)', createdAt: '2025-10-02 T00:00:00' },
-      { id: 'item1-3', name: '新動態結合データ[乗用:01/04-20/12]', createdAt: '2025-02-10 T00:00:00' },
-      { id: 'item1-4', name: 'デザイン感性研究調査 2024年 日本', createdAt: '2024-12-16 T00:00:00' },
+      { id: 'item1-1', name: 'NCBS Japan結合データ (2010-2021、2023年)', createdAt: '2024-01-01T00:00:00' },
+      { id: 'item1-2', name: 'NCBS Japan 結合データ (2010-2021、2023-2024年)', createdAt: '2025-10-02T00:00:00' },
+      { id: 'item1-3', name: '日本新動態 結合データ', createdAt: '2025-02-10T00:00:00' },
+      { id: 'item1-4', name: '2021-2024年META特性調査', createdAt: '2024-12-16T00:00:00' },
     ],
   }
 ];
@@ -44,15 +43,6 @@ interface DataSelectionModalProps {
 export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({ onClose, onConfirm }) => {
   // 初期状態では何も選択されていない状態に設定します。
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  // ツリーの展開状態を管理します（デフォルトは展開）
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({ 'group1': true });
-
-  const toggleGroup = (groupId: string) => {
-    setExpandedGroups(prev => ({
-      ...prev,
-      [groupId]: !prev[groupId]
-    }));
-  };
 
   const handleConfirm = () => {
     if (!selectedId) return;
@@ -73,6 +63,14 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({ onClose,
     }
   };
 
+  // すべてのアイテムをフラットなリストに変換
+  const allItems = modalData.flatMap(group => 
+    group.items.map(item => ({
+      ...item,
+      groupName: group.name,
+    }))
+  );
+
   return (
     <div
       className={modalStyles.overlay}
@@ -90,49 +88,62 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({ onClose,
 
         {/* ボディ */}
 
-        <div className={`${modalStyles.body.container} overflow-hidden flex flex-col`}>
-          {/* カラムヘッダー */}
-          <div className="grid grid-cols-12 pb-2 border-b border-gray-300 text-gray-700 font-medium flex-shrink-0 text-sm">
-            <div className="col-span-3">データ種別</div>
-            <div className="col-span-6">データ名</div>
-            <div className="col-span-3">作成日時</div>
-          </div>
+        <div className={`${modalStyles.body.container} overflow-hidden flex flex-col bg-white`}>
+          {/* 테이블 형태: 고정 헤더 + 스크롤 바디 */}
+          <div className="flex flex-col flex-grow overflow-hidden">
+            <style>{`
+              .data-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 0.875rem; }
+              .data-table thead { display: table; width: 100%; table-layout: fixed; }
+              .data-table tbody { display: block; max-height: 300px; overflow-y: auto; width: 100%; }
+              .data-table th, .data-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid #e5e7eb; vertical-align: middle; }
+              .data-table th { background: #f3f4f6; color: #374151; font-weight: 600; text-align: left; }
+              .data-table tr { display: table; width: 100%; table-layout: fixed; }
+              .data-table tbody tr:hover { background: #f8fafc; }
+              .data-table .col-group { width: 25%; }
+              .data-table .col-name { width: 50%; }
+              .data-table .col-date { width: 25%; }
+              .data-table .radio-wrap { display: flex; align-items: center; gap: 0.5rem; }
+              .data-table .selected-row { background: #eff6ff; }
+            `}</style>
 
-          <div className="flex-grow overflow-y-auto mt-2">
-            {modalData.map(group => (
-              <div key={group.id} className="mb-1">
-                {/* 최상위 트리: 데이터 종별 */}
-                <div 
-                  className="grid grid-cols-12 items-center py-1 bg-gray-100 hover:bg-gray-200 cursor-pointer border-y border-gray-200"
-                  onClick={() => toggleGroup(group.id)}
-                >
-                  <div className="col-span-3 flex items-center">
-                    <CaretIcon expanded={!!expandedGroups[group.id]} />
-                    <span className="text-sm font-bold">{group.name}</span>
-                  </div>
-                  <div className="col-span-9"></div>
-                </div>
-
-                {/* 하위 항목: 데이터명 및 작성일시 */}
-                {expandedGroups[group.id] && group.items.map(item => (
-                  <div
-                    key={item.id}
-                    className={`grid grid-cols-12 items-center cursor-pointer py-1 ${selectedId === item.id ? 'bg-blue-100' : 'hover:bg-gray-200'}`}
-                    onClick={() => setSelectedId(item.id)}
-                  >
-                    <div className="col-span-3"></div>
-                    <div className="col-span-6 flex items-center pl-4">
-                      {/* 커스텀 라디오 버튼 */}
-                      <div className="w-4 h-4 rounded-full border-2 border-gray-400 flex items-center justify-center mr-3 flex-shrink-0 bg-white">
-                        {selectedId === item.id && <div className="w-2 h-2 bg-gray-700 rounded-full" />}
-                      </div>
-                      <span className="text-sm">{item.name}</span>
-                    </div>
-                    <div className="col-span-3 text-sm text-gray-600">{item.createdAt}</div>
-                  </div>
-                ))}
-              </div>
-            ))}
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th className="col-group">データ種別</th>
+                  <th className="col-name">データ</th>
+                  <th className="col-date">作成日時
+                    <svg className="w-3 h-3 inline-block ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {allItems.map((item, index) => {
+                  const previousGroupName = index > 0 ? allItems[index - 1].groupName : null;
+                  const displayGroupName = previousGroupName === item.groupName ? '' : item.groupName;
+                  const isSelected = selectedId === item.id;
+                  return (
+                    <tr
+                      key={item.id}
+                      className={`${isSelected ? 'selected-row' : ''}`}
+                      onClick={() => setSelectedId(item.id)}
+                    >
+                      <td className="col-group">{displayGroupName}</td>
+                      <td className="col-name">
+                        <div className="radio-wrap">
+                          <div className="w-4 h-4 rounded-full border-2 border-gray-400 flex items-center justify-center flex-shrink-0 bg-white">
+                            {isSelected && <div className="w-2.5 h-2.5 bg-blue-600 rounded-full" />}
+                          </div>
+                          <span className="text-sm text-gray-700 truncate">{item.name}</span>
+                        </div>
+                      </td>
+                      <td className="col-date text-sm text-gray-600">{item.createdAt}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -141,7 +152,12 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({ onClose,
         <div className={`${modalStyles.footer.container} justify-end`}>
           <div className={modalStyles.footer.buttonGroup}>
             <AppButton onClick={handleConfirm} className="w-24" disabled={!selectedId} isActive={!!selectedId}>OK</AppButton>
-            <AppButton onClick={onClose} className="w-24">Cancel</AppButton>
+            <button 
+              onClick={onClose} 
+              className="h-[30px] px-4 flex items-center justify-center transition-colors duration-200 text-xs font-medium rounded-md border border-gray-400 bg-white text-gray-700 hover:bg-gray-50 w-24"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       </div>

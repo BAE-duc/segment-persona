@@ -288,7 +288,7 @@ export const ProductPersonaListPage: React.FC = () => {
                             <div className="pl-4 my-1 text-xs text-gray-600">
                                 {customFilterConditions.length > 0 ? (
                                     customFilterConditions.map((c, index) => (
-                                        <div key={c.id}>{`${c.itemName} ${c.symbol} ${c.categoryName} ${index < customFilterConditions.length - 1 ? c.connector : ''}`.trim()}</div>
+                                        <div key={c.id}>{`${c.bracketOpen === '（' ? c.bracketOpen : ''}${c.itemName} ${c.symbol} ${c.categoryName}${c.bracketClose === '）' ? c.bracketClose : ''} ${index < customFilterConditions.length - 1 ? c.connector : ''}`.trim()}</div>
                                     ))
                                 ) : (
                                     <span className="text-gray-400 italic">条件なし</span>

@@ -50,10 +50,18 @@ const testCodeConditions = [
   { no: 2, name: 'TEST CODE2', lower: '', upper: '' },
 ];
 
-const itemListData = {
+export const itemListData = {
   surveyData: {
     name: '調査データ',
     children: [
+      {
+        id: 'test',
+        name: 'TEST',
+        children: [
+          { id: 'sex', name: 'sex' },
+          { id: 'age', name: 'age' },
+        ],
+      },
       {
         id: 'currentCar',
         name: '現保有車特性',
@@ -64,21 +72,192 @@ const itemListData = {
           { id: 'carCodeToyota', name: '[C] ABAA0 現) 車名コード (Toyota)' },
           { id: 'carCodeNCBS2013', name: '[C] ABBA013 現) 車名コード (NCBS) (2013-)' },
           { id: 'carCodeNCBS2010', name: '[C] ABBA010 現) 車名コード (NCBS) (2010-2012)' },
+          { id: 'ABC', name: '[S] ABC 現 メーク' },
+          { id: 'ACA', name: '[S] ACA 現 NCBSボディタイプ' },
+          { id: 'AD', name: '[S] AD 現 NCBSカテゴリー' },
+          { id: 'AEAA0', name: '[C] AEAA0 グレードコード' },
+          { id: 'AF', name: '[S] AF 現 排気量' },
+          { id: 'AF0', name: '[R] AF0 現 排気量(生数字)' },
+          { id: 'AFA', name: '[S] AFA 現 エンジン最高出力(kW) (2013-)' },
+          { id: 'AFA0', name: '[R] AFA0 現 エンジン最高出力(kW)(生数字) (2013-)' },
+          { id: 'AFB', name: '[S] AFB 現 エンジン最高出力(BHP) (2013-)' },
+          { id: 'AFB0', name: '[R] AFB0 現 エンジン最高出力(BHP)(生数字) (2013-)' },
+          { id: 'AGA', name: '[S] AGA 現 ミッション' },
+          { id: 'AGB', name: '[S] AGB 現 駆動方式' },
+          { id: 'AH', name: '[S] AH 現 エンジンタイプ' },
+          { id: 'AI', name: '[M] AI 現 装備 (－2015)' },
+          { id: 'AJ', name: '[S] AJ 現 ハンドル位置' },
+          { id: 'AK', name: '[S] AK 現 ハンドル位置重要性' },
+          { id: 'AL', name: '[S] AL 現 ハンドル位置仮説' },
+          { id: 'AMA0', name: '[S] AMA0 登録年' },
+          { id: 'AMB0', name: '[S] AMB0 登録月' },
+          { id: 'AN', name: '[S] AN 納車後週数(分類)' },
+          { id: 'AN0', name: '[R] AN0 納車後週数(生数字)' },
+          { id: 'AP', name: '[S] AP 注文から納車までの週数(分類)' },
+          { id: 'AP0', name: '[R] AP0 注文から納車までの週数(生数字)' },
+          { id: 'AQ', name: '[S] AQ 登録府県コード' },
+          { id: 'ARA', name: '[M] ARA 前保有車メーカー非購入理由' },
+          { id: 'ARB', name: '[M] ARB 前保有車メーカー非購入理由(中分類)' },
+          { id: 'AHA', name: '[S] AHA 現 乗車定員(2010)' },
+          { id: 'AHB', name: '[R] AHB 現 乗車定員(生数字)(2010)' },
+          { id: 'ABD10', name: '[S] ABD10 現 モデル(2010)' },
+          { id: 'ABE10', name: '[S] ABE10 現 モデルファミリー(2010)' },
+          { id: 'ABD11', name: '[S] ABD11 現 モデル(2011)' },
+          { id: 'ABE11', name: '[S] ABE11 現 モデルファミリー(2011)' },
+          { id: 'ABD12', name: '[S] ABD12 現 モデル(2012)' },
+          { id: 'ABE12', name: '[S] ABE12 現 モデルファミリー(2012)' },
+          { id: 'ABD13', name: '[S] ABD13 現 モデル(2013)' },
+          { id: 'ABE13', name: '[S] ABE13 現 モデルファミリー(2013)' },
+          { id: 'ABD14', name: '[S] ABD14 現 モデル(2014)' },
+          { id: 'ABE14', name: '[S] ABE14 現 モデルファミリー(2014)' },
+          { id: 'ABD15', name: '[S] ABD15 現 モデル(2015)' },
+          { id: 'ABE15', name: '[S] ABE15 現 モデルファミリー(2015)' },
+          { id: 'ABD16', name: '[S] ABD16 現 モデル(2016)' },
+          { id: 'ABE16', name: '[S] ABE16 現 モデルファミリー(2016)' },
+          { id: 'ABD17', name: '[S] ABD17 現 モデル(2017)' },
+          { id: 'ABE17', name: '[S] ABE17 現 モデルファミリー(2017)' },
+          { id: 'ABD18', name: '[S] ABD18 現 モデル(2018)' },
+          { id: 'ABE18', name: '[S] ABE18 現 モデルファミリー(2018)' },
+          { id: 'ABD19', name: '[S] ABD19 現 モデル(2019)' },
+          { id: 'ABE19', name: '[S] ABE19 現 モデルファミリー(2019)' },
+          { id: 'A2M', name: '[S] A2M 現 座席数(2020－)' },
+          { id: 'A2M0', name: '[R] A2M0 現 座席数(生数字)(2020－)' },
+          { id: 'A3EV', name: '[S] A3EV [EV]現 バッテリー容量(2020－)' },
+          { id: 'A3EV0', name: '[R] A3EV0 [EV]現 バッテリー容量(生数字)(2020－)' },
+          { id: 'ABD20', name: '[S] ABD20 現 モデル(2020)' },
+          { id: 'ABE20', name: '[S] ABE20 現 モデルファミリー(2020)' },
+          { id: 'ABD21', name: '[S] ABD21 現 モデル(2021)' },
+          { id: 'ABE21', name: '[S] ABE21 現 モデルファミリー(2021)' },
+          { id: 'ABD23', name: '[S] ABD23 現 モデル(2023)' },
+          { id: 'ABE23', name: '[S] ABE23 現 モデルファミリー(2023)' },
+          { id: 'model_ym', name: '[C] model_ym 現 モデル年月' },
         ],
       },
-    ],
-  },
-  user: {
-    name: 'ユーザ',
-    children: [
-      { id: 'gender', name: '性別' },
-      { id: 'age', name: '年齢' },
-      { id: 'unmarried', name: '未既婚' },
-      { id: 'income', name: '年収' },
-      { id: 'job', name: '職業' },
-      { id: 'residence_type', name: '居住地域タイプ' },
-      { id: 'household_size', name: '同居家族人数_Scrolling test_123456789_あいうえお_カキクケコ_abcdefghijklmnopqrstuvwxyz' },
-      ...testItems
+      {
+        id: 'previousCar',
+        name: '前保有車特性',
+        children: [
+          {
+            id: 'BCAA0',
+            name: '[C] BCAA0 前) 車名コード(Toyota)',
+            children: [
+              { id: 'NAME', name: 'NAME 通称名称' },
+              { id: 'CL_NAME', name: 'CL_NAME 単位車名名称' },
+              { id: 'T_CAT_CL2', name: 'T_CAT_CL2 登録日報カテゴリークラス(2020/02～)' },
+              {
+                id: 'CAT',
+                name: 'CAT カテゴリ',
+                children: [
+                  { id: 'CAT_NAME', name: 'NAME 名称' },
+                  {
+                    id: 'LCL',
+                    name: 'LCL 大分類',
+                    children: [
+                      { id: 'LCL_NAME', name: 'NAME 名称' },
+                      { id: 'K_CAT_CL2', name: 'K_CAT_CL2' },
+                      { id: 'S_CAT_CL', name: 'S_CAT_CL' },
+                      { id: 'T_CAT_CL', name: 'T_CAT_CL' },
+                      { id: 'K_CAT_CL', name: 'K_CAT_CL' },
+                      { id: 'BCBA013', name: '[C] BCBA013' },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'purchaseSituation',
+        name: '購入時状況',
+        children: [
+          { id: 'purchaseSituation_testNode', name: 'Test Node' },
+        ],
+      },
+      {
+        id: 'comparison2004',
+        name: '比較検討状況(2004－)',
+        children: [
+          { id: 'comparison2004_testNode', name: 'Test Node' },
+        ],
+      },
+      {
+        id: 'purchaseFocus',
+        name: '購入時重点視点',
+        children: [
+          { id: 'purchaseFocus_testNode', name: 'Test Node' },
+        ],
+      },
+      {
+        id: 'purpose2010',
+        name: '用途(2010－)',
+        children: [
+          { id: 'purpose2010_testNode', name: 'Test Node' },
+        ],
+      },
+      {
+        id: 'usage',
+        name: '使用状況',
+        children: [
+          { id: 'usage_testNode', name: 'Test Node' },
+        ],
+      },
+      {
+        id: 'concurrentOwnership',
+        name: '併有状況',
+        children: [
+          { id: 'concurrentOwnership_testNode', name: 'Test Node' },
+        ],
+      },
+      {
+        id: 'satisfaction',
+        name: '満足度',
+        children: [
+          { id: 'satisfaction_testNode', name: 'Test Node' },
+        ],
+      },
+      {
+        id: 'dealerSatisfaction2004',
+        name: 'ディーラー満足度(2004－)',
+        children: [
+          { id: 'dealerSatisfaction2004_testNode', name: 'Test Node' },
+        ],
+      },
+      {
+        id: 'brandAwareness',
+        name: 'ブランド認知度',
+        children: [
+          { id: 'brandAwareness_testNode', name: 'Test Node' },
+        ],
+      },
+      {
+        id: 'carView',
+        name: '車観',
+        children: [
+          { id: 'carView_testNode', name: 'Test Node' },
+        ],
+      },
+      {
+        id: 'userCharacteristics',
+        name: 'ユーザー特性',
+        children: [
+          { id: 'userCharacteristics_testNode', name: 'Test Node' },
+        ],
+      },
+      {
+        id: 'surveyInfo',
+        name: '調査情報',
+        children: [
+          { id: 'surveyInfo_testNode', name: 'Test Node' },
+        ],
+      },
+      {
+        id: 'others',
+        name: 'その他',
+        children: [
+          { id: 'others_testNode', name: 'Test Node' },
+        ],
+      },
     ],
   },
 };
@@ -93,25 +272,106 @@ const conditionData: Record<string, { no: number; name: string; lower: string; u
   carCodeToyota: testCodeConditions,
   carCodeNCBS2013: testCodeConditions,
   carCodeNCBS2010: testCodeConditions,
-  gender: [
-    { no: 1, name: '男性', lower: '', upper: '' },
-    { no: 2, name: '女性', lower: '', upper: '' },
-    { no: 3, name: 'その他', lower: '', upper: '' },
+  // 現保有車特性の新規項目
+  ABC: testCodeConditions,
+  ACA: testCodeConditions,
+  AD: testCodeConditions,
+  AEAA0: testCodeConditions,
+  AF: testCodeConditions,
+  AF0: testCodeConditions,
+  AFA: testCodeConditions,
+  AFA0: testCodeConditions,
+  AFB: testCodeConditions,
+  AFB0: testCodeConditions,
+  AGA: testCodeConditions,
+  AGB: testCodeConditions,
+  AH: testCodeConditions,
+  AI: testCodeConditions,
+  AJ: testCodeConditions,
+  AK: testCodeConditions,
+  AL: testCodeConditions,
+  AMA0: testCodeConditions,
+  AMB0: testCodeConditions,
+  AN: testCodeConditions,
+  AN0: testCodeConditions,
+  AP: testCodeConditions,
+  AP0: testCodeConditions,
+  AQ: testCodeConditions,
+  ARA: testCodeConditions,
+  ARB: testCodeConditions,
+  AHA: testCodeConditions,
+  AHB: testCodeConditions,
+  ABD10: testCodeConditions,
+  ABE10: testCodeConditions,
+  ABD11: testCodeConditions,
+  ABE11: testCodeConditions,
+  ABD12: testCodeConditions,
+  ABE12: testCodeConditions,
+  ABD13: testCodeConditions,
+  ABE13: testCodeConditions,
+  ABD14: testCodeConditions,
+  ABE14: testCodeConditions,
+  ABD15: testCodeConditions,
+  ABE15: testCodeConditions,
+  ABD16: testCodeConditions,
+  ABE16: testCodeConditions,
+  ABD17: testCodeConditions,
+  ABE17: testCodeConditions,
+  ABD18: testCodeConditions,
+  ABE18: testCodeConditions,
+  ABD19: testCodeConditions,
+  ABE19: testCodeConditions,
+  A2M: testCodeConditions,
+  A2M0: testCodeConditions,
+  A3EV: testCodeConditions,
+  A3EV0: testCodeConditions,
+  ABD20: testCodeConditions,
+  ABE20: testCodeConditions,
+  ABD21: testCodeConditions,
+  ABE21: testCodeConditions,
+  ABD23: testCodeConditions,
+  ABE23: testCodeConditions,
+  model_ym: testCodeConditions,
+  // 前保有車特性 - BCAA0の深い階層
+  BCAA0: [
+    { no: 1, name: 'BCAA0 CODE1', lower: '', upper: '' },
+    { no: 2, name: 'BCAA0 CODE2', lower: '', upper: '' },
+  ],
+  NAME: testCodeConditions,
+  CL_NAME: testCodeConditions,
+  T_CAT_CL2: testCodeConditions,
+  CAT: testCodeConditions,
+  CAT_NAME: testCodeConditions,
+  LCL: testCodeConditions,
+  LCL_NAME: testCodeConditions,
+  K_CAT_CL2: testCodeConditions,
+  S_CAT_CL: testCodeConditions,
+  T_CAT_CL: testCodeConditions,
+  K_CAT_CL: testCodeConditions,
+  BCBA013: testCodeConditions,
+  // TEST項目
+  sex: [
+    { no: 1, name: 'sex CODE1', lower: '', upper: '' },
+    { no: 2, name: 'sex CODE2', lower: '', upper: '' },
   ],
   age: [
-    { no: 1, name: '19歳以下', lower: '', upper: '' },
-    { no: 2, name: '20-24歳', lower: '', upper: '' },
-    { no: 3, 'name': '25-29歳', lower: '', upper: '' },
-    { no: 4, name: '30-34歳', lower: '', upper: '' },
-    { no: 5, name: '35-39歳', lower: '', upper: '' },
-    { no: 6, name: '40代', lower: '', upper: '' },
-    { no: 7, name: '50代', lower: '', upper: '' },
-    { no: 8, name: '60代', lower: '', upper: '' },
-    { no: 9, name: '70-74歳', lower: '', upper: '' },
-    { no: 10, name: '75-79歳', lower: '', upper: '' },
-    { no: 11, name: '80歳以上', lower: '', upper: '' },
-    { no: 12, name: 'その他', lower: '', upper: '' },
+    { no: 1, name: 'age CODE1', lower: '', upper: '' },
+    { no: 2, name: 'age CODE2', lower: '', upper: '' },
   ],
+  // 2レベル項目の Test Node
+  purchaseSituation_testNode: testCodeConditions,
+  comparison2004_testNode: testCodeConditions,
+  purchaseFocus_testNode: testCodeConditions,
+  purpose2010_testNode: testCodeConditions,
+  usage_testNode: testCodeConditions,
+  concurrentOwnership_testNode: testCodeConditions,
+  satisfaction_testNode: testCodeConditions,
+  dealerSatisfaction2004_testNode: testCodeConditions,
+  brandAwareness_testNode: testCodeConditions,
+  carView_testNode: testCodeConditions,
+  userCharacteristics_testNode: testCodeConditions,
+  surveyInfo_testNode: testCodeConditions,
+  others_testNode: testCodeConditions,
 };
 
 // 条件一覧テーブルの行データを定義するためのインターフェース。
@@ -144,24 +404,48 @@ const TreeCaret = ({ expanded }: { expanded: boolean }) => (
 );
 
 // 指定されたIDを持つアイテムをツリーデータ構造から検索するヘルパー関数。
-// 指定されたIDを持つアイテムをツリーデータ構造から検索するヘルパー関数。
 // Helper function to find an item with a given ID from the tree data structure.
+const findNodeById = (node: any, targetId: string): { id: string, name: string } | null => {
+  if (node.id === targetId) {
+    return { id: node.id, name: node.name };
+  }
+  if (node.children) {
+    for (const child of node.children) {
+      const result = findNodeById(child, targetId);
+      if (result) return result;
+    }
+  }
+  return null;
+};
+
 const findItemInTree = (data: typeof itemListData, itemId: string | null): { id: string, name: string } | null => {
   if (!itemId) return null;
   for (const key in data) {
     const topLevelItem = data[key as keyof typeof itemListData];
     for (const child of topLevelItem.children) {
-      if (child.id === itemId) return child;
-      // FIX: Use 'in' operator for type-safe property checking to resolve TS error.
-      // FIX: TSエラーを解決するために、'in'演算子を使用してタイプセーフなプロパティチェックを行います。
-      if ('children' in child && child.children) {
-        for (const grandchild of child.children) {
-          if (grandchild.id === itemId) return grandchild;
-        }
-      }
+      const result = findNodeById(child, itemId);
+      if (result) return result;
     }
   }
   return null;
+};
+
+// TEST 치환 함수: 'TEST CODE{n}'을 'itemNameFirst5_CODE{n}' 형태로 치환
+const formatConditionName = (condName: string, itemName?: string) => {
+  if (!condName) return condName;
+  if (!itemName) return condName;
+  const m = condName.match(/TEST\s*CODE(\d+)/i);
+  if (m) {
+    const codeNum = m[1];
+    const prefix = itemName.slice(0, 5);
+    return `${prefix}_CODE${codeNum}`;
+  }
+  // 일반적인 'TEST' 치환(보수)
+  if (/TEST/i.test(condName)) {
+    const prefix = itemName.slice(0, 5);
+    return condName.replace(/TEST/i, prefix);
+  }
+  return condName;
 };
 
 
@@ -183,6 +467,48 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
   const [selectedConditionIndex, setSelectedConditionIndex] = useState<number | null>(null);
   const [conditionList, setConditionList] = useState<ConditionListItem[]>(initialConditions);
   const [selectedConditionListIndex, setSelectedConditionListIndex] = useState<number | null>(null);
+
+  // 재귀적 트리 렌더링 함수
+  const renderTreeNode = (node: any, depth: number = 0): React.ReactNode => {
+    const hasChildren = node.children && node.children.length > 0;
+    const isExpanded = !!expandedState[node.id];
+    
+    // 3레벨 이상(depth >= 2)만 클릭시 조건 표시
+    const shouldShowConditions = depth >= 2;
+
+    return (
+      <div key={node.id}>
+        <div
+          className={`flex items-center cursor-pointer p-1 rounded-sm ${
+            shouldShowConditions ? modalStyles.interactive.listItem(selectedItem === node.id) : ''
+          }`}
+          onClick={() => {
+            if (hasChildren) {
+              setExpandedState(prev => ({ ...prev, [node.id]: !prev[node.id] }));
+            }
+            if (shouldShowConditions) {
+              setSelectedItem(node.id);
+              setSelectedConditionIndex(null);
+            } else {
+              // 최상위나 2번째 레벨 클릭시 조건 표시 지우기
+              setSelectedItem(null);
+              setSelectedConditionIndex(null);
+            }
+          }}
+          title={node.name}
+        >
+          {hasChildren && <TreeCaret expanded={isExpanded} />}
+          {!hasChildren && <div className="w-4 mr-1"></div>}
+          <span className={hasChildren ? "font-semibold" : ""}>{node.name}</span>
+        </div>
+        {hasChildren && isExpanded && (
+          <div className="pl-4">
+            {node.children.map((child: any) => renderTreeNode(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const currentConditions = selectedItem ? conditionData[selectedItem] || [] : null;
 
@@ -212,7 +538,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
       itemName: childItem.name,
       symbol: '=',
       categoryNo: conditionItem.no,
-      categoryName: conditionItem.name,
+      categoryName: formatConditionName(conditionItem.name, childItem.name),
       bracketClose: ')',
       connector: '',
     };
@@ -226,6 +552,22 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
     });
 
     setSelectedConditionIndex(null);
+  };
+
+  const handleAddRow = () => {
+    const newRow: ConditionListItem = {
+      id: `cond-${Date.now()}`,
+      bracketOpen: '',
+      itemId: '',
+      itemName: '',
+      symbol: '',
+      categoryNo: 0,
+      categoryName: '',
+      bracketClose: '',
+      connector: '',
+    };
+    setConditionList(prev => [...prev, newRow]);
+    setSelectedConditionListIndex(conditionList.length);
   };
 
   const handleDeleteRow = () => {
@@ -314,51 +656,19 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
                       <div key={key}>
                         <div
                           className="flex items-center cursor-pointer p-1 rounded-sm"
-                          onClick={() => setExpandedState(prev => ({ ...prev, [key]: !prev[key] }))}
+                          onClick={() => {
+                            setExpandedState(prev => ({ ...prev, [key]: !prev[key] }));
+                            // 최상위 노드 클릭시 조건 클리어
+                            setSelectedItem(null);
+                            setSelectedConditionIndex(null);
+                          }}
                         >
                           <TreeCaret expanded={!!expandedState[key]} />
                           <span className="font-semibold">{topLevelItem.name}</span>
                         </div>
                         {expandedState[key] && (
                           <div className="pl-4">
-                            {topLevelItem.children.map(child => (
-                              <div key={child.id}>
-                                {'children' in child && child.children && child.children.length > 0 ? (
-                                  <>
-                                    <div
-                                      className="flex items-center cursor-pointer p-1 rounded-sm"
-                                      onClick={() => setExpandedState(prev => ({ ...prev, [child.id]: !prev[child.id] }))}
-                                    >
-                                      <TreeCaret expanded={!!expandedState[child.id]} />
-                                      <span className="font-semibold">{child.name}</span>
-                                    </div>
-                                    {expandedState[child.id] && (
-                                      <div className="pl-4">
-                                        {child.children.map(grandchild => (
-                                          <div
-                                            key={grandchild.id}
-                                            className={`cursor-pointer p-1 rounded-sm whitespace-nowrap ${modalStyles.interactive.listItem(selectedItem === grandchild.id)}`}
-                                            onClick={() => { setSelectedItem(grandchild.id); setSelectedConditionIndex(null); }}
-                                            title={grandchild.name}
-                                          >
-                                            {grandchild.name}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </>
-                                ) : (
-                                  <div
-                                    key={child.id}
-                                    className={`cursor-pointer p-1 rounded-sm whitespace-nowrap ${modalStyles.interactive.listItem(selectedItem === child.id)}`}
-                                    onClick={() => { setSelectedItem(child.id); setSelectedConditionIndex(null); }}
-                                    title={child.name}
-                                  >
-                                    {child.name}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
+                            {topLevelItem.children.map(child => renderTreeNode(child, 1))}
                           </div>
                         )}
                       </div>
@@ -402,7 +712,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
                             onClick={() => setSelectedConditionIndex(index)}
                           >
                             <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">{item.no}</td>
-                            <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{item.name}</td>
+                            <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{formatConditionName(item.name, selectedItemName)}</td>
                             <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{item.lower}</td>
                             <td className="p-1 border-b border-gray-200 pl-2 whitespace-nowrap">{item.upper}</td>
                           </tr>
@@ -420,13 +730,13 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
 
             {/* 下段：条件一覧 */}
             <div className="flex-1 grid grid-cols-8 gap-4 min-h-0 overflow-hidden">
-              <div className="col-span-1 flex flex-col items-center justify-start pt-6 space-y-2">
+              <div className="col-span-1 flex flex-col items-center justify-start pt-6 space-y-1">
                 <span className="font-semibold text-xs text-[#586365] mb-1 invisible">Controls</span>
                 {!hideRowControls && (
                   <>
                     <AppButton onClick={handleMoveUp} disabled={selectedConditionListIndex === null || selectedConditionListIndex === 0} className="w-12 h-[30px] flex items-center justify-center p-0 text-sm">↑</AppButton>
                     <AppButton onClick={handleMoveDown} disabled={selectedConditionListIndex === null || selectedConditionListIndex >= conditionList.length - 1} className="w-12 h-[30px] flex items-center justify-center p-0 text-sm">↓</AppButton>
-                    <div className="pt-4"></div>
+                    <AppButton onClick={handleAddRow} className="w-20 py-1">行追加</AppButton>
                   </>
                 )}
                 <AppButton onClick={handleDeleteRow} disabled={selectedConditionListIndex === null} className="py-1 w-20">行削除</AppButton>
@@ -457,15 +767,68 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
                             className={`cursor-pointer font-medium ${modalStyles.interactive.tableRow(selectedConditionListIndex === index)}`}
                             onClick={() => setSelectedConditionListIndex(index)}
                           >
-                            <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">{item.bracketOpen}</td>
-                            <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{item.itemId}</td>
-                            <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{item.itemName}</td>
-                            <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">{item.symbol}</td>
-                            <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">{item.categoryNo}</td>
-                            <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{item.categoryName}</td>
-                            <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">{item.bracketClose}</td>
                             <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">
-                              {index < conditionList.length - 1 && (() => {
+                              <AppSelect 
+                                value={item.bracketOpen} 
+                                onChange={(e) => {
+                                  setConditionList(prev => {
+                                    const newList = [...prev];
+                                    newList[index].bracketOpen = e.target.value;
+                                    return newList;
+                                  });
+                                }} 
+                                className="h-6 text-xs w-full"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <option value="">　</option>
+                                <option value="（">（</option>
+                              </AppSelect>
+                            </td>
+                            <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{item.itemId}</td>
+                            <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap max-w-[120px] truncate" title={item.itemName}>{item.itemName}</td>
+                            <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">
+                              <AppSelect 
+                                value={item.symbol} 
+                                onChange={(e) => {
+                                  setConditionList(prev => {
+                                    const newList = [...prev];
+                                    newList[index].symbol = e.target.value;
+                                    return newList;
+                                  });
+                                }} 
+                                className="h-6 text-xs w-full"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <option value="">　</option>
+                                <option value="=">=</option>
+                                <option value="≠">≠</option>
+                                <option value="＜">＜</option>
+                                <option value="＞">＞</option>
+                                <option value="≦">≦</option>
+                                <option value="≧">≧</option>
+                              </AppSelect>
+                            </td>
+                            <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">{item.categoryNo}</td>
+                            <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap max-w-[150px] truncate" title={formatConditionName(item.categoryName, item.itemName)}>{formatConditionName(item.categoryName, item.itemName)}</td>
+                            <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">
+                              <AppSelect 
+                                value={item.bracketClose} 
+                                onChange={(e) => {
+                                  setConditionList(prev => {
+                                    const newList = [...prev];
+                                    newList[index].bracketClose = e.target.value;
+                                    return newList;
+                                  });
+                                }} 
+                                className="h-6 text-xs w-full"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <option value="">　</option>
+                                <option value="）">）</option>
+                              </AppSelect>
+                            </td>
+                            <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">
+                              {index < conditionList.length - 1 && item.bracketClose !== '）' && (() => {
                                 // 同じアイテム名称の場合はORのみ選択可能
                                 const currentItemName = item.itemName;
                                 const nextItemName = conditionList[index + 1]?.itemName;
@@ -473,13 +836,14 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
                                 
                                 return (
                                   <AppSelect value={item.connector} onChange={(e) => {
-                                    const newConnector = e.target.value as 'AND' | 'OR';
+                                    const newConnector = e.target.value as 'AND' | 'OR' | '';
                                     setConditionList(prev => {
                                       const newList = [...prev];
                                       newList[index].connector = newConnector;
                                       return newList;
                                     });
-                                  }} className="h-6 text-xs w-20">
+                                  }} className="h-6 text-xs w-20" onClick={(e) => e.stopPropagation()}>
+                                    <option value="">　</option>
                                     <option value="AND" disabled={isSameItem}>AND</option>
                                     <option value="OR">OR</option>
                                   </AppSelect>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AppButton } from './shared/FormControls';
 import { modalStyles } from './shared/modalStyles';
 import type { SelectedItemsMap, ConversionSettings } from './SegmentVariableSelectionModal';
+import { itemListData } from './shared/FilterEditModal';
 
 interface ItemSelectionModalProps {
   onClose: () => void;
@@ -21,53 +22,22 @@ export interface ItemDetail {
   itemType: string;
   conversionSetting: string;
   somDataType: string;
+  originalSomDataType?: string; // 最初のデータ型を保持
   variance: number | string;
   validResponseRate: number;
   conversionDetails?: ConversionSettings;
 }
 
-
-const CustomCheckbox = ({
-  checked,
-  onChange,
-  disabled = false,
-}: {
-  checked: boolean;
-  onChange: () => void;
-  disabled?: boolean;
-}) => (
-  <div className="flex items-center justify-center">
-    <label className={`relative flex items-center justify-center w-4 h-4 ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        disabled={disabled}
-        className="sr-only peer"
-      />
-      <div
-        className={`w-4 h-4 border border-gray-400 rounded-sm flex items-center justify-center transition-colors 
-                  peer-disabled:bg-gray-200 peer-disabled:cursor-not-allowed
-                  bg-white`}
-      >
-        {checked && (
-          <svg
-            className="w-3 h-3 text-black"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="3"
-              d="M5 13l4 4L19 7"
-            ></path>
-          </svg>
-        )}
-      </div>
-    </label>
+// ツリービューの展開/折りたたみを視覚的に示すアイコン。
+const TreeCaret = ({ expanded }: { expanded: boolean }) => (
+  <div className="w-4 h-4 text-[#586365] flex items-center justify-center mr-1">
+    <svg
+      className={`w-3 h-3 transition-transform duration-200 ${expanded ? 'rotate-90' : 'rotate-0'}`}
+      viewBox="0 0 20 20"
+      fill="currentColor"
+    >
+      <path d="M8 6l6 4-6 4V6z" />
+    </svg>
   </div>
 );
 
@@ -84,14 +54,54 @@ export const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({ onClose,
 
   const [standardize, setStandardize] = useState(true);
 
+  // ツリービューの展開状態を管理します。
+  const [expandedState, setExpandedState] = useState<Record<string, boolean>>({});
+
   // ポップアップが開かれるたびに、渡された初期選択状態を同期します。
   // ポップアップが開かれるたびに、渡された初期選択状態を同期します。
   useEffect(() => {
     setAdoptedItems(new Set(Object.keys(initialSelectedItems)));
   }, [initialSelectedItems]);
 
+  // 再귀적 트리 렌더링 함수
+  const renderTreeNode = (node: any, depth: number = 0): React.ReactNode => {
+    const hasChildren = node.children && node.children.length > 0;
+    const isExpanded = !!expandedState[node.id];
+    const isAdopted = adoptedItems.has(node.id);
+    
+    // item 정보 가져오기
+    const itemInfo = items.find(item => item.id === node.id);
+    const somDataType = itemInfo?.somDataType;
 
-  const handleAdoptToggle = (itemId: string) => {
+    return (
+      <div key={node.id}>
+        <div
+          className={`flex items-center cursor-pointer p-1 rounded-sm ${
+            !hasChildren ? modalStyles.interactive.listItem(isAdopted) : ''
+          }`}
+          onClick={() => {
+            if (hasChildren) {
+              setExpandedState(prev => ({ ...prev, [node.id]: !prev[node.id] }));
+            } else {
+              handleAdoptToggleByNode(node.id);
+            }
+          }}
+          title={node.name}
+        >
+          {hasChildren && <TreeCaret expanded={isExpanded} />}
+          {!hasChildren && <div className="w-4 mr-1"></div>}
+          <span className={hasChildren ? "font-semibold" : ""}>{node.name}</span>
+        </div>
+        {hasChildren && isExpanded && (
+          <div className="pl-4">
+            {node.children.map((child: any) => renderTreeNode(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const handleAdoptToggleByNode = (itemId: string) => {
     setAdoptedItems(prev => {
       const newSet = new Set(prev);
       if (newSet.has(itemId)) {
@@ -135,6 +145,18 @@ export const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({ onClose,
 
   const isConversionDisabled = !selectedRightPanelItemId;
 
+  // 選択値 표시 함수
+  const getSelectionValue = (item: ItemDetail): string => {
+    if (!item.conversionDetails) return '-';
+    
+    if (item.conversionDetails.type === 'categorical' && item.conversionDetails.categories) {
+      return item.conversionDetails.categories.join(', ');
+    } else if (item.conversionDetails.type === 'numerical' && item.conversionDetails.range) {
+      return `${item.conversionDetails.range.min} ~ ${item.conversionDetails.range.max}`;
+    }
+    return '-';
+  };
+
 
   return (
     <div
@@ -167,34 +189,23 @@ export const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({ onClose,
                 ↓
               </button>
             </div>
-            <div className="flex-grow border border-gray-400 bg-white overflow-y-auto text-xs rounded-md">
-              <table className="w-full text-xs">
-                <thead className="sticky top-0 bg-gray-50 z-10">
-                  <tr>
-                    <th className="p-1 font-bold text-center border-b border-r border-gray-300 w-12">採用</th>
-                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">アイテム名称</th>
-                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">データタイプ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map(i => (
-                    <tr
-                      key={i.id}
-                      className="font-medium even:bg-gray-50 hover:bg-gray-200 cursor-pointer"
-                      onClick={() => handleAdoptToggle(i.id)}
-                    >
-                      <td className="p-1 border-b border-r border-gray-200" onClick={(e) => e.stopPropagation()}>
-                        <CustomCheckbox
-                          checked={adoptedItems.has(i.id)}
-                          onChange={() => handleAdoptToggle(i.id)}
-                        />
-                      </td>
-                      <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{i.name}</td>
-                      <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{i.dataType}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="flex-grow border border-gray-400 bg-white overflow-y-auto text-xs rounded-md p-1 select-none">
+              {Object.entries(itemListData).map(([key, topLevelItem]) => (
+                <div key={key}>
+                  <div
+                    className="flex items-center cursor-pointer p-1 rounded-sm"
+                    onClick={() => setExpandedState(prev => ({ ...prev, [key]: !prev[key] }))}
+                  >
+                    <TreeCaret expanded={!!expandedState[key]} />
+                    <span className="font-semibold">{topLevelItem.name}</span>
+                  </div>
+                  {expandedState[key] && (
+                    <div className="pl-4">
+                      {topLevelItem.children.map(child => renderTreeNode(child, 1))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 
@@ -220,7 +231,7 @@ export const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({ onClose,
                       <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">変換設定</th>
                       <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">データ型</th>
                       <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">分散</th>
-                      <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2">有効回答率(%)</th>
+                      <th className="p-1 font-semibold text-left border-b border-gray-300 pl-2">有効回答率(%)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -235,7 +246,7 @@ export const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({ onClose,
                         <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{item.conversionSetting}</td>
                         <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{item.somDataType}</td>
                         <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{item.variance}</td>
-                        <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{item.validResponseRate}</td>
+                        <td className="p-1 border-b border-gray-200 pl-2 whitespace-nowrap">{item.validResponseRate}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -244,9 +255,11 @@ export const ItemSelectionModal: React.FC<ItemSelectionModalProps> = ({ onClose,
             </div>
             <div className="flex gap-4 mt-2">
               <label className="flex items-center gap-2 cursor-pointer">
-                <CustomCheckbox
+                <input
+                  type="checkbox"
                   checked={standardize}
                   onChange={() => setStandardize(prev => !prev)}
+                  className="w-4 h-4"
                 />
                 <span className="text-xs select-none">標準化</span>
               </label>

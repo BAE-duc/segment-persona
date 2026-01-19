@@ -22,10 +22,8 @@ export interface FilterCategory {
 
 // フィルターの初期データを定義します。
 const initialFilterCategories: FilterCategory = {
-  '期間': ['2023年', '2024年', '2025年'],
-  '地域': [],
-  '車': ['PHEV'],
-  '人': ['性別(男性)', '年齢(20代)', '年齢(30代)', '年齢(40代)', '年齢(50代)', '性別(女性)'],
+  '地域': ['日本'],
+  '共通フィルタ': ['PHEV', '性別(男性)', '年齢(20代)'],
 };
 
 // セグメント設定の初期値を定義します。
@@ -143,6 +141,7 @@ headers.forEach((header, colIndex) => {
     itemType,
     conversionSetting: '未設定',
     somDataType,
+    originalSomDataType: somDataType, // 最初のデータ型を保存
     variance,
     validResponseRate
   });
@@ -385,13 +384,16 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
     if (!editingConversionItem) return;
 
     const { id: itemId } = editingConversionItem;
+    
+    // 変換設定のタイプに基づいてsomDataTypeを決定
+    const newSomDataType = settings.type === 'numerical' ? '数値型' : 'カテゴリ型';
 
     // マスターアイテムリストを更新します。設定完了ステータスにします。
     // Update the master item list. Set status to Configured.
     setItemDetails(prevDetails =>
       prevDetails.map(item =>
         item.id === itemId
-          ? { ...item, conversionSetting: '設定完了', conversionDetails: settings }
+          ? { ...item, conversionSetting: '設定完了', conversionDetails: settings, somDataType: newSomDataType }
           : item
       )
     );
@@ -405,7 +407,8 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
           [itemId]: {
             ...prevItems[itemId],
             conversionSetting: '設定完了',
-            conversionDetails: settings
+            conversionDetails: settings,
+            somDataType: newSomDataType
           }
         };
       }
@@ -637,14 +640,14 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
     let customFilterStr = '';
     if (targetCustomFilterConditions.length > 0) {
       customFilterStr = targetCustomFilterConditions.map((c, index) =>
-        `${c.bracketOpen}${c.itemName} ${c.symbol} ${c.categoryName}${c.bracketClose}${index < targetCustomFilterConditions.length - 1 ? (c.connector ? ' ' + c.connector : '') : ''}`
+        `${c.bracketOpen === '（' ? c.bracketOpen : ''}${c.itemName} ${c.symbol} ${c.categoryName}${c.bracketClose === '）' ? c.bracketClose : ''}${index < targetCustomFilterConditions.length - 1 ? (c.connector ? ' ' + c.connector : '') : ''}`
       ).join(' ');
     }
 
     // 2. サイドバーのフィルターカテゴリー (期間, 地域, 車, 人)
-    // 2. サイドバーのフィルターカテゴリー (期間, 地域, 車, 人)
+    // 2. サイドバーのフィルターカテゴリー (地域, 共通フィルタ)
     const categoryParts: string[] = [];
-    const targetCategories = ['期間', '地域', '車', '人'];
+    const targetCategories = ['地域', '共通フィルタ'];
 
     targetCategories.forEach(catKey => {
       const items = targetFilterCategories[catKey];
@@ -825,6 +828,7 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
         <ConversionSettingsModal
           itemId={editingConversionItem.id}
           initialSomDataType={editingConversionItem.somDataType}
+          originalSomDataType={editingItemDetails?.originalSomDataType}
           initialSettings={editingItemDetails?.conversionDetails}
           onClose={() => setIsConversionSettingsModalOpen(false)}
           onConfirm={handleConfirmConversionSettings}

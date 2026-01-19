@@ -12,6 +12,7 @@ interface ConversionSettingsModalProps {
     onConfirm: (settings: ConversionSettings) => void;
     itemId: string;
     initialSomDataType: string;
+    originalSomDataType?: string; // 最初のデータ型
     onShowWarningModal: (message: string) => void;
     initialSettings?: ConversionSettings;
     categoryData?: CategoryItem[];
@@ -62,6 +63,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
     onConfirm,
     itemId,
     initialSomDataType,
+    originalSomDataType,
     onShowWarningModal,
     initialSettings,
     categoryData,
@@ -69,7 +71,10 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
     numericData,
     naCount
 }) => {
-    const [somDataType, setSomDataType] = useState(initialSomDataType);
+    // initialSomDataType이 '数値型'이 아니거나 undefined일 경우 '数値型'로 초기화
+    const [somDataType, setSomDataType] = useState(
+        itemId === 'age' && !initialSomDataType ? '数値型' : initialSomDataType
+    );
 
     // カテゴリ型ビューの状態
     // カテゴリ型ビューの状態
@@ -102,6 +107,31 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
     // コンテナのサイズを管理するstate
 
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+    // somDataType変更時にヒストグラムをクリアし、数値型に戻る場合は範囲を初期化
+    useEffect(() => {
+        if (histogramRef.current) {
+            const svg = d3.select(histogramRef.current);
+            svg.selectAll("*").remove();
+        }
+        
+        // カテゴリ型から数値型に変更された場合、範囲を初期化
+        if (somDataType === '数値型' && rangeConfig) {
+            setMinRange(String(rangeConfig.min));
+            setMaxRange(String(rangeConfig.max));
+            
+            // dimensionsを強制的に再計算させるために一時的に0に設定
+            setDimensions({ width: 0, height: 0 });
+            
+            // 次のレンダリングサイクルで寸法を再取得
+            setTimeout(() => {
+                if (histogramRef.current?.parentElement) {
+                    const { width, height } = histogramRef.current.parentElement.getBoundingClientRect();
+                    setDimensions({ width, height });
+                }
+            }, 0);
+        }
+    }, [somDataType, rangeConfig]);
 
     // IQR計算関数
     const calculateIQR = useMemo(() => {
@@ -776,14 +806,18 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                 <span className="text-sm font-bold">{itemId}</span>
                 <div className="flex items-center space-x-2">
                     <label className="text-xs font-medium">データ型</label>
-                    <AppSelect value={somDataType} onChange={e => setSomDataType(e.target.value)} className="w-32">
-                        <option value="カテゴリ型">カテゴリ型</option>
-                        <option value="数値型">数値型</option>
-                    </AppSelect>
+                    {(originalSomDataType || initialSomDataType) === 'カテゴリ型' ? (
+                        <span className="text-xs font-medium">カテゴリ型</span>
+                    ) : (
+                        <AppSelect value={somDataType} onChange={e => setSomDataType(e.target.value)} className="w-32">
+                            <option value="カテゴリ型">カテゴリ型</option>
+                            <option value="数値型">数値型</option>
+                        </AppSelect>
+                    )}
                 </div>
             </div>
-            <div className="flex-grow flex gap-2 overflow-hidden">
-                <div className="flex-1 flex flex-col">
+            <div className="flex-grow flex gap-2 overflow-hidden min-h-0">
+                <div className="flex-1 flex flex-col min-h-0">
                     <h3 className="font-semibold text-xs mb-1 text-[#586365]">セグメントに使用しないカテゴリ</h3>
                     <div className="flex items-center space-x-1 mb-2">
                         <input type="text" className="flex-grow h-[28px] px-2 text-xs border border-gray-400 bg-white rounded-md outline-none focus:ring-1 focus:ring-gray-400" />
@@ -794,19 +828,19 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                             ↓
                         </button>
                     </div>
-                    <div className="flex-grow border border-gray-400 rounded-md bg-white overflow-hidden flex flex-col">
+                    <div className="flex-1 border border-gray-400 rounded-md bg-white overflow-auto flex flex-col min-h-0">
                         {renderCategoricalTable(leftItems, selectedLeftNos, handleToggleLeftSelection)}
                     </div>
                 </div>
 
-                <div className="flex flex-col justify-center items-center space-y-2 px-2">
+                <div className="flex flex-col justify-center items-center space-y-2 px-2 h-full">
                     <AppButton onClick={moveToRight} disabled={selectedLeftNos.size === 0} className="px-3 py-1 text-xs">{'>'}</AppButton>
                     <AppButton onClick={moveToLeft} disabled={selectedRightNos.size === 0} className="px-3 py-1 text-xs">{'<'}</AppButton>
                     <AppButton onClick={moveAllToRight} disabled={leftItems.length === 0} className="px-3 py-1 text-xs">ALL{'>'}</AppButton>
                     <AppButton onClick={moveAllToLeft} disabled={rightItems.length === 0} className="px-3 py-1 text-xs">{'<'}ALL</AppButton>
                 </div>
 
-                <div className="flex-1 flex flex-col">
+                <div className="flex-1 flex flex-col min-h-0">
                     <RightPanelHeader />
                     <div className="flex items-center space-x-1 mb-2">
                         <input type="text" className="flex-grow h-[28px] px-2 text-xs border border-gray-400 bg-white rounded-md outline-none focus:ring-1 focus:ring-gray-400" />
@@ -817,7 +851,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                             ↓
                         </button>
                     </div>
-                    <div className="flex-grow border border-gray-400 rounded-md bg-white overflow-hidden flex flex-col">
+                    <div className="flex-1 border border-gray-400 rounded-md bg-white overflow-auto flex flex-col min-h-0">
                         {renderCategoricalTable(rightItems, selectedRightNos, handleToggleRightSelection)}
                     </div>
                 </div>
@@ -964,7 +998,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                 </div>
 
                 {/* Body */}
-                <div className={`${modalStyles.body.container} flex flex-col gap-4`}>
+                <div className={`${modalStyles.body.container} flex flex-col gap-4 flex-1 min-h-0`}>
                     {somDataType === 'カテゴリ型' ? renderCategoricalView() : renderNumericalView()}
                 </div>
 

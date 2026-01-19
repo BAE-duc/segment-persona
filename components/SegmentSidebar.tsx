@@ -115,6 +115,18 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
 
   const [weightValue, setWeightValue] = useState('default');
 
+  // サンプルサイズの状態を管理
+  const [sampleSize, setSampleSize] = useState(1000);
+
+  // customFilterConditions가 변경될 때 샘플 사이즈 업데이트
+  useEffect(() => {
+    if (customFilterConditions.length > 0) {
+      setSampleSize(Math.floor(Math.random() * 1000) + 1);
+    } else {
+      setSampleSize(1000);
+    }
+  }, [customFilterConditions]);
+
   // 表示用の値をマッピングします。
   // 表示用の値をマッピングします。
   const decayFunctionMap: Record<string, string> = {
@@ -144,8 +156,7 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
     <aside
       className="w-[290px] pt-2 pb-2 pl-2 pr-1 flex flex-col flex-shrink-0 bg-[#ECECEC]"
     >
-      <div className="flex items-center justify-between gap-2 mb-1 -mt-1">
-        <div className="flex justify-start gap-2">
+      <div className="flex justify-start gap-2 mb-1 -mt-1">
         <button
           className="h-[30px] w-[30px] flex items-center justify-center text-gray-600 hover:bg-gray-300 transition-colors rounded-md"
           aria-label="データベース"
@@ -166,8 +177,6 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
             <circle cx="17.5" cy="18.5" r="1.2" fill="#ffffff" />
           </svg>
         </button>
-        </div>
-        <div className="text-xs text-gray-500 select-none">v1.0.0</div>
       </div>
 
       {/* テキスト表示エリア */}
@@ -300,12 +309,14 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
                       フィルター編集
                     </button>
                     {selectedData && (
-                      <span className="text-xs font-medium text-[#586365]">サンプルサイズ：1000</span>
+                      <span className="text-xs font-medium text-[#586365]">
+                        サンプルサイズ：{sampleSize}
+                      </span>
                     )}
                   </div>
                   <div className="pl-4 my-1 text-xs">
                     {customFilterConditions.map((c, index) => (
-                      <div key={c.id}>{`${c.itemName} ${c.symbol} ${c.categoryName} ${index < customFilterConditions.length - 1 ? c.connector : ''}`.trim()}</div>
+                      <div key={c.id}>{`${c.bracketOpen === '（' ? c.bracketOpen : ''}${c.itemName} ${c.symbol} ${c.categoryName}${c.bracketClose === '）' ? c.bracketClose : ''} ${index < customFilterConditions.length - 1 ? c.connector : ''}`.trim()}</div>
                     ))}
                   </div>
                 </div>
