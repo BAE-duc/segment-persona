@@ -31,15 +31,15 @@ const settingDescriptions: Record<string, { title: string; desc: string; options
     desc: 'SOMの出力マップのグリッドサイズ（幅×高さ）です。グリッド数が多いほどデータを細かく分類できますが、計算コストが増加します。'
   },
   learningRate: {
-    title: 'SOM-学習率',
+    title: '学習率',
     desc: 'SOMにおける重みベクトルを更新する際の強さを決定するパラメータです。値が大きいと学習初期の変動が大きくなり、小さいと収束しやすくなります。'
   },
   iterations: {
-    title: 'SOM-イテレーション数',
+    title: 'イテレーション数',
     desc: 'SOMの学習プロセスを繰り返す回数です。回数が多いほどモデルはデータの特徴をよく学習しますが、計算時間が増加します。'
   },
   distanceMetric: {
-    title: 'SOM-距離関数',
+    title: 'SOMの距離関数',
     desc: 'SOMにおけるベクトル間の類似度を計算する方法です。',
     options: {
       'Euclidean': '最も一般的な直線距離（ユークリッド距離）です。',
@@ -48,11 +48,11 @@ const settingDescriptions: Record<string, { title: string; desc: string; options
     }
   },
   neighborhoodRadius: {
-    title: 'SOM-近傍半径',
+    title: '近傍半径',
     desc: 'SOMにおける勝者ノード（BMU）の周辺のどの範囲のノードまで重みを更新するかを指定します。学習が進むにつれて小さくなるのが一般的です。'
   },
   neighborhoodFunction: {
-    title: 'SOM-近傍関数',
+    title: '近傍関数',
     desc: 'SOMにおける近傍半径内のノードに対する学習の影響度合いを決定する関数です。',
     options: {
       'Gaussian': '中心から離れるにつれて滑らかに影響力が減少するガウス関数です。',
@@ -61,7 +61,7 @@ const settingDescriptions: Record<string, { title: string; desc: string; options
     }
   },
   hierarchicalDistanceFunction: {
-    title: '階層クラスタ-距離関数',
+    title: '階層クラスタリングの距離関数',
     desc: '階層クラスタリングにおけるデータポイント間の距離を計算する方法です。',
     options: {
       'Euclidean': '最も一般的な直線距離（ユークリッド距離）です。',
@@ -70,7 +70,7 @@ const settingDescriptions: Record<string, { title: string; desc: string; options
     }
   },
   hierarchicalLinkageMethod: {
-    title: '階層クラスタ-結合方法',
+    title: '連結基準',
     desc: '階層クラスタリングにおけるクラスタ間の距離を計算し、結合する方法です。',
     options: {
       '最短距離法': 'クラスタ間の最も近い点同士の距離を使用します。',
@@ -223,84 +223,84 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
       }
     }
 
-    // 2. SOM-学習率の検証 (UI順序: 2番目)
+    // 2. 学習率の検証 (UI順序: 2番目)
     const learningRateNum = parseFloat(learningRate);
     if (!isNaN(learningRateNum)) {
       if (learningRateNum <= 0) {
         warnings.push({
-          parameter: 'SOM-学習率',
+          parameter: '学習率',
           value: learningRate,
           reason: '学習率は正の値である必要があります。\n推奨範囲: 0.01-1.0'
         });
       } else if (learningRateNum > 1.0) {
         warnings.push({
-          parameter: 'SOM-学習率',
+          parameter: '学習率',
           value: learningRate,
           reason: '1.0を超える値は学習プロセスが不安定になり、適切な収束が困難になります。\n推奨範囲: 0.01-1.0'
         });
       } else if (learningRateNum < 0.001) {
         warnings.push({
-          parameter: 'SOM-学習率',
+          parameter: '学習率',
           value: learningRate,
           reason: '0.001未満の値は学習速度が極めて遅く、実用的な時間内での収束が期待できません。\n推奨範囲: 0.01-1.0'
         });
       } else if (learningRateNum > 0.5) {
         warnings.push({
-          parameter: 'SOM-学習率',
+          parameter: '学習率',
           value: learningRate,
           reason: '0.5を超える値は学習初期の振動が大きくなる可能性があります。\n推奨範囲: 0.01-0.5'
         });
       } else if (learningRateNum < 0.01) {
         warnings.push({
-          parameter: 'SOM-学習率',
+          parameter: '学習率',
           value: learningRate,
           reason: '0.01未満の値は学習が遅くなり、十分な特徴抽出に時間がかかります。\n推奨範囲: 0.01-0.5'
         });
       }
     }
 
-    // 3. SOM-イテレーション数の検証 (UI順序: 3番目)
+    // 3. イテレーション数の検証 (UI順序: 3番目)
     const iterationsNum = parseInt(iterations, 10);
     if (!isNaN(iterationsNum)) {
       if (iterationsNum <= 0) {
         warnings.push({
-          parameter: 'SOM-イテレーション数',
+          parameter: 'イテレーション数',
           value: iterations,
           reason: 'イテレーション数は正の整数である必要があります。\n推奨範囲: 100-49,999'
         });
       } else if (iterationsNum >= 50000) {
         warnings.push({
-          parameter: 'SOM-イテレーション数',
+          parameter: 'イテレーション数',
           value: iterations,
           reason: '50,000以上の値は計算時間が非常に長くなります。\n推奨範囲: 100-49,999'
         });
       } else if (iterationsNum < 50) {
         warnings.push({
-          parameter: 'SOM-イテレーション数',
+          parameter: 'イテレーション数',
           value: iterations,
           reason: '50未満の値は学習が不十分になる可能性があります。\n推奨範囲: 100-10,000'
         });
       }
     }
 
-    // 4. SOM-近傍半径の検証 (UI順序: 5番目)
+    // 4. 近傍半径の検証 (UI順序: 5番目)
     const radiusNum = parseFloat(neighborhoodRadius);
     if (!isNaN(radiusNum)) {
       if (radiusNum <= 0) {
         warnings.push({
-          parameter: 'SOM-近傍半径',
+          parameter: '近傍半径',
           value: neighborhoodRadius,
           reason: '近傍半径は正の値である必要があります。\n推奨範囲: 0.1-0.9'
         });
       } else if (radiusNum >= 1.0) {
         warnings.push({
-          parameter: 'SOM-近傍半径',
+          parameter: '近傍半径',
           value: neighborhoodRadius,
           reason: '1.0以上の値は過度な平滑化を引き起こし、適切なクラスタリングができません。\n推奨範囲: 0.1-0.9'
         });
       } else if (radiusNum < 0.05) {
         warnings.push({
-          parameter: 'SOM-近傍半径',
+          parameter: '近傍半径',
           value: neighborhoodRadius,
           reason: '0.05未満の値は近傍効果が不十分になります。\n推奨範囲: 0.1-0.9'
         });
@@ -419,15 +419,15 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
             </div>
           </FormRow>
 
-          <FormRow label="SOM-学習率" tooltipKey="learningRate">
+          <FormRow label="学習率" tooltipKey="learningRate">
             <StyledInput type="number" value={learningRate} onChange={(e) => setLearningRate(e.target.value)} />
           </FormRow>
 
-          <FormRow label="SOM-イテレーション数" tooltipKey="iterations">
+          <FormRow label="イテレーション数" tooltipKey="iterations">
             <StyledInput type="number" value={iterations} onChange={(e) => setIterations(e.target.value)} />
           </FormRow>
 
-          <FormRow label="SOM-距離関数" tooltipKey="distanceMetric">
+          <FormRow label="SOMの距離関数" tooltipKey="distanceMetric">
             <AppSelect value={distanceMetric} onChange={(e) => setDistanceMetric(e.target.value)} className="w-40">
               <option>ユークリッド距離</option>
               <option>マンハッタン距離</option>
@@ -435,11 +435,11 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
             </AppSelect>
           </FormRow>
 
-          <FormRow label="SOM-近傍半径" tooltipKey="neighborhoodRadius">
+          <FormRow label="近傍半径" tooltipKey="neighborhoodRadius">
             <StyledInput type="number" value={neighborhoodRadius} onChange={(e) => setNeighborhoodRadius(e.target.value)} />
           </FormRow>
 
-          <FormRow label="SOM-近傍関数" tooltipKey="neighborhoodFunction">
+          <FormRow label="近傍関数" tooltipKey="neighborhoodFunction">
             <AppSelect value={neighborhoodFunction} onChange={(e) => setNeighborhoodFunction(e.target.value)} className="w-40">
               <option>ガウス関数</option>
               <option>バブル関数</option>
@@ -447,7 +447,7 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
             </AppSelect>
           </FormRow>
 
-          <FormRow label="階層クラスタ-距離関数" tooltipKey="hierarchicalDistanceFunction">
+          <FormRow label="階層クラスタリングの距離関数" tooltipKey="hierarchicalDistanceFunction">
             <AppSelect value={hierarchicalDistanceFunction} onChange={(e) => setHierarchicalDistanceFunction(e.target.value)} className="w-40">
               <option>ユークリッド距離</option>
               <option>マンハッタン距離</option>
@@ -455,7 +455,7 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
             </AppSelect>
           </FormRow>
 
-          <FormRow label="階層クラスタ-結合方法" tooltipKey="hierarchicalLinkageMethod">
+          <FormRow label="連結基準" tooltipKey="hierarchicalLinkageMethod">
             <AppSelect value={hierarchicalLinkageMethod} onChange={(e) => setHierarchicalLinkageMethod(e.target.value)} className="w-40">
               <option>最短距離法</option>
               <option>最長距離法</option>

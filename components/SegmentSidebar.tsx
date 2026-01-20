@@ -290,11 +290,11 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
                   <p>マップサイズ: {currentSettings.mapSize === 'auto' ? '自動' : `${currentSettings.customWidth}×${currentSettings.customHeight}`}</p>
                   <p>学習率: {currentSettings.learningRate}</p>
                   <p>イテレーション数: {currentSettings.iterations}</p>
-                  <p>距離尺度: {currentSettings.distanceMetric}</p>
+                  <p>SOMの距離関数: {currentSettings.distanceMetric}</p>
                   <p>近傍半径: {currentSettings.neighborhoodRadius}</p>
                   <p>近傍関数: {currentSettings.neighborhoodFunction}</p>
-                  <p>階層クラスタ-距離関数: {currentSettings.hierarchicalDistanceFunction}</p>
-                  <p>階層クラスタ-結合方法: {currentSettings.hierarchicalLinkageMethod}</p>
+                  <p>階層クラスタリングの距離関数: {currentSettings.hierarchicalDistanceFunction}</p>
+                  <p>連結基準: {currentSettings.hierarchicalLinkageMethod}</p>
                 </div>
               </div>
             )}

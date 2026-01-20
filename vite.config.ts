@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
+        'd3-contour': path.resolve(__dirname, 'node_modules/d3-contour/dist/d3-contour.min.js'),
       }
     }
   };

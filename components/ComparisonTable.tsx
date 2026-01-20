@@ -19,14 +19,16 @@ interface ComparisonTableProps {
   data: ComparisonRow[];
   segmentSizes: number[];
   segmentIds?: number[];
-  displayMode?: 'percentage' | 'difference' | 'count'; // 새로운 prop 추가
+  displayMode?: 'percentage' | 'difference' | 'count';
+  transpose?: boolean;
 }
 
-export const ComparisonTable: React.FC<ComparisonTableProps> = ({ 
-  data, 
-  segmentSizes, 
-  segmentIds, 
-  displayMode = 'percentage'
+export const ComparisonTable: React.FC<ComparisonTableProps> = ({
+  data,
+  segmentSizes,
+  segmentIds,
+  displayMode = 'percentage',
+  transpose = false
 }) => {
   // 変数IDでデータをグループ化します。
 
@@ -124,6 +126,32 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
 
   const totalSample = segmentSizes.reduce((a, b) => a + b, 0);
 
+  // Transpose mode: 選択肢基準で各セグメントの割合を計算
+  const transposedData = useMemo(() => {
+    if (!transpose) return null;
+    
+    return data.map(row => {
+      // この選択肢の全体での合計数
+      const totalChoiceCount = row.totalCount || 0;
+      
+      // 各セグメントでこの選択肢が全選択肢全体に占める割合を計算
+      const segmentPercentages = row.segmentCounts?.map(count => {
+        return totalChoiceCount > 0 ? (count / totalChoiceCount) * 100 : 0;
+      }) || [];
+      
+      // セグメント割合の平均を計算
+      const averagePercentage = segmentPercentages.length > 0
+        ? segmentPercentages.reduce((sum, p) => sum + p, 0) / segmentPercentages.length
+        : 0;
+      
+      return {
+        ...row,
+        transposedSegmentPercentages: segmentPercentages,
+        averagePercentage
+      };
+    });
+  }, [data, transpose]);
+
   return (
     <div className="overflow-auto w-full h-full border border-gray-300 bg-white shadow-sm pl-2">
       <table className="w-full text-xs border-collapse min-w-[800px]">
@@ -149,7 +177,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
           <tr className="text-gray-500">
             <th className="border-b border-r border-gray-300 bg-gray-50 p-1 font-semibold w-24">変数名</th>
             <th className="border-b border-r border-gray-300 bg-gray-50 p-1 font-semibold w-24">選択肢</th>
-            <th className="border-b border-r border-gray-300 bg-gray-50 p-1 font-semibold text-center">全体</th>
+            <th className="border-b border-r border-gray-300 bg-gray-50 p-1 font-semibold text-center">{transpose ? '平均' : '全体'}</th>
             {segmentSizes.map((_, i) => (
               <th key={i} className="border-b border-r border-gray-300 bg-gray-50 p-1 font-semibold text-center">
                 セグメント{segmentIds ? segmentIds[i] : i + 1}
@@ -161,6 +189,14 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
           {groupedData.order.map((varId) => {
             const rows = groupedData.groups[varId];
             return rows.map((row, rowIndex) => {
+              // 수치형 데이터 판별 (choiceId가 빈 문자열)
+              const isNumerical = row.choiceId === '';
+              
+              // transpose データを取得
+              const transRow = transpose && transposedData ? transposedData.find(tr => 
+                tr.variableId === row.variableId && tr.choiceId === row.choiceId
+              ) : null;
+              
               // 各行（選択肢）で最大値のインデックスを見つける
               const maxRatio = Math.max(...row.segmentRatios);
 
@@ -178,39 +214,62 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                     </td>
                   )}
                   <td className="border-r border-b border-gray-300 p-1 align-middle">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block w-4 text-center text-gray-400 bg-gray-100 rounded text-[10px]">{row.choiceId}</span>
-                      <span>{row.choiceName}</span>
-                    </div>
+                    {isNumerical ? (
+                      <span></span>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="inline-block w-4 text-center text-gray-400 bg-gray-100 rounded text-[10px]">{row.choiceId}</span>
+                        <span>{row.choiceName}</span>
+                      </div>
+                    )}
                   </td>
                   <td className="border-r border-b border-gray-300 p-1">
-                    {displayMode === 'count' 
-                      ? renderCountBar(row.totalCount || 0, row.totalRatio, true)
-                      : renderBar(row.totalRatio, true, false)
+                    {transpose && transRow
+                      ? renderBar(transRow.averagePercentage, true, false) // transpose: 항상 평均% 표시
+                      : displayMode === 'count' 
+                        ? renderCountBar(row.totalCount || 0, row.totalRatio, true)
+                        : isNumerical && !transpose
+                          ? renderBar(100, true, false) // 수치형 통상 모드: 100%
+                          : renderBar(row.totalRatio, true, false)
                     }
                   </td>
-                  {row.segmentRatios.map((ratio, i) => {
+                  {(transpose && transRow ? transRow.transposedSegmentPercentages : 
+                    isNumerical && !transpose ? row.segmentRatios.map(() => 100) : row.segmentRatios
+                  ).map((ratio, i) => {
                     // このセルが最大値かどうかを確인 (동점의 경우는 모두 강조)
                     const isMaxInRow = ratio === maxRatio && maxRatio > 0;
                     
-                    // 배경색 계산 (항상 percentage 기준)
+                    // 배경색 계산
                     let cellBgColor = '';
-                    if (displayMode === 'difference') {
-                      // 차분 모드에서의 배경색 계산
-                      const differences = row.segmentRatios.map(r => r - row.totalRatio);
-                      const maxDiff = Math.max(...differences);
-                      const minDiff = Math.min(...differences);
-                      const currentDiff = ratio - row.totalRatio;
-                      
-                      // 최대 플러스값은 파란 배경, 최대 마이너스값은 빨간 배경
-                      if (currentDiff === maxDiff && maxDiff > 0) {
-                        cellBgColor = 'bg-blue-100';
-                      } else if (currentDiff === minDiff && minDiff < 0) {
-                        cellBgColor = 'bg-red-100';
+                    if (displayMode === 'difference' && !isNumerical) {
+                      if (transpose && transRow) {
+                        // transpose + difference: 평균 기준 차이
+                        const differences = transRow.transposedSegmentPercentages.map(p => p - transRow.averagePercentage);
+                        const maxDiff = Math.max(...differences);
+                        const minDiff = Math.min(...differences);
+                        const currentDiff = ratio - transRow.averagePercentage;
+                        
+                        if (currentDiff === maxDiff && maxDiff > 0) {
+                          cellBgColor = 'bg-blue-100';
+                        } else if (currentDiff === minDiff && minDiff < 0) {
+                          cellBgColor = 'bg-red-100';
+                        }
+                      } else {
+                        // 통상 차분 모드
+                        const differences = row.segmentRatios.map(r => r - row.totalRatio);
+                        const maxDiff = Math.max(...differences);
+                        const minDiff = Math.min(...differences);
+                        const currentDiff = row.segmentRatios[i] - row.totalRatio;
+                        
+                        if (currentDiff === maxDiff && maxDiff > 0) {
+                          cellBgColor = 'bg-blue-100';
+                        } else if (currentDiff === minDiff && minDiff < 0) {
+                          cellBgColor = 'bg-red-100';
+                        }
                       }
-                    } else {
+                    } else if (!transpose && !isNumerical) {
                       // 절대값 모드(percentage, count)에서의 배경색 계산: 전체값과의 차이가 5 이상인 경우
-                      const difference = ratio - row.totalRatio;
+                      const difference = row.segmentRatios[i] - row.totalRatio;
                       if (difference >= 5) {
                         cellBgColor = 'bg-blue-100'; // 전체보다 5 이상 큰 경우는 파란 배경
                       } else if (difference <= -5) {
@@ -220,12 +279,27 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                     
                     // 표시 모드에 따른 렌더링 분기
                     let cellContent;
-                    if (displayMode === 'difference') {
-                      cellContent = renderDifferenceBar(ratio, row.totalRatio);
+                    if (isNumerical && !transpose) {
+                      // 수치형 통상 모드
+                      if (displayMode === 'count') {
+                        cellContent = renderCountBar(row.segmentCounts?.[i] || 0, 100, false);
+                      } else if (displayMode === 'difference') {
+                        cellContent = renderDifferenceBar(100, 100); // 100 - 100 = 0
+                      } else {
+                        cellContent = renderBar(100, false, false); // 100%
+                      }
+                    } else if (transpose && displayMode === 'difference' && transRow) {
+                      // transpose + difference モード: セグメント% - 平均%
+                      cellContent = renderDifferenceBar(ratio, transRow.averagePercentage);
+                    } else if (transpose) {
+                      // transpose + percentage モード: 選択肢全体に対するセグメントの割合
+                      cellContent = renderBar(ratio, false, false);
+                    } else if (displayMode === 'difference') {
+                      cellContent = renderDifferenceBar(row.segmentRatios[i], row.totalRatio);
                     } else if (displayMode === 'count') {
-                      cellContent = renderCountBar(row.segmentCounts?.[i] || 0, ratio, false);
+                      cellContent = renderCountBar(row.segmentCounts?.[i] || 0, row.segmentRatios[i], false);
                     } else {
-                      cellContent = renderBar(ratio, false, isMaxInRow);
+                      cellContent = renderBar(row.segmentRatios[i], false, isMaxInRow);
                     }
                     
                     return (

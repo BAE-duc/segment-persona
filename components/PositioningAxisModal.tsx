@@ -2,6 +2,20 @@ import React, { useState, useMemo } from 'react';
 import { AppButton } from './shared/FormControls';
 import { modalStyles } from './shared/modalStyles';
 import { TEST_CSV_RAW } from '../data/testData';
+import { itemListData } from './shared/FilterEditModal';
+
+// Caret アイコンコンポーネント
+const TreeCaret = ({ expanded }: { expanded: boolean }) => (
+  <div className="w-4 h-4 text-[#586365] flex items-center justify-center mr-1">
+    <svg
+      className={`w-3 h-3 transition-transform duration-200 ${expanded ? 'rotate-90' : 'rotate-0'}`}
+      viewBox="0 0 20 20"
+      fill="currentColor"
+    >
+      <path d="M8 6l6 4-6 4V6z" />
+    </svg>
+  </div>
+);
 
 // 明確にするために型を定義します
 
@@ -28,21 +42,21 @@ const getAgeBin = (val: number): string => {
 };
 
 export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onClose, onConfirm, onShowWarning, initialAxes }) => {
-  // TEST_CSV_RAWからデータを動的に抽出
-  const { variables, choicesData } = useMemo(() => {
+  // TEST_CSV_RAWからTESTカテゴリのデータのみを抽出（数値型を除外）
+  // これはカテゴリ選択用のデータ
+  const { testVariables, choicesData } = useMemo(() => {
     const lines = TEST_CSV_RAW.trim().split('\n');
     const headers = lines[0].split(',').map(h => h.trim());
-
-    // IDを除く全てのカラムを変数として追加
-    const vars = headers
-      .filter(h => h !== 'ID')
-      .map(h => ({ id: h, name: h }));
+    
+    // 対象項目のみをフィルタリング
+    const targetColumns = ['sex', 'child', 'age', 'year', '車イメージ', '保有車_メーカー', '保有車_カテゴリ', '保有車_車名', 'test_SEG'];
 
     // 各変数のカテゴリを抽出
     const choices: { [key: string]: { id: string; name: string }[] } = {};
+    const vars: { id: string; name: string }[] = [];
 
     headers.forEach((header, colIndex) => {
-      if (header === 'ID') return;
+      if (header === 'ID' || !targetColumns.includes(header)) return;
 
       const uniqueValues = new Set<string>();
       const allValues: string[] = [];
@@ -61,17 +75,32 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
       // 数値型かどうかを判定
       const isNumeric = allValues.length > 0 && allValues.every(v => !isNaN(Number(v)));
 
-      if (isNumeric) {
-        // 数値型の場合は変数名自体をカテゴリとして追加
-        choices[header] = [{ id: `${header}_self`, name: header }];
-      } else {
+      // 数値型は除外
+      if (!isNumeric) {
+        vars.push({ id: header, name: header });
         // カテゴリ型の場合は通常通りカテゴリを追加
-        choices[header] = Array.from(uniqueValues).map((val, idx) => ({ id: `${header}_${idx}`, name: val }));
+        const sortedValues = Array.from(uniqueValues).sort();
+        choices[header] = sortedValues.map((val, idx) => ({ id: `${header}_${idx}`, name: val }));
       }
     });
 
-    return { variables: vars, choicesData: choices };
+    return { testVariables: vars, choicesData: choices };
   }, []);
+
+  // TESTノードのchildrenを動的に生成
+  const testChildren = useMemo(() => {
+    return testVariables.map(v => ({
+      id: v.id,
+      name: v.name,
+      children: []
+    }));
+  }, [testVariables]);
+
+  // ツリービューの展開状態を管理
+  const [expandedState, setExpandedState] = useState<Record<string, boolean>>({
+    'surveyData': true,  // デフォルトで調査データを展開
+    'test': true         // デフォルトでTESTを展開
+  });
 
   const [selectedVariableId, setSelectedVariableId] = useState<string | null>(null);
   const [selectedChoiceId, setSelectedChoiceId] = useState<string | null>(null);
@@ -88,7 +117,7 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
   const handleAddAxis = (axis: 'vertical' | 'horizontal') => {
     if (!selectedVariableId || !selectedChoiceId) return;
 
-    const variable = variables.find(v => v.id === selectedVariableId);
+    const variable = testVariables.find(v => v.id === selectedVariableId);
     const choice = choicesData[selectedVariableId]?.find(c => c.id === selectedChoiceId);
 
     if (variable && choice) {
@@ -128,7 +157,48 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
     onClose();
   };
 
+  // ツリーノードを再帰的にレンダリング
+  const renderTreeNode = (node: any, depth: number = 0): React.ReactNode => {
+    // TESTノードの場合は動的に生成したchildrenを使用
+    const nodeChildren = node.id === 'test' ? testChildren : (node.children || []);
+    const hasChildren = nodeChildren && nodeChildren.length > 0;
+    const isExpanded = !!expandedState[node.id];
+    
+    // TESTカテゴリの変数かどうか判定
+    const isTestVariable = testVariables.some(v => v.id === node.id);
+
+    return (
+      <div key={node.id}>
+        <div
+          className={`flex items-center cursor-pointer p-1 rounded-sm ${
+            isTestVariable ? modalStyles.interactive.listItem(selectedVariableId === node.id) : ''
+          }`}
+          onClick={() => {
+            if (hasChildren) {
+              setExpandedState(prev => ({ ...prev, [node.id]: !prev[node.id] }));
+            } else if (isTestVariable) {
+              handleVariableClick(node.id);
+            }
+          }}
+          title={node.name}
+        >
+          {hasChildren && <TreeCaret expanded={isExpanded} />}
+          {!hasChildren && <div className="w-4 mr-1"></div>} {/* Placeholder for alignment */}
+          <span className={hasChildren ? "font-semibold" : ""}>{node.name}</span>
+        </div>
+        {hasChildren && isExpanded && (
+          <div className="pl-4">
+            {nodeChildren.map((child: any) => renderTreeNode(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const currentChoices = selectedVariableId ? choicesData[selectedVariableId] || [] : [];
+  
+  // 選択された変数がTESTカテゴリに属しているかチェック
+  const isTestVariable = selectedVariableId ? testVariables.some(v => v.id === selectedVariableId) : false;
 
   // 現在選択されているカテゴリが既にいずれかの軸で使用されているかを確認します。
   // Check if the currently selected choice is already used in either axis.
@@ -140,7 +210,7 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
   // Disable the add buttons if no choice is selected OR if the selected choice is already used.
   const isAddButtonDisabled = !selectedChoiceId || isChoiceAlreadyUsed;
 
-  const selectedVariableName = selectedVariableId ? variables.find(v => v.id === selectedVariableId)?.name : '項目を選択してください';
+  const selectedVariableName = selectedVariableId || '項目を選択してください';
 
   return (
     <div className={modalStyles.overlay} aria-modal="true" role="dialog">
@@ -165,12 +235,21 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
                 </button>
               </div>
               <div className="flex-grow border border-gray-400 bg-white rounded-md overflow-y-auto text-xs p-1 select-none">
-                {variables.map(v => (
-                  <div key={v.id}
-                    className={`p-1 cursor-pointer rounded-sm whitespace-nowrap overflow-hidden text-ellipsis ${modalStyles.interactive.listItem(selectedVariableId === v.id)}`}
-                    onClick={() => handleVariableClick(v.id)}
-                    title={v.name}>
-                    {v.name}
+                {/* 調査データとその全ての子ノードを表示 */}
+                {Object.entries(itemListData).map(([key, topLevelItem]: [string, any]) => (
+                  <div key={key}>
+                    <div
+                      className="flex items-center cursor-pointer p-1 rounded-sm"
+                      onClick={() => setExpandedState(prev => ({ ...prev, [key]: !prev[key] }))}
+                    >
+                      <TreeCaret expanded={!!expandedState[key]} />
+                      <span className="font-semibold">{topLevelItem.name}</span>
+                    </div>
+                    {expandedState[key] && (
+                      <div className="pl-4">
+                        {topLevelItem.children.map((child: any) => renderTreeNode(child, 1))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -188,23 +267,29 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
                 {/* カテゴリリスト */}
 
                 <div className="flex-grow overflow-y-auto">
-                  <table className="w-full text-xs">
-                    <tbody>
-                      {currentChoices.map(choice => (
-                        <tr key={choice.id}
-                          className={`cursor-pointer font-medium ${modalStyles.interactive.tableRow(selectedChoiceId === choice.id)}`}
-                          onClick={() => setSelectedChoiceId(choice.id)}>
-                          <td className="p-1 border-b border-gray-200 pl-2">{choice.name}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  {isTestVariable ? (
+                    <table className="w-full text-xs">
+                      <tbody>
+                        {currentChoices.map(choice => (
+                          <tr key={choice.id}
+                            className={`cursor-pointer font-medium ${modalStyles.interactive.tableRow(selectedChoiceId === choice.id)}`}
+                            onClick={() => setSelectedChoiceId(choice.id)}>
+                            <td className="p-1 border-b border-gray-200 pl-2">{choice.name}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-xs text-gray-400">
+                      {selectedVariableId ? 'カテゴリデータがありません' : '左側からアイテムを選択してください'}
+                    </div>
+                  )}
                 </div>
                 {/* アクションボタン */}
 
                 <div className="flex-shrink-0 p-2 flex justify-end gap-2 bg-gray-50 border-t border-gray-300">
-                  <AppButton onClick={() => handleAddAxis('vertical')} className="py-1 px-3 text-xs" disabled={isAddButtonDisabled}>縦軸に設定</AppButton>
-                  <AppButton onClick={() => handleAddAxis('horizontal')} className="py-1 px-3 text-xs" disabled={isAddButtonDisabled}>横軸に設定</AppButton>
+                  <AppButton onClick={() => handleAddAxis('vertical')} className="py-1 px-3 text-xs" disabled={isAddButtonDisabled || !isTestVariable}>縦軸に設定</AppButton>
+                  <AppButton onClick={() => handleAddAxis('horizontal')} className="py-1 px-3 text-xs" disabled={isAddButtonDisabled || !isTestVariable}>横軸に設定</AppButton>
                 </div>
               </div>
             </div>

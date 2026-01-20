@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { AppButton, AppSelect } from './shared/FormControls';
 import type { DataItem } from './DataSelectionModal';
 import type { SelectedItemsMap, SelectedItem } from './SegmentVariableSelectionModal';
@@ -40,6 +40,7 @@ interface SegmentMainContentProps {
   rangeConfigs?: Record<string, { min: number; max: number }>;
   customFilterConditions: ConditionListItem[];
   onOpenPersonaPopup?: () => void;
+  onComparisonDataChange?: (data: { rows: any[]; segmentSizes: number[] } | null) => void;
 }
 
 // ポジショニングタブの設定コンポーネントのPropsインターフェース
@@ -193,10 +194,19 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
   onExportCommonFilter,
   rangeConfigs,
   customFilterConditions,
-  onOpenPersonaPopup
+  onOpenPersonaPopup,
+  onComparisonDataChange
 }) => {
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [isDisplayConditionModalOpen, setIsDisplayConditionModalOpen] = useState(false);
+
+  // useRef to keep the latest callback reference
+  const onComparisonDataChangeRef = useRef(onComparisonDataChange);
+  
+  // Update ref when callback changes
+  useEffect(() => {
+    onComparisonDataChangeRef.current = onComparisonDataChange;
+  }, [onComparisonDataChange]);
 
   // Manage the number of applied segments.
   const [segmentCount, setSegmentCount] = useState(5);
@@ -237,6 +247,8 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
   // 集計表の表示モード
   type TableDisplayMode = 'percentage' | 'difference' | 'count';
   const [tableDisplayMode, setTableDisplayMode] = useState<TableDisplayMode>('percentage');
+  // 横縦変換 상태
+  const [isTableTransposed, setIsTableTransposed] = useState(false);
 
 
   const [displayRangeConfigs, setDisplayRangeConfigs] = useState<Record<string, { min: number; max: number }>>({});
@@ -245,6 +257,8 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
   const [displayCategoryConfigs, setDisplayCategoryConfigs] = useState<Record<string, string[]>>({});
 
+  const [displayIntervalConfigs, setDisplayIntervalConfigs] = useState<Record<string, number>>({});
+
 
 
   const [displayAdoptedVariableIds, setDisplayAdoptedVariableIds] = useState<Set<string> | null>(null);
@@ -252,6 +266,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
   const [pendingRangeConfigs, setPendingRangeConfigs] = useState<Record<string, { min: number; max: number }>>({});
   const [pendingCategoryConfigs, setPendingCategoryConfigs] = useState<Record<string, string[]>>({});
+  const [pendingIntervalConfigs, setPendingIntervalConfigs] = useState<Record<string, number>>({});
   const [pendingAdoptedVariableIds, setPendingAdoptedVariableIds] = useState<Set<string> | null>(null);
   const [pendingSelectedSegments, setPendingSelectedSegments] = useState<number[] | null>(null);
 
@@ -302,7 +317,8 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     count: number,
     currentVariables: SelectedItemsMap,
     customRanges: Record<string, { min: number; max: number }>,
-    customCategories: Record<string, string[]>
+    customCategories: Record<string, string[]>,
+    customIntervals: Record<string, number>
   ) => {
     // CSVパース
     const lines = TEST_CSV_RAW.trim().split('\n');
@@ -313,6 +329,10 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       headers.forEach((h, i) => { record[h] = vals[i]; });
       return record;
     });
+    
+    // 集計に使用するRangeとInterval設定
+    const currentRangeConfigs = customRanges;
+    const currentIntervalConfigs = customIntervals;
 
     // フィルタリング (変換設定に基づく)
 
@@ -391,41 +411,84 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
     // 分析対象の変数定義 (選択された変数のみを対象とする)
 
-    const analyzeTargets = Object.values(currentVariables).map(v => ({
-      id: v.id,
-      name: v.name,
-      // 年齢のみ特殊なビン分割ロジックを適用、それ以外はカテゴリとして扱う
-      type: v.id === 'age' ? 'age' : 'categorical'
-    }));
+    const analyzeTargets = Object.values(currentVariables).map(v => {
+      // 数値型かどうかは conversionDetails.type で判定
+      const isNumerical = v.conversionDetails?.type === 'numerical';
+      const hasInterval = currentIntervalConfigs && currentIntervalConfigs[v.id];
+      
+      return {
+        id: v.id,
+        name: v.name,
+        type: isNumerical ? 'numerical' : 'categorical',
+        isNumerical: isNumerical,
+        interval: hasInterval ? currentIntervalConfigs[v.id] : undefined,
+        range: hasInterval && currentRangeConfigs[v.id] ? currentRangeConfigs[v.id] : undefined
+      };
+    });
 
     analyzeTargets.forEach(target => {
-      // 全カテゴリの収集
-
+      // 수치형 데이터인 경우: 한 줄로 집계 (선택지별 분리 안함)
+      if (target.isNumerical) {
+        // 전체 카운트 (NA 제외)
+        const totalCount = rowsWithSegment.filter(r => {
+          const val = r[target.id];
+          const numVal = Number(val);
+          return !isNaN(numVal) && val !== 'NA' && val !== '';
+        }).length;
+        
+        const totalRatio = totalSamples > 0 ? (totalCount / totalSamples) * 100 : 0;
+        
+        // 세그먼트별 카운트
+        const segCounts = segmentSizes.map((size, segIndex) => {
+          const segId = segIndex + 1;
+          return rowsWithSegment.filter(r => {
+            if (r.segmentId !== segId) return false;
+            const val = r[target.id];
+            const numVal = Number(val);
+            return !isNaN(numVal) && val !== 'NA' && val !== '';
+          }).length;
+        });
+        
+        // 세그먼트별 비율 (각 세그먼트 내에서의 비율)
+        const segmentRatios = segCounts.map((count, i) => {
+          const size = segmentSizes[i];
+          return size > 0 ? (count / size) * 100 : 0;
+        });
+        
+        // 한 줄만 추가 (선택지는 공란)
+        resultRows.push({
+          variableId: target.id.toUpperCase(),
+          variableName: target.name,
+          choiceId: '',
+          choiceName: '',
+          totalRatio: totalRatio,
+          segmentRatios: segmentRatios,
+          totalCount: totalCount,
+          segmentCounts: segCounts
+        });
+        
+        return; // 다음 target으로
+      }
+      
+      // 카테고리형 데이터: 기존 로직
       const choiceSet = new Set<string>();
+      
+      // 通常のカテゴリ収集
       rowsWithSegment.forEach(r => {
         let val = r[target.id];
         // データに存在しない変数の場合はスキップ（念のため）
         if (val === undefined) return;
 
-        if (target.type === 'age') {
-          val = getAgeBin(val);
-        } else {
-          if (!val || val === '') val = 'NA';
-        }
+        if (!val || val === '') val = 'NA';
         choiceSet.add(val);
       });
 
       // カテゴリのソート
-
       let choices = Array.from(choiceSet);
-      if (target.type === 'age') {
-        choices.sort((a, b) => getAgeSortOrder(a) - getAgeSortOrder(b));
-      } else {
-        choices.sort();
-        // NAを最後に
-        if (choices.includes('NA')) {
-          choices = choices.filter(c => c !== 'NA').concat(['NA']);
-        }
+      choices.sort();
+      // NAを最後に
+      if (choices.includes('NA')) {
+        choices = choices.filter(c => c !== 'NA').concat(['NA']);
       }
 
       // 各カテゴリについて集計
@@ -435,8 +498,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
         const totalCount = rowsWithSegment.filter(r => {
           let val = r[target.id];
-          if (target.type === 'age') val = getAgeBin(val);
-          else if (!val || val === '') val = 'NA';
+          if (!val || val === '') val = 'NA';
           return val === choiceName;
         }).length;
 
@@ -448,8 +510,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
           return rowsWithSegment.filter(r => {
             if (r.segmentId !== segId) return false;
             let val = r[target.id];
-            if (target.type === 'age') val = getAgeBin(val);
-            else if (!val || val === '') val = 'NA';
+            if (!val || val === '') val = 'NA';
             return val === choiceName;
           }).length;
         });
@@ -491,11 +552,13 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     // グローバル設定が変わったのでローカルの上書きをクリア
     setDisplayRangeConfigs({});
     setDisplayCategoryConfigs({});
+    setDisplayIntervalConfigs({});
     setDisplayAdoptedVariableIds(null);
     setDisplaySelectedSegments(null);
 
     setPendingRangeConfigs({});
     setPendingCategoryConfigs({});
+    setPendingIntervalConfigs({});
     setPendingAdoptedVariableIds(null);
     setPendingSelectedSegments(null);
 
@@ -516,10 +579,12 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       // 集計表の設定をリセット
       setDisplayRangeConfigs({});
       setDisplayCategoryConfigs({});
+      setDisplayIntervalConfigs({});
       setDisplayAdoptedVariableIds(null);
       setDisplaySelectedSegments(null);
       setPendingRangeConfigs({});
       setPendingCategoryConfigs({});
+      setPendingIntervalConfigs({});
       setPendingAdoptedVariableIds(null);
       setPendingSelectedSegments(null);
       setSegmentComparisonConditions([]);
@@ -583,7 +648,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       }
 
       // 選択された変数と条件に基づいてデータを生成
-      const result = generateRealDataFromCSV(segmentCount, targetVariables, displayRangeConfigs, displayCategoryConfigs);
+      const result = generateRealDataFromCSV(segmentCount, targetVariables, displayRangeConfigs, displayCategoryConfigs, displayIntervalConfigs);
       
       let filteredRows = result.rows;
       let filteredSegmentSizes = result.segmentSizes;
@@ -601,8 +666,19 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
       setComparisonData({ rows: filteredRows, segmentSizes: filteredSegmentSizes });
       setSegmentedRows(result.rowsWithSegment);
+      
+      // Export data to parent for Excel download using ref
+      try {
+        const callback = onComparisonDataChangeRef.current;
+        if (typeof callback === 'function') {
+          callback({ rows: filteredRows, segmentSizes: filteredSegmentSizes });
+        }
+      } catch (error) {
+        console.error('Failed to call onComparisonDataChange:', error);
+      }
     }
-  }, [isSegmentComparisonExecuted, segmentCount, selectedVariables, displayRangeConfigs, displayCategoryConfigs, displayAdoptedVariableIds, displaySelectedSegments, itemDetails, choicesData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSegmentComparisonExecuted, segmentCount, selectedVariables, displayRangeConfigs, displayCategoryConfigs, displayIntervalConfigs, displayAdoptedVariableIds, displaySelectedSegments, itemDetails, choicesData]);
 
   const handleTabClick = (buttonName: string) => {
     setActiveTab(buttonName);
@@ -627,10 +703,12 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     // 集計表の設定をリセット
     setDisplayRangeConfigs({});
     setDisplayCategoryConfigs({});
+    setDisplayIntervalConfigs({});
     setDisplayAdoptedVariableIds(null);
     setDisplaySelectedSegments(null);
     setPendingRangeConfigs({});
     setPendingCategoryConfigs({});
+    setPendingIntervalConfigs({});
     setPendingAdoptedVariableIds(null);
     setPendingSelectedSegments(null);
     setSegmentComparisonConditions([]);
@@ -658,6 +736,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     // 保留中の設定を適用設定に反映
     setDisplayRangeConfigs(pendingRangeConfigs);
     setDisplayCategoryConfigs(pendingCategoryConfigs);
+    setDisplayIntervalConfigs(pendingIntervalConfigs);
     setDisplayAdoptedVariableIds(pendingAdoptedVariableIds);
     setDisplaySelectedSegments(pendingSelectedSegments);
 
@@ -833,8 +912,10 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                           <AppButton
                             className="px-6 whitespace-nowrap ml-auto"
                             onClick={() => {
-                              // TODO: 横縦変換の機能をここに実装する
+                              setIsTableTransposed(prev => !prev);
                             }}
+                            disabled={tableDisplayMode === 'count'}
+                            isActive={isTableTransposed}
                           >
                             横縦変換
                           </AppButton>
@@ -842,14 +923,20 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                             className="px-6 whitespace-nowrap"
                             onClick={() => {
                               setTableDisplayMode(prev => {
-                                if (prev === 'percentage') return 'difference';
-                                if (prev === 'difference') return 'count';
-                                return 'percentage';
+                                if (isTableTransposed) {
+                                  // 横縦変換 ON: percentage ↔ difference만 토글
+                                  return prev === 'percentage' ? 'difference' : 'percentage';
+                                } else {
+                                  // 横縦変換 OFF: 3개 모드 순환
+                                  if (prev === 'percentage') return 'difference';
+                                  if (prev === 'difference') return 'count';
+                                  return 'percentage';
+                                }
                               });
                             }}
                           >
                             {tableDisplayMode === 'percentage' ? '差分表示' : 
-                             tableDisplayMode === 'difference' ? 'n数表示' : '%表示'}
+                             tableDisplayMode === 'difference' ? (isTableTransposed ? '%表示' : 'n数表示') : '%表示'}
                           </AppButton>
                         </div>
                         <div className="flex-grow min-h-0">
@@ -917,12 +1004,13 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                   <div className="flex-grow relative overflow-hidden">
                     {activeTab === '集計表' && (
                       <div id="segment-comparison-graph-area" className="absolute inset-0 overflow-auto">
-                        {isSegmentComparisonExecuted && comparisonData ? (
-                          <ComparisonTable 
-                            data={comparisonData.rows} 
-                            segmentSizes={comparisonData.segmentSizes} 
+                          {isSegmentComparisonExecuted && comparisonData ? (
+                          <ComparisonTable
+                            data={comparisonData.rows}
+                            segmentSizes={comparisonData.segmentSizes}
                             segmentIds={displaySelectedSegments || undefined}
-                            displayMode={tableDisplayMode} 
+                            displayMode={tableDisplayMode}
+                            transpose={isTableTransposed}
                           />
                         ) : (
                           <div className="flex items-center justify-center h-full">
@@ -993,13 +1081,31 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       {isDisplayConditionModalOpen && (
         <DisplayConditionSelectionModal
           onClose={() => setIsDisplayConditionModalOpen(false)}
-          onConfirm={(adoptedVariableIds, adoptedVariableNames, newRangeConfigs, newCategoryConfigs, selectedSegments) => {
+          onConfirm={(adoptedVariableIds, adoptedVariableNames, newRangeConfigs, newCategoryConfigs, selectedSegments, intervalConfigs) => {
             const formattedConditions: string[] = [];
             
             // アイテム一覧の順序を維持するために itemDetails を基準にループします
             itemDetails.forEach(item => {
               if (adoptedVariableIds.has(item.id)) {
-                if (newCategoryConfigs[item.id]) {
+                // Interval設定がある場合
+                if (intervalConfigs && intervalConfigs[item.id] && newRangeConfigs[item.id]) {
+                  const min = newRangeConfigs[item.id].min;
+                  const max = newRangeConfigs[item.id].max;
+                  const interval = intervalConfigs[item.id];
+                  const groups = [];
+                  // Interval が 1 の場合は単一値として表示
+                  if (interval === 1) {
+                    for (let val = min; val <= max; val++) {
+                      groups.push(String(val));
+                    }
+                  } else {
+                    for (let start = min; start <= max; start += interval) {
+                      const end = Math.min(start + interval - 1, max);
+                      groups.push(`${start}-${end}`);
+                    }
+                  }
+                  formattedConditions.push(`・${item.name}：${groups.join('、')}`);
+                } else if (newCategoryConfigs[item.id]) {
                   formattedConditions.push(`・${item.name} : ${newCategoryConfigs[item.id].join(', ')}`);
                 } else if (newRangeConfigs[item.id]) {
                   formattedConditions.push(`・${item.name} : ${newRangeConfigs[item.id].min} ~ ${newRangeConfigs[item.id].max}`);
@@ -1026,6 +1132,11 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
             setPendingCategoryConfigs(prev => ({
               ...prev,
               ...newCategoryConfigs
+            }));
+            // Interval設定を保存
+            setPendingIntervalConfigs(prev => ({
+              ...prev,
+              ...(intervalConfigs || {})
             }));
             // モーダルで採用された変数を保留状態として保存
             setPendingAdoptedVariableIds(adoptedVariableIds);

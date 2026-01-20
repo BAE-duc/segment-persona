@@ -1,5 +1,6 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import * as XLSX from 'xlsx';
 import { SegmentSidebar } from '../components/SegmentSidebar';
 import { SegmentMainContent } from '../components/SegmentMainContent';
 import { DataSelectionModal, type DataItem } from '../components/DataSelectionModal';
@@ -204,6 +205,8 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
     filterCategories: FilterCategory;
     customFilterConditions: ConditionListItem[];
   } | null>(null);
+  // comparison data for export (filled by SegmentMainContent via callback)
+  const [comparisonExportData, setComparisonExportData] = useState<{ rows: any[]; segmentSizes: number[] } | null>(null);
 
 
   const handleSegmentationExecute = () => {
@@ -487,139 +490,113 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
       handleShowWarningModal("セグメンテーションが実行されていません。");
       return;
     }
+    // Prepare export. We will create an Excel workbook containing:
+    // - 1st sheet: Meta info (selected data, selected variables or selected items, filters)
+    // - Next 3 sheets: three display modes (percentage/difference/count)
 
-    const sectionsToCapture: { id: string, title: string }[] = [];
-
-    // SOMMAPはセグメンテーション実行時に常にキャプチャ対象とします
-    // SOMMAPはセグメンテーション実行時に常にキャプチャ対象とします
-    sectionsToCapture.push({ id: 'sommap-area', title: 'SOMMAP' });
-
-    // 各グラフが実行された場合にのみダウンロード対象に追加します
-    // 各グラフが実行された場合にのみダウンロード対象に追加します
-    if (isSegmentComparisonExecuted) {
-      sectionsToCapture.push({ id: 'segment-comparison-graph-area', title: 'セグメント比較' });
-    }
-    if (isPositioningExecuted) {
-      sectionsToCapture.push({ id: 'positioning-graph-area', title: 'ポジショニング' });
-    }
-    if (isHeatmapExecuted) {
-      sectionsToCapture.push({ id: 'heatmap-graph-area', title: 'ヒートマップ' });
+    if (!comparisonExportData || !comparisonExportData.rows || comparisonExportData.rows.length === 0) {
+      handleShowWarningModal("エクスポート用の集計データがありません。先に集計を実行してください。");
+      return;
     }
 
     try {
-      const canvasesWithTitles: { canvas: HTMLCanvasElement, title: string }[] = [];
+      const wb = XLSX.utils.book_new();
 
-      for (const section of sectionsToCapture) {
-        const element = document.getElementById(section.id);
-        if (element) {
-          const clone = element.cloneNode(true) as HTMLElement;
-          clone.style.position = 'absolute';
-          clone.style.left = '-9999px';
-          clone.style.top = '0px';
-
-          // クローンが表示されるように、'invisible'と'hidden'クラスを削除します
-          // Remove the 'invisible' and 'hidden' classes so the clone is visible for capture
-          clone.classList.remove('invisible', 'hidden');
-
-          // 念のため、スタイルで表示を強制します
-          // Force visibility via style just in case
-          clone.style.visibility = 'visible';
-          // displayプロパティをリセットしてクラスベースのスタイルを適用させます
-          // Reset display property to allow class-based styling
-          clone.style.display = '';
-
-          // 元の要素の寸法ではなく、内容全体が表示されるようにスタイルをリセットします
-          // Reset styles to ensure the full content is visible, not just the scrolled view
-          clone.style.width = 'max-content';
-          clone.style.height = 'auto';
-          clone.style.overflow = 'visible';
-          clone.style.maxHeight = 'none';
-          clone.style.maxWidth = 'none';
-
-          // 内部のスクロール可能な要素も全て展開します
-          // Expand all internal scrollable elements
-          const scrollables = clone.querySelectorAll('.overflow-auto, .overflow-y-auto, .overflow-x-auto');
-          scrollables.forEach((el) => {
-            const htmlEl = el as HTMLElement;
-            htmlEl.style.overflow = 'visible';
-            htmlEl.style.maxHeight = 'none';
-            htmlEl.style.maxWidth = 'none';
-            htmlEl.style.height = 'auto';
-            htmlEl.style.width = 'max-content';
-          });
-
-          document.body.appendChild(clone);
-
-          const canvas = await html2canvas(clone, {
-            backgroundColor: '#ffffff',
-            scale: 2,
-            logging: false,
-            useCORS: true,
-          });
-          document.body.removeChild(clone);
-          canvasesWithTitles.push({ canvas, title: section.title });
-        }
-      }
-
-      if (canvasesWithTitles.length === 0) {
-        handleShowWarningModal("ダウンロードするグラフがありません。");
-        return;
-      }
-
-      const padding = 40; // 20px padding * scale 2
-      const titleHeight = 60; // 30px title height * scale 2
-      let totalHeight = padding;
-      canvasesWithTitles.forEach(item => {
-        totalHeight += item.canvas.height + titleHeight + padding;
-      });
-      const maxWidth = Math.max(...canvasesWithTitles.map(item => item.canvas.width));
-      const totalWidth = maxWidth + (padding * 2);
-
-      const combinedCanvas = document.createElement('canvas');
-      combinedCanvas.width = totalWidth;
-      combinedCanvas.height = totalHeight;
-      const ctx = combinedCanvas.getContext('2d');
-      if (!ctx) return;
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, totalWidth, totalHeight);
-
-      ctx.font = 'bold 32px sans-serif'; // 16px font * scale 2
-      ctx.fillStyle = '#000000';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-
-      let currentY = padding;
-      for (const { canvas, title } of canvasesWithTitles) {
-        ctx.fillText(title, totalWidth / 2, currentY + titleHeight / 2);
-        currentY += titleHeight;
-
-        const x = (totalWidth - canvas.width) / 2;
-        ctx.drawImage(canvas, x, currentY);
-        currentY += canvas.height + padding;
-      }
-
-      const blob = await new Promise<Blob | null>(resolve => combinedCanvas.toBlob(resolve, 'image/png'));
-      if (!blob) {
-        throw new Error("キャンバスからBlobへの変換に失敗しました。");
-      }
-
+      // --- Sheet 1: Meta / Selected info and filters ---
+      const metaRows: any[] = [];
       const today = new Date();
-      const timestamp = `${today.getFullYear()}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getDate().toString().padStart(2, '0')}_${today.getHours().toString().padStart(2, '0')}${today.getMinutes().toString().padStart(2, '0')}${today.getSeconds().toString().padStart(2, '0')}`;
-      const suggestedName = `segment-analysis_${timestamp}.png`;
+      metaRows.push(['Exported at', today.toISOString()]);
+      metaRows.push([]);
 
-      const link = document.createElement('a');
-      link.download = suggestedName;
-      link.href = URL.createObjectURL(blob);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
+      // Selected data info: use displayData or executedState snapshot
+      const targetSelectedData = (isSegmentationExecuted && executedState) ? executedState.selectedData : selectedData;
+      metaRows.push(['Selected data', targetSelectedData ? JSON.stringify(targetSelectedData) : 'N/A']);
+      metaRows.push([]);
 
+      // Selected variables (display conditions). If none, fallback to selectedItems
+      const targetVariables = (isSegmentationExecuted && executedState) ? executedState.selectedVariables : selectedVariables;
+      if (targetVariables && Object.keys(targetVariables).length > 0) {
+        metaRows.push(['Selected variables']);
+        Object.values(targetVariables).forEach((v: any) => {
+          metaRows.push([v.id, v.name, v.conversionSetting || '', v.conversionDetails ? JSON.stringify(v.conversionDetails) : '']);
+        });
+      } else {
+        metaRows.push(['Selected items (fallback)']);
+        Object.values(selectedItems).forEach((v: any) => {
+          metaRows.push([v.id, v.name, v.conversionSetting || '', v.conversionDetails ? JSON.stringify(v.conversionDetails) : '']);
+        });
+      }
+      metaRows.push([]);
+
+      // Filters: include sidebar filterCategories and customFilterConditions (use executed snapshot if exists)
+      const targetCustomFilters = (isSegmentationExecuted && executedState) ? executedState.customFilterConditions : customFilterConditions;
+      const targetFilterCategories = (isSegmentationExecuted && executedState) ? executedState.filterCategories : filterCategories;
+
+      metaRows.push(['Custom filter conditions']);
+      if (targetCustomFilters && targetCustomFilters.length > 0) {
+        targetCustomFilters.forEach((c: any) => {
+          metaRows.push([c.itemName, c.symbol, c.categoryName, c.connector || '', c.bracketOpen || '', c.bracketClose || '']);
+        });
+      } else {
+        metaRows.push(['(none)']);
+      }
+      metaRows.push([]);
+
+      metaRows.push(['Sidebar filter categories']);
+      Object.keys(targetFilterCategories).forEach((cat) => {
+        metaRows.push([cat, ...(targetFilterCategories[cat] || [])]);
+      });
+
+      const metaWs = XLSX.utils.aoa_to_sheet(metaRows);
+      XLSX.utils.book_append_sheet(wb, metaWs, 'Info');
+
+      // Helper to build normal sheet
+      const buildNormalSheet = (rows: any[], segmentSizes: number[], mode: 'percentage' | 'difference' | 'count') => {
+        const header = ['Variable', 'Choice', 'Total', ...segmentSizes.map((_, i) => `Segment ${i + 1}`)];
+        const aoa = [header];
+        rows.forEach(r => {
+          const rowVals: any[] = [];
+          rowVals.push(r.variableName || r.variableId);
+          rowVals.push(r.choiceName || r.choiceId);
+          
+          if (mode === 'count') {
+            rowVals.push(r.totalCount ?? 0);
+            rowVals.push(...(r.segmentCounts || []));
+          } else if (mode === 'difference') {
+            // difference mode: show total ratio and differences (segment - total)
+            rowVals.push(typeof r.totalRatio === 'number' ? Number(r.totalRatio.toFixed(2)) : r.totalRatio);
+            const totalRatio = r.totalRatio || 0;
+            const diffs = (r.segmentRatios || []).map((segRatio: number) => 
+              typeof segRatio === 'number' ? Number((segRatio - totalRatio).toFixed(2)) : ''
+            );
+            rowVals.push(...diffs);
+          } else {
+            // percentage mode
+            rowVals.push(typeof r.totalRatio === 'number' ? Number(r.totalRatio.toFixed(2)) : r.totalRatio);
+            rowVals.push(...(r.segmentRatios || []).map((val: number) => typeof val === 'number' ? Number(val.toFixed(2)) : val));
+          }
+          
+          aoa.push(rowVals);
+        });
+        return aoa;
+      };
+
+      const modes: ('percentage' | 'difference' | 'count')[] = ['percentage', 'difference', 'count'];
+      for (const mode of modes) {
+        const sheetName = mode;
+        const aoa = buildNormalSheet(comparisonExportData.rows, comparisonExportData.segmentSizes, mode);
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+      }
+
+      const ts = `${today.getFullYear()}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getDate().toString().padStart(2, '0')}_${today.getHours().toString().padStart(2, '0')}${today.getMinutes().toString().padStart(2, '0')}${today.getSeconds().toString().padStart(2, '0')}`;
+      const filename = `segment-analysis_${ts}.xlsx`;
+      XLSX.writeFile(wb, filename);
     } catch (error) {
-      console.error("ダウンロード画像の生成に失敗しました:", error);
-      handleShowWarningModal("ダウンロード画像の生成に失敗しました。");
+      console.error('Excel export failed', error);
+      handleShowWarningModal("エクスポートに失敗しました。");
     }
+    return;
   };
 
   // 共通フィルター出力機能
@@ -780,6 +757,7 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
         rangeConfigs={itemRangeConfig}
         customFilterConditions={displayCustomFilterConditions}
         onOpenPersonaPopup={onOpenPersonaPopup}
+        onComparisonDataChange={setComparisonExportData}
       />
 
       {/* モーダルレンダリングエリア */}

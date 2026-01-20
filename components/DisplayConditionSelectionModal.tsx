@@ -7,6 +7,20 @@ import { modalStyles } from './shared/modalStyles';
 import type { ItemDetail } from './ItemSelectionModal';
 import { TEST_CSV_RAW } from '../data/testData';
 import * as d3 from 'd3';
+import { itemListData } from './shared/FilterEditModal';
+
+// ツリービューの展開/折りたたみを視覚的に示すアイコン。
+const TreeCaret = ({ expanded }: { expanded: boolean }) => (
+  <div className="w-4 h-4 text-[#586365] flex items-center justify-center mr-1">
+    <svg
+      className={`w-3 h-3 transition-transform duration-200 ${expanded ? 'rotate-90' : 'rotate-0'}`}
+      viewBox="0 0 20 20"
+      fill="currentColor"
+    >
+      <path d="M8 6l6 4-6 4V6z" />
+    </svg>
+  </div>
+);
 
 // エクスポートして他のファイルで型を再利用できるようにします。
 
@@ -43,7 +57,8 @@ interface DisplayConditionSelectionModalProps {
     adoptedVariableNames: string[],
     newRangeConfigs: Record<string, { min: number; max: number }>,
     newCategoryConfigs: Record<string, string[]>,
-    selectedSegments: number[]
+    selectedSegments: number[],
+    intervalConfigs?: Record<string, number>
   ) => void;
   initialSelectedItems: SelectedItemsMap;
   segmentCount: number;
@@ -169,49 +184,12 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
     [items]
   );
 
-  // 年齢(age)のカテゴリをCSVから動的に生成するロジック
-
-  const ageChoices = useMemo(() => {
-    const lines = TEST_CSV_RAW.trim().split('\n');
-    const headers = lines[0].split(',').map(h => h.trim());
-    const ageIndex = headers.indexOf('age');
-
-    if (ageIndex === -1) return [];
-
-    const getAgeBin = (val: number): string => {
-      if (val <= 19) return '19歳以下';
-      if (val >= 60) return '60歳以上';
-      const lower = Math.floor(val / 5) * 5;
-      return `${lower}-${lower + 4}歳`;
-    };
-
-    const bins = new Set<string>();
-    for (let i = 1; i < lines.length; i++) {
-      const row = lines[i].split(',').map(v => v.trim());
-      const ageVal = parseInt(row[ageIndex], 10);
-      if (!isNaN(ageVal)) {
-        bins.add(getAgeBin(ageVal));
-      }
-    }
-
-    const getAgeSortOrder = (bin: string): number => {
-      if (bin === '19歳以下') return 0;
-      if (bin === '60歳以上') return 100;
-      if (bin === 'NA') return 999;
-      const match = bin.match(/^(\d+)/);
-      return match ? parseInt(match[1], 10) : 50;
-    };
-
-    return Array.from(bins)
-      .sort((a, b) => getAgeSortOrder(a) - getAgeSortOrder(b))
-      .map((bin, index) => ({ id: index + 1000, content: bin })); // IDは衝突しないようにオフセット
-
-  }, []);
-
-
   // 選択された変数、採用された変数、選択されたカテゴリの状態を管理します。
 
   const [selectedVariableId, setSelectedVariableId] = useState<string | null>(null);
+
+  // ツリービューの展開状態を管理
+  const [expandedState, setExpandedState] = useState<Record<string, boolean>>({});
 
   // 初期表示時、セグメントアイテム選択で選択した項目が選択された状態にします。
   // もし表示条件選択で以前に設定された値があれば（displayAdoptedIds）、それを優先します。
@@ -263,6 +241,9 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
     return initial;
   });
 
+  // Range 입력エラーの状態
+  const [rangeErrors, setRangeErrors] = useState<Record<string, { min?: string; max?: string }>>({});
+
   // 初期表示時、セグメントアイテム選択で選択したカテゴリが選択された状態にします。
   // 変換設定（カテゴリ型）がある場合は、その設定内容を反映させます。
   // 表示条件選択での上書き設定（displayCategoryConfigs）がある場合はそれを優先します。
@@ -274,30 +255,8 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
 
     items.forEach(item => {
       const varId = item.id;
-      // ageの場合は特別に計算したカテゴリを使用
-      const choices = varId === 'age' ? ageChoices : choicesData[varId];
+      const choices = choicesData[varId];
       if (!choices) return;
-
-      // 🆕 age変数で数値範囲が設定されている場合の特別処理
-      // 優先順位 1.5: 数値範囲からカテゴリへの自動マッピング (displayCategoryConfigsより後、他より前)
-      if (varId === 'age' &&
-        !displayCategoryConfigs?.[varId] &&
-        item.conversionDetails?.type === 'numerical' &&
-        item.conversionDetails.range) {
-        const min = parseInt(item.conversionDetails.range.min, 10);
-        const max = parseInt(item.conversionDetails.range.max, 10);
-
-        if (!isNaN(min) && !isNaN(max)) {
-          // 数値範囲から該当カテゴリを計算
-          const targetCategories = mapAgeRangeToCategories(min, max);
-          const categorySet = new Set(targetCategories);
-          const filteredIds = choices
-            .filter(c => categorySet.has(c.content))
-            .map(c => c.id);
-          initial[varId] = new Set(filteredIds);
-          return; // 早期リターン
-        }
-      }
 
       // 優先順位 1: 表示条件での上書き設定
       if (displayCategoryConfigs && displayCategoryConfigs[varId]) {
@@ -331,6 +290,11 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
 
   const segmentNumbers = Array.from({ length: segmentCount }, (_, i) => i + 1);
 
+  // セグメントアイテム選択で選択された変数を取得 (locked items)
+  const lockedVariables = useMemo(() => {
+    return new Set(Object.keys(initialSelectedItems));
+  }, [initialSelectedItems]);
+
   // セグメント選択の状態を管理します。初期状態ですべて選択にします。
 
   const [selectedSegments, setSelectedSegments] = useState<Set<number>>(() => {
@@ -350,8 +314,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
     if (!selectedVariableId) return emptyData;
     const selectedItem = items.find(i => i.id === selectedVariableId);
 
-    // ageはカテゴリ扱いにするため除外
-    if (!selectedItem || selectedItem.conversionDetails?.type !== 'numerical' || selectedVariableId === 'age') return emptyData;
+    if (!selectedItem || selectedItem.conversionDetails?.type !== 'numerical') return emptyData;
 
     // TEST_CSV_RAWをパースして数値データを抽出
     const lines = TEST_CSV_RAW.trim().split('\n');
@@ -421,10 +384,10 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
 
         setSelectedVariableId(variableId);
 
-        // カテゴリ型(またはage)の場合のみ全選択処理を行う
+        // カテゴリ型の場合のみ全選択処理を行う
         const item = items.find(i => i.id === variableId);
-        if (!item || item.conversionDetails?.type !== 'numerical' || variableId === 'age') {
-          const choices = variableId === 'age' ? ageChoices : (choicesData[variableId] || []);
+        if (!item || item.conversionDetails?.type !== 'numerical') {
+          const choices = choicesData[variableId] || [];
           const allChoiceIds = choices.map(c => c.id);
           setSelectedChoices(prevChoices => ({
             ...prevChoices,
@@ -449,7 +412,35 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
   // 変数リストの項目をクリックしたときのハンドラ。
 
   const handleVariableClick = (id: string) => {
-    setSelectedVariableId(id);
+    // 既に採用されている場合は解除、されていない場合は採用
+    if (adoptedVariables.has(id)) {
+      // 採用解除
+      setAdoptedVariables(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
+      // カテゴリ選択もクリア
+      setSelectedChoices(prev => {
+        const newChoices = { ...prev };
+        delete newChoices[id];
+        return newChoices;
+      });
+      // 範囲選択もクリア
+      setSelectedRanges(prev => {
+        const newRanges = { ...prev };
+        delete newRanges[id];
+        return newRanges;
+      });
+      // 現在の選択をクリア
+      if (selectedVariableId === id) {
+        setSelectedVariableId(null);
+      }
+    } else {
+      // 採用
+      setAdoptedVariables(prev => new Set(prev).add(id));
+      setSelectedVariableId(id);
+    }
   };
 
 
@@ -498,20 +489,97 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
     // 数値のみ許可
     if (!/^\d*$/.test(value)) return;
 
+    // 範囲を更新
+    const newRange = {
+      ...selectedRanges[variableId] || { min: '', max: '' },
+      [type]: value
+    };
+    
     setSelectedRanges(prev => ({
       ...prev,
-      [variableId]: {
-        ...prev[variableId] || { min: '', max: '' },
-        [type]: value
-      }
+      [variableId]: newRange
     }));
+    
+    // バリデーション
+    validateRange(variableId, newRange.min, newRange.max);
+  };
+  
+  // Range バリデーション関数
+  const validateRange = (variableId: string, minStr: string, maxStr: string) => {
+    const errors: { min?: string; max?: string } = {};
+    
+    // アイテム情報取得
+    const item = items.find(i => i.id === variableId);
+    if (!item) return;
+    
+    // 全体データ範囲取得（初期範囲）
+    let globalMin: number | undefined;
+    let globalMax: number | undefined;
+    
+    if (rangeConfigs && rangeConfigs[variableId]) {
+      globalMin = rangeConfigs[variableId].min;
+      globalMax = rangeConfigs[variableId].max;
+    } else if (item.conversionDetails?.range) {
+      globalMin = parseFloat(item.conversionDetails.range.min);
+      globalMax = parseFloat(item.conversionDetails.range.max);
+    }
+    
+    const min = minStr ? parseFloat(minStr) : undefined;
+    const max = maxStr ? parseFloat(maxStr) : undefined;
+    
+    // 1. 空値チェック（両方入力されている場合のみ他の検証を行う）
+    if (!minStr || !maxStr) {
+      // 片方だけ入力されている場合
+      if (minStr && !maxStr) {
+        errors.max = '範囲選択 (MIN:' + (globalMin || '?') + ', MAX:' + (globalMax || '?') + ') 内の値を入力してください';
+      } else if (!minStr && maxStr) {
+        errors.min = '範囲選択 (MIN:' + (globalMin || '?') + ', MAX:' + (globalMax || '?') + ') 内の値を入力してください';
+      }
+      setRangeErrors(prev => ({
+        ...prev,
+        [variableId]: errors
+      }));
+      return;
+    }
+    
+    // 2. MIN > MAX チェック
+    if (min !== undefined && max !== undefined && min > max) {
+      errors.min = 'MIN値はMAX値以下である必要があります';
+      errors.max = 'MAX値はMIN値以上である必要があります';
+    }
+    
+    // 3. 全体データ範囲チェック
+    if (globalMin !== undefined && min !== undefined && min < globalMin) {
+      errors.min = '範囲選択 (MIN:' + globalMin + ', MAX:' + (globalMax || '?') + ') 内の値を入力してください';
+    }
+    
+    if (globalMax !== undefined && max !== undefined && max > globalMax) {
+      errors.max = '範囲選択 (MIN:' + (globalMin || '?') + ', MAX:' + globalMax + ') 内の値を入力してください';
+    }
+    
+    // 4. MIN = MAX チェック（警告のみ、エラーではない）
+    // MIN = MAX は Interval=1 で有効なので許可
+    
+    // エラーを設定
+    if (Object.keys(errors).length > 0) {
+      setRangeErrors(prev => ({
+        ...prev,
+        [variableId]: errors
+      }));
+    } else {
+      // エラーをクリア
+      setRangeErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[variableId];
+        return newErrors;
+      });
+    }
   };
 
   const handleSelectAllToggle = () => {
     if (!selectedVariableId) return;
 
-    // ageの場合は特別対応
-    const choices = selectedVariableId === 'age' ? ageChoices : (choicesData[selectedVariableId] || []);
+    const choices = choicesData[selectedVariableId] || [];
     const allChoiceIds = choices.map(c => c.id);
     const selected = selectedChoices[selectedVariableId] || new Set();
     const allSelected = allChoiceIds.length > 0 && allChoiceIds.every(id => selected.has(id));
@@ -556,8 +624,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
       setAdoptedVariables(new Set(allVariableIds));
       const newAllSelectedChoices: Record<string, Set<number>> = {};
       allVariableIds.forEach(varId => {
-        // ageの場合は特別対応
-        const choices = varId === 'age' ? ageChoices : (choicesData[varId] || []);
+        const choices = choicesData[varId] || [];
         const allChoiceIds = choices.map(c => c.id);
         if (allChoiceIds.length > 0) {
           newAllSelectedChoices[varId] = new Set(allChoiceIds);
@@ -589,6 +656,28 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
   };
 
   const handleConfirm = () => {
+    // Range エラーチェック
+    const hasRangeError = Object.keys(rangeErrors).length > 0;
+    if (hasRangeError) {
+      alert('範囲選択の値が正しくありません。エラーメッセージを確認してください。');
+      return;
+    }
+    
+    // 数値型変数で範囲が未入力の場合チェック
+    const adoptedNumericVars = Array.from(adoptedVariables).filter(varId => {
+      const item = items.find(i => i.id === varId);
+      return item && item.dataType === 'int';
+    });
+    
+    for (const varId of adoptedNumericVars) {
+      const range = selectedRanges[varId];
+      if (!range || !range.min || !range.max) {
+        const item = items.find(i => i.id === varId);
+        alert(`数値型変数「${item?.name || varId}」の範囲選択（MIN、MAX）を入力してください。`);
+        return;
+      }
+    }
+    
     const adoptedVariableNames = Array.from(adoptedVariables)
       .map((varId: string) => {
         const item = items.find(i => i.id === varId);
@@ -600,8 +689,7 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
     const rangesToReturn: Record<string, { min: number; max: number }> = {};
     for (const varId in selectedRanges) {
       const item = items.find(i => i.id === varId);
-      // ageはカテゴリ扱いのため除外
-      if (item && item.dataType === 'int' && varId !== 'age') {
+      if (item && item.dataType === 'int') {
         const r = selectedRanges[varId];
         if (r.min !== '' && r.max !== '') {
           rangesToReturn[varId] = { min: parseInt(r.min, 10), max: parseInt(r.max, 10) };
@@ -614,10 +702,9 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
     for (const varId in selectedChoices) {
       const item = items.find(i => i.id === varId);
       if (item) {
-        // ageはカテゴリ扱い
-        const isNum = item.conversionDetails?.type === 'numerical' && varId !== 'age';
+        const isNum = item.conversionDetails?.type === 'numerical';
         if (!isNum) {
-          const choices = varId === 'age' ? ageChoices : choicesData[varId];
+          const choices = choicesData[varId];
           if (choices) {
             const selectedIds = selectedChoices[varId];
             if (selectedIds && selectedIds.size > 0) {
@@ -632,14 +719,13 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
     }
 
     // adoptedVariables (IDのSet) も返す
-    onConfirm(adoptedVariables, adoptedVariableNames, rangesToReturn, categoriesToReturn, Array.from(selectedSegments).sort((a, b) => a - b));
+    onConfirm(adoptedVariables, adoptedVariableNames, rangesToReturn, categoriesToReturn, Array.from(selectedSegments).sort((a, b) => a - b), {});
   };
 
   const selectedVariableItem = selectedVariableId ? items.find(i => i.id === selectedVariableId) : null;
-  // ageはカテゴリとして扱う
-  const isNumerical = selectedVariableItem?.conversionDetails?.type === 'numerical' && selectedVariableId !== 'age';
+  const isNumerical = selectedVariableItem?.conversionDetails?.type === 'numerical';
 
-  const currentChoices = selectedVariableId ? (selectedVariableId === 'age' ? ageChoices : (choicesData[selectedVariableId] || [])) : [];
+  const currentChoices = selectedVariableId ? (choicesData[selectedVariableId] || []) : [];
   const allCurrentChoicesSelected = selectedVariableId ? (currentChoices.length > 0 && currentChoices.every(c => selectedChoices[selectedVariableId]?.has(c.id))) : false;
   const allSegmentsSelected = segmentNumbers.length > 0 && segmentNumbers.every(num => selectedSegments.has(num));
 
@@ -868,6 +954,51 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
 
   }, [selectedRanges, selectedVariableId, histData, dimensions, isNumerical]);
 
+  // 再귀적 트리 렌더링 함수 (ItemSelectionModal과 동일한 구조)
+  const renderTreeNode = (node: any, depth: number = 0): React.ReactNode => {
+    const hasChildren = node.children && node.children.length > 0;
+    const isExpanded = !!expandedState[node.id];
+    const isAdopted = adoptedVariables.has(node.id);
+    const isSelected = selectedVariableId === node.id;
+    const isLocked = lockedVariables.has(node.id); // セグメントアイテム選択で選択済み
+    
+    // Check if this node is an actual variable
+    const isVariable = variables.find(v => v.id === node.id);
+
+    return (
+      <div key={node.id}>
+        <div
+          className={`flex items-center p-1 rounded-sm ${
+            !hasChildren && isVariable 
+              ? isLocked
+                ? 'bg-gray-200 cursor-not-allowed opacity-60' // Locked: gray background
+                : isAdopted 
+                  ? 'bg-blue-200 hover:bg-blue-300 cursor-pointer' 
+                  : modalStyles.interactive.listItem(isSelected) + ' cursor-pointer'
+              : 'cursor-pointer'
+          }`}
+          onClick={() => {
+            if (hasChildren) {
+              setExpandedState(prev => ({ ...prev, [node.id]: !prev[node.id] }));
+            } else if (isVariable && !isLocked) { // locked 아이템은 클릭 불가
+              handleVariableClick(node.id);
+            }
+          }}
+          title={isLocked ? `${node.name} (セグメントアイテム選択で選択済み)` : node.name}
+        >
+          {hasChildren && <TreeCaret expanded={isExpanded} />}
+          {!hasChildren && <div className="w-4 mr-1"></div>}
+          <span className={hasChildren ? "font-semibold" : ""}>{node.name}</span>
+          {isLocked && <span className="ml-auto text-xs text-gray-500">🔒</span>}
+        </div>
+        {hasChildren && isExpanded && (
+          <div className="pl-4">
+            {node.children.map((child: any) => renderTreeNode(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div
@@ -900,32 +1031,23 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
                 ↓
               </button>
             </div>
-            <div className="flex-grow border border-gray-400 bg-white overflow-y-auto text-xs rounded-md">
-              <table className="w-full text-xs">
-                <thead className="sticky top-0 bg-gray-50 z-10">
-                  <tr>
-                    <th className="p-1 font-bold text-center border-b border-r border-gray-300 w-12">
-                      採用
-                    </th>
-                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">変数名</th>
-                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">データタイプ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {variables.map(v => (
-                    <tr key={v.id} className={`cursor-pointer font-medium ${modalStyles.interactive.tableRow(selectedVariableId === v.id)}`} onClick={() => handleVariableClick(v.id)}>
-                      <td className="p-1 border-b border-r border-gray-200" onClick={(e) => e.stopPropagation()}>
-                        <CustomCheckbox
-                          checked={adoptedVariables.has(v.id)}
-                          onChange={() => handleAdoptToggle(v.id)}
-                        />
-                      </td>
-                      <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{v.name}</td>
-                      <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{v.type}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="flex-grow border border-gray-400 bg-white overflow-y-auto text-xs rounded-md p-1 select-none">
+              {Object.entries(itemListData).map(([key, topLevelItem]) => (
+                <div key={key}>
+                  <div
+                    className="flex items-center cursor-pointer p-1 rounded-sm"
+                    onClick={() => setExpandedState(prev => ({ ...prev, [key]: !prev[key] }))}
+                  >
+                    <TreeCaret expanded={!!expandedState[key]} />
+                    <span className="font-semibold">{topLevelItem.name}</span>
+                  </div>
+                  {expandedState[key] && (
+                    <div className="pl-4">
+                      {topLevelItem.children.map((child: any) => renderTreeNode(child, 1))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
             <div className="pt-2 flex-shrink-0 flex justify-end">
               <AppButton 
@@ -944,74 +1066,117 @@ export const DisplayConditionSelectionModal: React.FC<DisplayConditionSelectionM
             </h3>
 
             {isNumerical ? (
-              // 数値型の場合の範囲設定UI (ヒストグラム付き)
-              <div className="flex-grow border border-gray-400 bg-white overflow-hidden flex flex-col rounded-md p-4 gap-2">
-                <div className="mb-1 text-xs text-gray-600">
-                  (MIN:{rangeLabelMin}, MAX:{rangeLabelMax})
-                </div>
-                <div className="flex items-center gap-2">
-                  <StyledNumInput
-                    value={selectedVariableId ? (selectedRanges[selectedVariableId]?.min || '') : ''}
-                    onChange={(e) => selectedVariableId && handleRangeChange(selectedVariableId, 'min', e.target.value)}
-                    placeholder="Min"
-                    className="w-full"
-                  />
-                  <span>~</span>
-                  <StyledNumInput
-                    value={selectedVariableId ? (selectedRanges[selectedVariableId]?.max || '') : ''}
-                    onChange={(e) => selectedVariableId && handleRangeChange(selectedVariableId, 'max', e.target.value)}
-                    placeholder="Max"
-                    className="w-full"
-                  />
-                </div>
-
-                {/* ヒストグラム領域 */}
-                <div className="flex-grow border border-gray-300 rounded-md flex items-center justify-center bg-white relative overflow-hidden mt-2">
-                  {selectedVariableId && histData.bins.length > 0 ? (
-                    <svg ref={histogramRef} width="100%" height="100%"></svg>
-                  ) : (
-                    <span className="text-gray-400 text-xs">データがありません</span>
-                  )}
-                </div>
-                <div className="text-center text-xs text-gray-500">ヒストグラム表示領域</div>
+              // 数値型の場合の範囲設定UI (簡素化版)
+              <div className="flex-grow border border-gray-400 bg-white overflow-hidden flex flex-col rounded-md p-4 gap-4">
+                {selectedVariableId && lockedVariables.has(selectedVariableId) ? (
+                  // Locked: 範囲は表示のみ
+                  <div className="text-center text-gray-500 text-sm">
+                    🔒 セグメントアイテム選択で選択済み<br/>
+                    MIN: {selectedRanges[selectedVariableId]?.min || rangeLabelMin}<br/>
+                    MAX: {selectedRanges[selectedVariableId]?.max || rangeLabelMax}
+                  </div>
+                ) : (
+                  // 範囲選択 (MIN, MAX)
+                  <div>
+                    <div className="mb-2 text-xs text-[#586365] font-semibold">
+                      範囲選択 (MIN:{rangeLabelMin}, MAX:{rangeLabelMax})
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-[#586365] w-12">MIN</label>
+                          <StyledNumInput
+                            value={selectedVariableId ? (selectedRanges[selectedVariableId]?.min || '') : ''}
+                            onChange={(e) => selectedVariableId && handleRangeChange(selectedVariableId, 'min', e.target.value)}
+                            placeholder="Min"
+                            className={`flex-1 ${selectedVariableId && rangeErrors[selectedVariableId]?.min ? 'border-red-500 bg-red-50' : ''}`}
+                          />
+                          <span className="text-xs text-[#586365]">~</span>
+                        </div>
+                        {selectedVariableId && rangeErrors[selectedVariableId]?.min && (
+                          <div className="text-xs text-red-500 ml-14">
+                            {rangeErrors[selectedVariableId].min}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-[#586365] w-12">MAX</label>
+                          <StyledNumInput
+                            value={selectedVariableId ? (selectedRanges[selectedVariableId]?.max || '') : ''}
+                            onChange={(e) => selectedVariableId && handleRangeChange(selectedVariableId, 'max', e.target.value)}
+                            placeholder="Max"
+                            className={`flex-1 ${selectedVariableId && rangeErrors[selectedVariableId]?.max ? 'border-red-500 bg-red-50' : ''}`}
+                          />
+                        </div>
+                        {selectedVariableId && rangeErrors[selectedVariableId]?.max && (
+                          <div className="text-xs text-red-500 ml-14">
+                            {rangeErrors[selectedVariableId].max}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               // カテゴリ型またはその他の場合のカテゴリリスト
               <div className="flex-grow border border-gray-400 bg-white overflow-hidden flex flex-col rounded-md">
-                <div className="flex-shrink-0">
-                  <table className="w-full text-xs">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="p-1 font-bold text-center border-b border-r border-gray-300 w-12">
-                          採用
-                        </th>
-                        <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2 w-20">No.</th>
-                        <th className="p-1 font-bold text-left border-b border-gray-300 pl-2 flex items-center">
-                          内容
-                        </th>
-                      </tr>
-                    </thead>
-                  </table>
-                </div>
-                <div className="flex-grow overflow-y-auto">
-                  <table className="w-full text-xs">
-                    <tbody>
-                      {currentChoices.map((c) => (
-                        <tr key={c.id} className="font-medium even:bg-gray-50 hover:bg-gray-200">
-                          <td className="p-1 border-b border-r border-gray-200 w-12 text-center">
-                            <CustomCheckbox
-                              checked={selectedVariableId ? selectedChoices[selectedVariableId]?.has(c.id) ?? false : false}
-                              onChange={() => selectedVariableId && handleChoiceToggle(selectedVariableId, c.id)}
-                              disabled={!selectedVariableId}
-                            />
-                          </td>
-                          <td className="p-1 border-b border-r border-gray-200 pl-2 w-20">{c.id}</td>
-                          <td className="p-1 border-b border-gray-200 pl-2 whitespace-nowrap">{c.content}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                {selectedVariableId && lockedVariables.has(selectedVariableId) ? (
+                  // Locked: カテゴリは表示のみ
+                  <div className="flex-grow overflow-y-auto p-4">
+                    <div className="text-center text-gray-500 text-sm mb-4">
+                      🔒 セグメントアイテム選択で選択済み
+                    </div>
+                    <div className="text-xs">
+                      <div className="font-semibold mb-2">選択済みカテゴリ:</div>
+                      {currentChoices
+                        .filter(c => selectedChoices[selectedVariableId]?.has(c.id))
+                        .map(c => (
+                          <div key={c.id} className="p-1 bg-gray-100 mb-1 rounded">
+                            {c.id}: {c.content}
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex-shrink-0">
+                      <table className="w-full text-xs">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="p-1 font-bold text-center border-b border-r border-gray-300 w-12">
+                              採用
+                            </th>
+                            <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2 w-20">No.</th>
+                            <th className="p-1 font-bold text-left border-b border-gray-300 pl-2 flex items-center">
+                              内容
+                            </th>
+                          </tr>
+                        </thead>
+                      </table>
+                    </div>
+                    <div className="flex-grow overflow-y-auto">
+                      <table className="w-full text-xs">
+                        <tbody>
+                          {currentChoices.map((c) => (
+                            <tr key={c.id} className="font-medium even:bg-gray-50 hover:bg-gray-200">
+                              <td className="p-1 border-b border-r border-gray-200 w-12 text-center">
+                                <CustomCheckbox
+                                  checked={selectedVariableId ? selectedChoices[selectedVariableId]?.has(c.id) ?? false : false}
+                                  onChange={() => selectedVariableId && handleChoiceToggle(selectedVariableId, c.id)}
+                                  disabled={!selectedVariableId}
+                                />
+                              </td>
+                              <td className="p-1 border-b border-r border-gray-200 pl-2 w-20">{c.id}</td>
+                              <td className="p-1 border-b border-gray-200 pl-2 whitespace-nowrap">{c.content}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
               </div>
             )}
             <div className="pt-2 flex-shrink-0 flex justify-end">
