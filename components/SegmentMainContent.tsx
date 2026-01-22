@@ -8,7 +8,6 @@ import { PositioningAxisModal, type AxisSelection } from './PositioningAxisModal
 import { OverlayItemSelectionModal, type OverlaySelection } from './OverlayItemSelectionModal';
 import { FilterEditModal, type ConditionListItem } from './shared/FilterEditModal';
 import type { ItemDetail } from './ItemSelectionModal';
-import { HeatmapVariableModal } from './HeatmapVariableModal';
 import { ComparisonTable, type ComparisonRow } from './ComparisonTable';
 import { TEST_CSV_RAW } from '../data/testData';
 import { PositioningMapGraph } from './PositioningMapGraph';
@@ -915,9 +914,8 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                               setIsTableTransposed(prev => !prev);
                             }}
                             disabled={tableDisplayMode === 'count'}
-                            isActive={isTableTransposed}
                           >
-                            横縦変換
+                            {isTableTransposed ? '縦変換' : '横変換'}
                           </AppButton>
                           <AppButton
                             className="px-6 whitespace-nowrap"
@@ -1189,7 +1187,8 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
         />
       )}
       {isHeatmapConditionsModalOpen && (
-        <HeatmapVariableModal
+        <FilterEditModal
+          title="ヒートマップの表示条件設定"
           onClose={() => {
             setIsHeatmapConditionsModalOpen(false);
             setEditingConditionIndex(null);

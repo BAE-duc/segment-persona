@@ -747,6 +747,21 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
         return Array.from(errorMessages);
     }
 
+    const isConfirmEnabled = useMemo(() => {
+        if (somDataType === '数値型') {
+            if (!isEditable) return true;
+            const minVal = parseInt(minRange, 10);
+            const maxVal = parseInt(maxRange, 10);
+            const hasNumericValues =
+                minRange.trim() !== '' && !isNaN(minVal) &&
+                maxRange.trim() !== '' && !isNaN(maxVal);
+            const hasRangeErrors = !!errors.min || !!errors.max;
+            return hasNumericValues && !hasRangeErrors;
+        }
+
+        return rightItems.length > 0;
+    }, [somDataType, isEditable, minRange, maxRange, errors, rightItems.length]);
+
 
     const handleConfirm = () => {
         if (somDataType === '数値型') {
@@ -1005,7 +1020,7 @@ export const ConversionSettingsModal: React.FC<ConversionSettingsModalProps> = (
                 {/* Footer */}
                 <div className={`${modalStyles.footer.container} justify-end`}>
                     <div className={modalStyles.footer.buttonGroup}>
-                        <AppButton onClick={handleConfirm} className="w-24 py-1">OK</AppButton>
+                        <AppButton onClick={handleConfirm} className="w-24 py-1" isActive={isConfirmEnabled} disabled={!isConfirmEnabled}>OK</AppButton>
                         <AppButton onClick={onClose} className="w-24 py-1">Cancel</AppButton>
                     </div>
                 </div>

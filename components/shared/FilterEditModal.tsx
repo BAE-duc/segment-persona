@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AppButton, AppSelect } from './FormControls';
 import { modalStyles } from './modalStyles';
+import { TEST_CSV_RAW } from '../../data/testData';
 
 interface FilterEditModalProps {
   onClose: () => void;
@@ -50,7 +51,7 @@ const testCodeConditions = [
   { no: 2, name: 'TEST CODE2', lower: '', upper: '' },
 ];
 
-export const itemListData = {
+const baseItemListData = {
   surveyData: {
     name: '調査データ',
     children: [
@@ -262,10 +263,111 @@ export const itemListData = {
   },
 };
 
+const buildTestChildrenFromCsv = (options: { includeNumeric?: boolean } = {}) => {
+  const { includeNumeric = true } = options;
+  const lines = TEST_CSV_RAW.trim().split('\n');
+  if (lines.length === 0) return [];
+  const headers = lines[0].split(',').map(h => h.trim());
+
+  const targetColumns = [
+    'sex',
+    'child',
+    'age',
+    'year',
+    '車イメージ',
+    '保有車_メーカー',
+    '保有車_カテゴリ',
+    '保有車_車名',
+    'test_SEG'
+  ];
+
+  const result: { id: string; name: string }[] = [];
+
+  headers.forEach((header, colIndex) => {
+    if (header === 'ID' || !targetColumns.includes(header)) return;
+
+    const values: string[] = [];
+    for (let i = 1; i < lines.length; i += 1) {
+      const row = lines[i].split(',').map(v => v.trim());
+      const value = row[colIndex];
+      if (value && value !== 'NA') {
+        values.push(value);
+      }
+    }
+
+    const isNumeric = values.length > 0 && values.every(v => !isNaN(Number(v)));
+    if (includeNumeric || !isNumeric) {
+      result.push({ id: header, name: header });
+    }
+  });
+
+  return result;
+};
+
+export const itemListData = (() => {
+  const cloned = JSON.parse(JSON.stringify(baseItemListData));
+  const surveyChildren = cloned?.surveyData?.children || [];
+  const testNode = surveyChildren.find((child: any) => child.id === 'test');
+  if (testNode) {
+    testNode.children = buildTestChildrenFromCsv({ includeNumeric: true });
+  }
+  return cloned;
+})();
+
 
 // 条件テーブルのデモデータを拡張し、垂直スクロールバーが表示されるようにします。
 
-const conditionData: Record<string, { no: number; name: string; lower: string; upper: string }[]> = {
+const buildTestConditionDataFromCsv = () => {
+  const lines = TEST_CSV_RAW.trim().split('\n');
+  if (lines.length === 0) return {};
+  const headers = lines[0].split(',').map(h => h.trim());
+
+  const targetColumns = [
+    'sex',
+    'child',
+    'age',
+    'year',
+    '車イメージ',
+    '保有車_メーカー',
+    '保有車_カテゴリ',
+    '保有車_車名',
+    'test_SEG'
+  ];
+
+  const result: Record<string, { no: number; name: string; lower: string; upper: string }[]> = {};
+
+  headers.forEach((header, colIndex) => {
+    if (header === 'ID' || !targetColumns.includes(header)) return;
+
+    const values = new Set<string>();
+    for (let i = 1; i < lines.length; i += 1) {
+      const row = lines[i].split(',').map(v => v.trim());
+      const value = row[colIndex];
+      if (value && value !== 'NA') {
+        values.add(value);
+      }
+    }
+
+    const sortedValues = Array.from(values).sort((a, b) => {
+      const numA = Number(a);
+      const numB = Number(b);
+      const bothNumeric = !isNaN(numA) && !isNaN(numB);
+      if (bothNumeric) return numA - numB;
+      return a.localeCompare(b);
+    });
+
+    result[header] = sortedValues.map((val, idx) => ({
+      no: idx + 1,
+      name: val,
+      lower: '',
+      upper: ''
+    }));
+  });
+
+  return result;
+};
+
+const conditionDataBase: Record<string, { no: number; name: string; lower: string; upper: string }[]> = {
   payment1: paymentConditions,
   payment2: paymentConditions,
   paymentRaw: paymentConditions,
@@ -372,6 +474,11 @@ const conditionData: Record<string, { no: number; name: string; lower: string; u
   userCharacteristics_testNode: testCodeConditions,
   surveyInfo_testNode: testCodeConditions,
   others_testNode: testCodeConditions,
+};
+
+const conditionData: Record<string, { no: number; name: string; lower: string; upper: string }[]> = {
+  ...conditionDataBase,
+  ...buildTestConditionDataFromCsv()
 };
 
 // 条件一覧テーブルの行データを定義するためのインターフェース。
@@ -533,13 +640,13 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
 
     const newListItem: ConditionListItem = {
       id: `${Date.now()}-${Math.random()}`,
-      bracketOpen: '(',
+      bracketOpen: '（',
       itemId: 'SUSERSAGE',
       itemName: childItem.name,
       symbol: '=',
       categoryNo: conditionItem.no,
       categoryName: formatConditionName(conditionItem.name, childItem.name),
-      bracketClose: ')',
+      bracketClose: '）',
       connector: '',
     };
 
@@ -609,6 +716,81 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
   const isAndButtonDisabled =
     selectedConditionIndex === null ||
     (!!selectedItemName && conditionList.some(item => item.itemName === selectedItemName));
+
+  const normalizeLastConnector = (list: ConditionListItem[]) => {
+    if (list.length === 0) return list;
+    const lastIndex = list.length - 1;
+    if (list[lastIndex].connector === '') return list;
+    return list.map((item, index) =>
+      index === lastIndex ? { ...item, connector: '' } : item
+    );
+  };
+
+  const normalizeBrackets = (list: ConditionListItem[]) => {
+    return list.map(item => ({
+      ...item,
+      bracketOpen: item.bracketOpen === '(' ? '（' : item.bracketOpen,
+      bracketClose: item.bracketClose === ')' ? '）' : item.bracketClose,
+    }));
+  };
+
+  const validateConditionList = (list: ConditionListItem[]) => {
+    if (list.length === 0) {
+      return '条件一覧が空です。条件を追加してください。';
+    }
+
+    for (const [index, item] of list.entries()) {
+      if (!item.itemName?.trim() || !item.symbol?.trim() || !item.categoryName?.trim()) {
+        return `条件一覧の${index + 1}行目に未入力の項目があります。`;
+      }
+    }
+
+    for (let i = 0; i < list.length - 1; i += 1) {
+      if (list[i].connector !== 'AND' && list[i].connector !== 'OR') {
+        return `条件一覧の${i + 1}行目に連結（AND/OR）が設定されていません。`;
+      }
+    }
+
+    let balance = 0;
+    for (const [index, item] of list.entries()) {
+      const open = item.bracketOpen || '';
+      const close = item.bracketClose || '';
+      if (/[^()（）]/.test(open) || /[^()（）]/.test(close)) {
+        return `条件一覧の${index + 1}行目に不正な括弧が含まれています。`;
+      }
+
+      const openCount = (open.match(/[（(]/g) || []).length;
+      const closeCount = (close.match(/[）)]/g) || []).length;
+      balance += openCount;
+      balance -= closeCount;
+
+      if (balance < 0) {
+        return '括弧の閉じが先に来ています。括弧の開閉を確認してください。';
+      }
+    }
+
+    if (balance !== 0) {
+      return '括弧の開閉が一致しません。括弧を閉じてください。';
+    }
+
+    return null;
+  };
+
+  const handleConfirmClick = () => {
+    const withNormalizedBrackets = normalizeBrackets(conditionList);
+    const normalizedList = normalizeLastConnector(withNormalizedBrackets);
+    if (normalizedList !== conditionList) {
+      setConditionList(normalizedList);
+    }
+
+    const errorMessage = validateConditionList(normalizedList);
+    if (errorMessage) {
+      onShowInfo(errorMessage);
+      return;
+    }
+
+    onConfirm(normalizedList);
+  };
 
   return (
     <div
@@ -828,7 +1010,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
                               </AppSelect>
                             </td>
                             <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">
-                              {index < conditionList.length - 1 && item.bracketClose !== '）' && (() => {
+                              {index < conditionList.length - 1 && (() => {
                                 // 同じアイテム名称の場合はORのみ選択可能
                                 const currentItemName = item.itemName;
                                 const nextItemName = conditionList[index + 1]?.itemName;
@@ -866,7 +1048,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
         <div className={`${modalStyles.footer.container} justify-end`}>
           <div className={modalStyles.footer.buttonGroup}>
             <AppButton
-              onClick={() => onConfirm(conditionList)}
+              onClick={handleConfirmClick}
               className="w-24 py-1"
               isActive={conditionList.length > 0}
               disabled={conditionList.length === 0}

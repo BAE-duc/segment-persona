@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { PersonaDetailPage } from './PersonaDetailPage';
 import { DataSelectionModal, type DataItem } from '../components/DataSelectionModal';
 import { FilterEditModal, type ConditionListItem } from '../components/shared/FilterEditModal';
 import { AppSelect, AppButton } from '../components/shared/FormControls';
 import { CaretIcon } from '../components/shared/CaretIcon';
+import { WarningModal } from '../components/shared/WarningModal';
 import somMapImage from '../data/sommap.png';
 import personaMale60sHokkaido from '../data/persona_male_60s_hokkaido.png';
 import personaMale60sIndifferent from '../data/persona_male_60s_indifferent.png';
@@ -154,10 +155,8 @@ export interface FilterCategory {
 
 // フィルターの初期データを定義します。
 const initialFilterCategories: FilterCategory = {
-    '期間': ['2023年', '2024年', '2025年'],
-    '地域': [],
-    '車': ['PHEV'],
-    '人': ['性別(男性)', '年齢(20代)', '年齢(30代)', '年齢(40代)', '年齢(50代)', '性別(女性)'],
+    '地域': ['日本'],
+    '共通フィルタ': ['PHEV', '性別(男性)', '年齢(20代)'],
 };
 
 /**
@@ -171,11 +170,13 @@ export const ProductPersonaListPage: React.FC = () => {
 
     // セグメント画面と同様の状態管理
     const [selectedData, setSelectedData] = useState<DataItem | null>(null);
-    const [weightValue, setWeightValue] = useState('default');
+    const [weightValue, setWeightValue] = useState('unweighted');
     const [filterCategories, setFilterCategories] = useState<FilterCategory>(initialFilterCategories);
     const [customFilterConditions, setCustomFilterConditions] = useState<ConditionListItem[]>([]);
     const [isDataSelectionModalOpen, setIsDataSelectionModalOpen] = useState(false);
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+    const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
+    const [warningMessage, setWarningMessage] = useState('');
 
     // ツリービューの状態
     const [expandedFilters, setExpandedFilters] = useState<Record<string, boolean>>(() => {
@@ -193,6 +194,42 @@ export const ProductPersonaListPage: React.FC = () => {
             ...prev,
             [filterName]: !prev[filterName]
         }));
+    };
+
+    const weightOptions = useMemo(() => {
+        if (!selectedData) return [];
+
+        const optionsByName: Record<string, { value: string; label: string }[]> = {
+            'NCBS Japan結合データ (2010-2021、2023年)': [
+                { value: 'unweighted', label: 'unweighted' },
+                { value: 'weight', label: 'ウエイト値' }
+            ],
+            'NCBS Japan 結合データ (2010-2021、2023-2024年)': [
+                { value: 'unweighted', label: 'unweighted' },
+                { value: 'weight', label: 'ウエイト値' }
+            ],
+            '日本新動態 結合データ': [
+                { value: 'unweighted', label: 'unweighted' },
+                { value: 'weight', label: 'ウエイト' },
+                { value: 'weight_prefecture_year', label: 'ウエイト（府県別・年間）' }
+            ],
+            '2021-2024年META特性調査': [
+                { value: 'unweighted', label: 'unweighted' },
+                { value: 'car_type_weight', label: '車種ウェイト' }
+            ]
+        };
+
+        return optionsByName[selectedData.name] ?? [{ value: 'unweighted', label: 'unweighted' }];
+    }, [selectedData]);
+
+    useEffect(() => {
+        if (!selectedData) return;
+        setWeightValue('unweighted');
+    }, [selectedData?.name]);
+
+    const handleShowWarningModal = (message: string) => {
+        setWarningMessage(message);
+        setIsWarningModalOpen(true);
     };
 
     const handleSelectPersona = (id: number) => {
@@ -242,15 +279,19 @@ export const ProductPersonaListPage: React.FC = () => {
                         <div className="mt-1 pl-2 space-y-1">
                             <p className="text-xs text-gray-600">{selectedData.groupName}</p>
                             <p className="text-xs">{selectedData.name}</p>
-                            <AppSelect
-                                value={weightValue}
-                                onChange={(e) => setWeightValue(e.target.value)}
-                                className="mt-1 w-32"
-                            >
-                                <option value="default">ウェイト値</option>
-                                <option value="ari">有</option>
-                                <option value="nashi">無</option>
-                            </AppSelect>
+                            {weightOptions.length > 0 && (
+                                <AppSelect
+                                    value={weightValue}
+                                    onChange={(e) => setWeightValue(e.target.value)}
+                                    className="mt-1 w-48"
+                                >
+                                    {weightOptions.map(option => (
+                                        <option key={option.value} value={option.value}>
+                                            {option.label}
+                                        </option>
+                                    ))}
+                                </AppSelect>
+                            )}
                         </div>
                     ) : (
                         <div className="mt-2 pl-2">
@@ -272,7 +313,7 @@ export const ProductPersonaListPage: React.FC = () => {
                                 <button
                                     onClick={() => {
                                         if (!selectedData) {
-                                            alert("選択されたデータがありません。\nデータを先に選択してください。");
+                                            handleShowWarningModal("選択されたデータがありません。\nデータを先に選択してください。");
                                         } else {
                                             setIsFilterModalOpen(true);
                                         }
@@ -489,10 +530,16 @@ export const ProductPersonaListPage: React.FC = () => {
                             setIsFilterModalOpen(false);
                         }}
                         initialConditions={customFilterConditions}
-                        onShowInfo={(msg) => alert(msg)}
+                        onShowInfo={handleShowWarningModal}
                     />
                 )
             }
+            {isWarningModalOpen && (
+                <WarningModal
+                    message={warningMessage}
+                    onClose={() => setIsWarningModalOpen(false)}
+                />
+            )}
         </div>
     );
 };

@@ -690,8 +690,27 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
   // サイドバーで変更しても即時には反映されず、実行ボタンを押したときに反映されます。
   const displayCustomFilterConditions = (isSegmentationExecuted && executedState) ? executedState.customFilterConditions : customFilterConditions;
 
+  const handleOpenPersonaPopup = useCallback(() => {
+    // 부모 창(메인화면, 3001 포트)으로 메시지 전송
+    if (window.parent !== window) {
+      window.parent.postMessage({
+        type: 'OPEN_IFRAME',
+        url: 'http://localhost:3000/i-map/segmentpersona'
+      }, 'http://localhost:3001');
+      console.log('Sent OPEN_IFRAME message to parent (3001)');
+    } else {
+      // 단독 실행 중일 경우 현재 창에서 이동 (테스트용)
+      window.location.href = '/i-map/segmentpersona';
+    }
+    
+    // 기존 prop이 있다면 호출
+    if (onOpenPersonaPopup) {
+      onOpenPersonaPopup();
+    }
+  }, [onOpenPersonaPopup]);
+
   return (
-    // モーダル表示時にサイドバーも含めて全体が非アクティブになるように、コンテナにrelativeを追加します。
+    // 모달 표시시에 사이드바를 포함하여 전체가 비활성화되도록 컨테이너에 relative를 추가합니다.
     <div
       className="flex h-full w-full bg-white relative"
       onDragOver={handleDragOver}
@@ -756,7 +775,7 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
         // rangeConfigsプロパティを渡す
         rangeConfigs={itemRangeConfig}
         customFilterConditions={displayCustomFilterConditions}
-        onOpenPersonaPopup={onOpenPersonaPopup}
+        onOpenPersonaPopup={handleOpenPersonaPopup}
         onComparisonDataChange={setComparisonExportData}
       />
 

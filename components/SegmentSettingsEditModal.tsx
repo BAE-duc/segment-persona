@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AppButton, AppSelect } from './shared/FormControls';
 import { modalStyles } from './shared/modalStyles';
 import { ParameterWarningModal } from './shared/ParameterWarningModal';
@@ -154,9 +154,11 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
   // 警告ポップアップの状態管理
   const [showWarning, setShowWarning] = useState(false);
   const [warningItems, setWarningItems] = useState<Array<{parameter: string; value: string; reason: string}>>([]);
+  const [customSizeErrors, setCustomSizeErrors] = useState<{ width?: string; height?: string }>({});
 
   const isFormValid = useMemo(() => {
     const isMapSizeValid = mapSize === 'auto' || (customWidth.trim() !== '' && customHeight.trim() !== '');
+    const hasCustomSizeError = mapSize === 'custom' && (!!customSizeErrors.width || !!customSizeErrors.height);
     const isOtherSettingsValid =
       learningRate.trim() !== '' &&
       iterations.trim() !== '' &&
@@ -166,8 +168,42 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
       hierarchicalDistanceFunction.trim() !== '' &&
       hierarchicalLinkageMethod.trim() !== '';
 
-    return isMapSizeValid && isOtherSettingsValid;
-  }, [mapSize, customWidth, customHeight, learningRate, iterations, distanceMetric, neighborhoodRadius, neighborhoodFunction, hierarchicalDistanceFunction, hierarchicalLinkageMethod]);
+    return isMapSizeValid && isOtherSettingsValid && !hasCustomSizeError;
+  }, [mapSize, customWidth, customHeight, learningRate, iterations, distanceMetric, neighborhoodRadius, neighborhoodFunction, hierarchicalDistanceFunction, hierarchicalLinkageMethod, customSizeErrors]);
+
+  useEffect(() => {
+    if (mapSize !== 'custom') {
+      setCustomSizeErrors({});
+      return;
+    }
+
+    const errors: { width?: string; height?: string } = {};
+    const widthValue = customWidth.trim();
+    const heightValue = customHeight.trim();
+
+    if (widthValue !== '') {
+      const widthNum = parseInt(widthValue, 10);
+      if (isNaN(widthNum) || widthNum > 20) {
+        errors.width = '20以下の数字を入力してください';
+      }
+    }
+
+    if (heightValue !== '') {
+      const heightNum = parseInt(heightValue, 10);
+      if (isNaN(heightNum) || heightNum > 20) {
+        errors.height = '20以下の数字を入力してください';
+      }
+    }
+
+    setCustomSizeErrors(errors);
+  }, [mapSize, customWidth, customHeight]);
+
+  useEffect(() => {
+    if (mapSize === 'auto') {
+      setCustomWidth('');
+      setCustomHeight('');
+    }
+  }, [mapSize]);
 
   // パラメータ検証関数
   const validateParameters = () => {
@@ -406,7 +442,11 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
                 value={customWidth}
                 onChange={(e) => setCustomWidth(e.target.value)}
                 disabled={mapSize !== 'custom'}
-                className="w-20 h-[30px] px-2 text-xs border border-gray-400 bg-white rounded-lg outline-none focus:ring-1 focus:ring-gray-400 disabled:bg-gray-200"
+                className={`w-20 h-[30px] px-2 text-xs border bg-white rounded-lg outline-none focus:ring-1 disabled:bg-gray-200 ${
+                  mapSize === 'custom' && customSizeErrors.width
+                    ? 'border-red-500 bg-red-50 focus:ring-red-400'
+                    : 'border-gray-400 focus:ring-gray-400'
+                }`}
               />
               <span className="text-xs text-gray-600">Y:</span>
               <input
@@ -414,9 +454,18 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
                 value={customHeight}
                 onChange={(e) => setCustomHeight(e.target.value)}
                 disabled={mapSize !== 'custom'}
-                className="w-20 h-[30px] px-2 text-xs border border-gray-400 bg-white rounded-lg outline-none focus:ring-1 focus:ring-gray-400 disabled:bg-gray-200"
+                className={`w-20 h-[30px] px-2 text-xs border bg-white rounded-lg outline-none focus:ring-1 disabled:bg-gray-200 ${
+                  mapSize === 'custom' && customSizeErrors.height
+                    ? 'border-red-500 bg-red-50 focus:ring-red-400'
+                    : 'border-gray-400 focus:ring-gray-400'
+                }`}
               />
             </div>
+            {mapSize === 'custom' && (customSizeErrors.width || customSizeErrors.height) && (
+              <div className="mt-1 text-xs text-red-500">
+                20以下の数字を入力してください
+              </div>
+            )}
           </FormRow>
 
           <FormRow label="学習率" tooltipKey="learningRate">
@@ -481,6 +530,7 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
           </div>
         </div>
       </div>
+
 
       {/* 警告ポップアップ */}
       {showWarning && (

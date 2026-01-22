@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { AppButton } from './shared/FormControls';
 import { modalStyles } from './shared/modalStyles';
 import { TEST_CSV_RAW } from '../data/testData';
+import { itemListData } from './shared/FilterEditModal';
 
 // 選択されたアイテムの構造を定義します
 
@@ -65,18 +66,34 @@ const CustomCheckbox = ({
   </div>
 );
 
+// Caret アイコンコンポーネント
+const TreeCaret = ({ expanded }: { expanded: boolean }) => (
+  <div className="w-4 h-4 text-[#586365] flex items-center justify-center mr-1">
+    <svg
+      className={`w-3 h-3 transition-transform duration-200 ${expanded ? 'rotate-90' : 'rotate-0'}`}
+      viewBox="0 0 20 20"
+      fill="currentColor"
+    >
+      <path d="M8 6l6 4-6 4V6z" />
+    </svg>
+  </div>
+);
+
 export const OverlayItemSelectionModal: React.FC<OverlayItemSelectionModalProps> = ({ onClose, onConfirm, initialSelection }) => {
-  // TEST_CSV_RAWからデータを動的に抽出
-  const { variables, choicesData } = useMemo(() => {
+  // TEST_CSV_RAWからTESTカテゴリのデータのみを抽出（数値型を除外）
+  const { testVariables, choicesData } = useMemo(() => {
     const lines = TEST_CSV_RAW.trim().split('\n');
     const headers = lines[0].split(',').map(h => h.trim());
 
+    // 対象項目のみをフィルタリング
+    const targetColumns = ['sex', 'child', 'age', 'year', '車イメージ', '保有車_メーカー', '保有車_カテゴリ', '保有車_車名', 'test_SEG'];
+
     // 各変数のカテゴリを抽出
     const choices: { [key: string]: { id: string; name: string }[] } = {};
-    const categoricalVars: { id: string; name: string; dataType: string }[] = [];
+    const vars: { id: string; name: string }[] = [];
 
     headers.forEach((header, colIndex) => {
-      if (header === 'ID') return;
+      if (header === 'ID' || !targetColumns.includes(header)) return;
 
       const uniqueValues = new Set<string>();
       const allValues: string[] = [];
@@ -92,18 +109,34 @@ export const OverlayItemSelectionModal: React.FC<OverlayItemSelectionModalProps>
         }
       }
 
-      // 数値型かどうかを判定（全ての値が数値の場合は除外）
+      // 数値型かどうかを判定
       const isNumeric = allValues.length > 0 && allValues.every(v => !isNaN(Number(v)));
 
-      // 数値型でない場合のみ変数リストに追加
+      // 数値型は除外
       if (!isNumeric) {
-        categoricalVars.push({ id: header, name: header, dataType: 'string' });
-        choices[header] = Array.from(uniqueValues).map((val, idx) => ({ id: `${header}_${idx}`, name: val }));
+        vars.push({ id: header, name: header });
+        const sortedValues = Array.from(uniqueValues).sort();
+        choices[header] = sortedValues.map((val, idx) => ({ id: `${header}_${idx}`, name: val }));
       }
     });
 
-    return { variables: categoricalVars, choicesData: choices };
+    return { testVariables: vars, choicesData: choices };
   }, []);
+
+  // TESTノードのchildrenを動的に生成
+  const testChildren = useMemo(() => {
+    return testVariables.map(v => ({
+      id: v.id,
+      name: v.name,
+      children: []
+    }));
+  }, [testVariables]);
+
+  // ツリービューの展開状態を管理
+  const [expandedState, setExpandedState] = useState<Record<string, boolean>>({
+    'surveyData': false,
+    'test': false
+  });
 
   const [selectedVariableId, setSelectedVariableId] = useState<string | null>(
     initialSelection?.variableId || null
@@ -138,7 +171,7 @@ export const OverlayItemSelectionModal: React.FC<OverlayItemSelectionModalProps>
       return;
     }
 
-    const variable = variables.find(v => v.id === selectedVariableId);
+    const variable = testVariables.find(v => v.id === selectedVariableId);
     if (!variable) {
       onConfirm(null);
       return;
@@ -175,6 +208,44 @@ export const OverlayItemSelectionModal: React.FC<OverlayItemSelectionModalProps>
     }
   };
 
+  // ツリーノードを再帰的にレンダリング
+  const renderTreeNode = (node: any, depth: number = 0): React.ReactNode => {
+    // TESTノードの場合は動的に生成したchildrenを使用
+    const nodeChildren = node.id === 'test' ? testChildren : (node.children || []);
+    const hasChildren = nodeChildren && nodeChildren.length > 0;
+    const isExpanded = !!expandedState[node.id];
+
+    // TESTカテゴリの変数かどうか判定
+    const isTestVariable = testVariables.some(v => v.id === node.id);
+
+    return (
+      <div key={node.id}>
+        <div
+          className={`flex items-center cursor-pointer p-1 rounded-sm ${
+            isTestVariable ? modalStyles.interactive.listItem(selectedVariableId === node.id) : ''
+          }`}
+          onClick={() => {
+            if (hasChildren) {
+              setExpandedState(prev => ({ ...prev, [node.id]: !prev[node.id] }));
+            } else if (isTestVariable) {
+              handleVariableClick(node.id);
+            }
+          }}
+          title={node.name}
+        >
+          {hasChildren && <TreeCaret expanded={isExpanded} />}
+          {!hasChildren && <div className="w-4 mr-1"></div>}
+          <span className={hasChildren ? "font-semibold" : ""}>{node.name}</span>
+        </div>
+        {hasChildren && isExpanded && (
+          <div className="pl-4">
+            {nodeChildren.map((child: any) => renderTreeNode(child, depth + 1))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className={modalStyles.overlay} aria-modal="true" role="dialog">
       <div className={`${modalStyles.container} max-w-5xl w-full`} style={{ height: '40rem' }}>
@@ -196,27 +267,23 @@ export const OverlayItemSelectionModal: React.FC<OverlayItemSelectionModalProps>
                 ↓
               </button>
             </div>
-            <div className="flex-grow border border-gray-400 bg-white rounded-md overflow-y-auto text-xs">
-              <table className="w-full text-xs">
-                <thead className="sticky top-0 bg-gray-50 z-10">
-                  <tr>
-                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">変数名</th>
-                    <th className="p-1 font-bold text-left border-b border-r border-gray-300 pl-2">データタイプ</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {variables.map(v => (
-                    <tr
-                      key={v.id}
-                      className={`cursor-pointer font-medium ${modalStyles.interactive.tableRow(selectedVariableId === v.id)}`}
-                      onClick={() => handleVariableClick(v.id)}
-                    >
-                      <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{v.name}</td>
-                      <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{v.dataType}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="flex-grow border border-gray-400 bg-white rounded-md overflow-y-auto text-xs p-1 select-none">
+              {Object.entries(itemListData).map(([key, topLevelItem]: [string, any]) => (
+                <div key={key}>
+                  <div
+                    className="flex items-center cursor-pointer p-1 rounded-sm"
+                    onClick={() => setExpandedState(prev => ({ ...prev, [key]: !prev[key] }))}
+                  >
+                    <TreeCaret expanded={!!expandedState[key]} />
+                    <span className="font-semibold">{topLevelItem.name}</span>
+                  </div>
+                  {expandedState[key] && (
+                    <div className="pl-4">
+                      {topLevelItem.children.map((child: any) => renderTreeNode(child, 1))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 

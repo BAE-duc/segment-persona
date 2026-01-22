@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { AppButton, AppSelect } from './shared/FormControls';
 import type { ConditionListItem } from './shared/FilterEditModal';
 import type { FilterCategory } from '../pages/SegmentCreationPage';
@@ -113,7 +113,38 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
   };
 
 
-  const [weightValue, setWeightValue] = useState('default');
+  const [weightValue, setWeightValue] = useState('unweighted');
+
+  const weightOptions = useMemo(() => {
+    if (!selectedData) return [];
+
+    const optionsByName: Record<string, { value: string; label: string }[]> = {
+      'NCBS Japan結合データ (2010-2021、2023年)': [
+        { value: 'unweighted', label: 'unweighted' },
+        { value: 'weight', label: 'ウエイト値' }
+      ],
+      'NCBS Japan 結合データ (2010-2021、2023-2024年)': [
+        { value: 'unweighted', label: 'unweighted' },
+        { value: 'weight', label: 'ウエイト値' }
+      ],
+      '日本新動態 結合データ': [
+        { value: 'unweighted', label: 'unweighted' },
+        { value: 'weight', label: 'ウエイト' },
+        { value: 'weight_prefecture_year', label: 'ウエイト（府県別・年間）' }
+      ],
+      '2021-2024年META特性調査': [
+        { value: 'unweighted', label: 'unweighted' },
+        { value: 'car_type_weight', label: '車種ウェイト' }
+      ]
+    };
+
+    return optionsByName[selectedData.name] ?? [{ value: 'unweighted', label: 'unweighted' }];
+  }, [selectedData]);
+
+  useEffect(() => {
+    if (!selectedData) return;
+    setWeightValue('unweighted');
+  }, [selectedData?.name]);
 
   // サンプルサイズの状態を管理
   const [sampleSize, setSampleSize] = useState(1000);
@@ -187,15 +218,19 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
           <div className="mt-1 pl-2 space-y-1">
             <p className="text-xs text-gray-600">{selectedData.groupName}</p>
             <p className="text-xs">{selectedData.name}</p>
-            <AppSelect
-              value={weightValue}
-              onChange={(e) => setWeightValue(e.target.value)}
-              className="mt-1 w-32"
-            >
-              <option value="default">ウェイト値</option>
-              <option value="ari">有</option>
-              <option value="nashi">無</option>
-            </AppSelect>
+            {weightOptions.length > 0 && (
+              <AppSelect
+                value={weightValue}
+                onChange={(e) => setWeightValue(e.target.value)}
+                className="mt-1 w-48"
+              >
+                {weightOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </AppSelect>
+            )}
           </div>
         )}
       </div>

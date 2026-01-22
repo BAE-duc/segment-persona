@@ -98,8 +98,8 @@ export const PositioningAxisModal: React.FC<PositioningAxisModalProps> = ({ onCl
 
   // ツリービューの展開状態を管理
   const [expandedState, setExpandedState] = useState<Record<string, boolean>>({
-    'surveyData': true,  // デフォルトで調査データを展開
-    'test': true         // デフォルトでTESTを展開
+    'surveyData': false,
+    'test': false
   });
 
   const [selectedVariableId, setSelectedVariableId] = useState<string | null>(null);
