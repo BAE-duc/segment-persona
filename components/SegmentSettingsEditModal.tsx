@@ -155,10 +155,14 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
   const [showWarning, setShowWarning] = useState(false);
   const [warningItems, setWarningItems] = useState<Array<{parameter: string; value: string; reason: string}>>([]);
   const [customSizeErrors, setCustomSizeErrors] = useState<{ width?: string; height?: string }>({});
+  const [learningRateError, setLearningRateError] = useState<string>('');
+  const [neighborhoodRadiusError, setNeighborhoodRadiusError] = useState<string>('');
 
   const isFormValid = useMemo(() => {
     const isMapSizeValid = mapSize === 'auto' || (customWidth.trim() !== '' && customHeight.trim() !== '');
     const hasCustomSizeError = mapSize === 'custom' && (!!customSizeErrors.width || !!customSizeErrors.height);
+    const hasLearningRateError = !!learningRateError;
+    const hasNeighborhoodRadiusError = !!neighborhoodRadiusError;
     const isOtherSettingsValid =
       learningRate.trim() !== '' &&
       iterations.trim() !== '' &&
@@ -168,8 +172,8 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
       hierarchicalDistanceFunction.trim() !== '' &&
       hierarchicalLinkageMethod.trim() !== '';
 
-    return isMapSizeValid && isOtherSettingsValid && !hasCustomSizeError;
-  }, [mapSize, customWidth, customHeight, learningRate, iterations, distanceMetric, neighborhoodRadius, neighborhoodFunction, hierarchicalDistanceFunction, hierarchicalLinkageMethod, customSizeErrors]);
+    return isMapSizeValid && isOtherSettingsValid && !hasCustomSizeError && !hasLearningRateError && !hasNeighborhoodRadiusError;
+  }, [mapSize, customWidth, customHeight, learningRate, iterations, distanceMetric, neighborhoodRadius, neighborhoodFunction, hierarchicalDistanceFunction, hierarchicalLinkageMethod, customSizeErrors, learningRateError, neighborhoodRadiusError]);
 
   useEffect(() => {
     if (mapSize !== 'custom') {
@@ -183,20 +187,52 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
 
     if (widthValue !== '') {
       const widthNum = parseInt(widthValue, 10);
-      if (isNaN(widthNum) || widthNum > 20) {
-        errors.width = '20以下の数字を入力してください';
+      if (isNaN(widthNum) || widthNum > 40) {
+        errors.width = '40以下の数字を入力してください';
       }
     }
 
     if (heightValue !== '') {
       const heightNum = parseInt(heightValue, 10);
-      if (isNaN(heightNum) || heightNum > 20) {
-        errors.height = '20以下の数字を入力してください';
+      if (isNaN(heightNum) || heightNum > 40) {
+        errors.height = '40以下の数字を入力してください';
       }
     }
 
     setCustomSizeErrors(errors);
   }, [mapSize, customWidth, customHeight]);
+
+  // 学習率の実時間検証
+  useEffect(() => {
+    const rateValue = learningRate.trim();
+    if (rateValue === '') {
+      setLearningRateError('');
+      return;
+    }
+
+    const rateNum = parseFloat(rateValue);
+    if (isNaN(rateNum) || rateNum <= 0 || rateNum > 1.0) {
+      setLearningRateError('0より大きく1以下の数字を入力してください');
+    } else {
+      setLearningRateError('');
+    }
+  }, [learningRate]);
+
+  // 近傍半径の実時間検証
+  useEffect(() => {
+    const radiusValue = neighborhoodRadius.trim();
+    if (radiusValue === '') {
+      setNeighborhoodRadiusError('');
+      return;
+    }
+
+    const radiusNum = parseFloat(radiusValue);
+    if (isNaN(radiusNum) || radiusNum <= 0) {
+      setNeighborhoodRadiusError('0より大きい数字を入力してください');
+    } else {
+      setNeighborhoodRadiusError('');
+    }
+  }, [neighborhoodRadius]);
 
   useEffect(() => {
     if (mapSize === 'auto') {
@@ -219,19 +255,19 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
           warnings.push({
             parameter: 'カスタム幅',
             value: customWidth,
-            reason: 'マップ幅は正の整数である必要があります。\n推奨範囲: 5-20'
+            reason: 'マップ幅は正の整数である必要があります。\n推奨範囲: 5-40'
           });
-        } else if (widthNum > 20) {
+        } else if (widthNum > 40) {
           warnings.push({
             parameter: 'カスタム幅',
             value: customWidth,
-            reason: '20を超える値は計算負荷が高くなります。\n推奨範囲: 5-20'
+            reason: '40を超える値は計算負荷が高くなります。\n推奨範囲: 5-40'
           });
         } else if (widthNum < 2) {
           warnings.push({
             parameter: 'カスタム幅',
             value: customWidth,
-            reason: '2未満の値では適切な分類ができません。\n推奨範囲: 5-20'
+            reason: '2未満の値では適切な分類ができません。\n推奨範囲: 5-40'
           });
         }
       }
@@ -241,19 +277,19 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
           warnings.push({
             parameter: 'カスタム高さ',
             value: customHeight,
-            reason: 'マップ高さは正の整数である必要があります。\n推奨範囲: 5-20'
+            reason: 'マップ高さは正の整数である必要があります。\n推奨範囲: 5-40'
           });
-        } else if (heightNum > 20) {
+        } else if (heightNum > 40) {
           warnings.push({
             parameter: 'カスタム高さ',
             value: customHeight,
-            reason: '20を超える値は計算負荷が高くなります。\n推奨範囲: 5-20'
+            reason: '40を超える値は計算負荷が高くなります。\n推奨範囲: 5-40'
           });
         } else if (heightNum < 2) {
           warnings.push({
             parameter: 'カスタム高さ',
             value: customHeight,
-            reason: '2未満の値では適切な分類ができません。\n推奨範囲: 5-20'
+            reason: '2未満の値では適切な分類ができません。\n推奨範囲: 5-40'
           });
         }
       }
@@ -262,35 +298,11 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
     // 2. 学習率の検証 (UI順序: 2番目)
     const learningRateNum = parseFloat(learningRate);
     if (!isNaN(learningRateNum)) {
-      if (learningRateNum <= 0) {
+      if (learningRateNum <= 0 || learningRateNum > 1.0) {
         warnings.push({
           parameter: '学習率',
           value: learningRate,
-          reason: '学習率は正の値である必要があります。\n推奨範囲: 0.01-1.0'
-        });
-      } else if (learningRateNum > 1.0) {
-        warnings.push({
-          parameter: '学習率',
-          value: learningRate,
-          reason: '1.0を超える値は学習プロセスが不安定になり、適切な収束が困難になります。\n推奨範囲: 0.01-1.0'
-        });
-      } else if (learningRateNum < 0.001) {
-        warnings.push({
-          parameter: '学習率',
-          value: learningRate,
-          reason: '0.001未満の値は学習速度が極めて遅く、実用的な時間内での収束が期待できません。\n推奨範囲: 0.01-1.0'
-        });
-      } else if (learningRateNum > 0.5) {
-        warnings.push({
-          parameter: '学習率',
-          value: learningRate,
-          reason: '0.5を超える値は学習初期の振動が大きくなる可能性があります。\n推奨範囲: 0.01-0.5'
-        });
-      } else if (learningRateNum < 0.01) {
-        warnings.push({
-          parameter: '学習率',
-          value: learningRate,
-          reason: '0.01未満の値は学習が遅くなり、十分な特徴抽出に時間がかかります。\n推奨範囲: 0.01-0.5'
+          reason: '学習率は0より大きく1以下の値を入力してください。\n有効範囲: 0 < 学習率 ≤ 1'
         });
       }
     }
@@ -463,13 +475,23 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
             </div>
             {mapSize === 'custom' && (customSizeErrors.width || customSizeErrors.height) && (
               <div className="mt-1 text-xs text-red-500">
-                20以下の数字を入力してください
+                40以下の数字を入力してください
               </div>
             )}
           </FormRow>
 
           <FormRow label="学習率" tooltipKey="learningRate">
-            <StyledInput type="number" value={learningRate} onChange={(e) => setLearningRate(e.target.value)} />
+            <StyledInput 
+              type="number" 
+              value={learningRate} 
+              onChange={(e) => setLearningRate(e.target.value)}
+              className={learningRateError ? 'border-red-500' : ''}
+            />
+            {learningRateError && (
+              <div className="text-red-500 text-xs mt-1">
+                {learningRateError}
+              </div>
+            )}
           </FormRow>
 
           <FormRow label="イテレーション数" tooltipKey="iterations">
@@ -485,7 +507,17 @@ export const SegmentSettingsEditModal: React.FC<SegmentSettingsEditModalProps> =
           </FormRow>
 
           <FormRow label="近傍半径" tooltipKey="neighborhoodRadius">
-            <StyledInput type="number" value={neighborhoodRadius} onChange={(e) => setNeighborhoodRadius(e.target.value)} />
+            <StyledInput 
+              type="number" 
+              value={neighborhoodRadius} 
+              onChange={(e) => setNeighborhoodRadius(e.target.value)}
+              className={neighborhoodRadiusError ? 'border-red-500' : ''}
+            />
+            {neighborhoodRadiusError && (
+              <div className="text-red-500 text-xs mt-1">
+                {neighborhoodRadiusError}
+              </div>
+            )}
           </FormRow>
 
           <FormRow label="近傍関数" tooltipKey="neighborhoodFunction">

@@ -792,9 +792,9 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
   };
 
   const validateConditionList = (list: ConditionListItem[]) => {
-    // 空の場合はそのまま許可（フィルターなし状態）
+    // 조건이 하나도 없으면 에러
     if (list.length === 0) {
-      return null;
+      return '条件を少なくとも1つ追加してください。';
     }
 
     for (const [index, item] of list.entries()) {
@@ -1171,8 +1171,8 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
             <AppButton
               onClick={handleConfirmClick}
               className="w-24 py-1"
-              isActive={true}
-              disabled={false}
+              isActive={conditionList.length > 0}
+              disabled={conditionList.length === 0}
             >
               OK
             </AppButton>

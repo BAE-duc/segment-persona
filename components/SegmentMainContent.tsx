@@ -244,11 +244,13 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
 
   const [segmentComparisonConditions, setSegmentComparisonConditions] = useState<string[]>([]);
 
-  // 集計表の表示モード
-  type TableDisplayMode = 'percentage' | 'difference' | 'count';
+  // 集計表の表示モード: percentage / difference のみ
+  type TableDisplayMode = 'percentage' | 'difference';
   const [tableDisplayMode, setTableDisplayMode] = useState<TableDisplayMode>('percentage');
-  // 横縦変換 상태
-  const [isTableTransposed, setIsTableTransposed] = useState(false);
+  
+  // 表示形式: 縦変換 / 横変換 / n数表示
+  type ViewType = 'vertical' | 'horizontal' | 'count';
+  const [viewType, setViewType] = useState<ViewType>('vertical');
 
 
   const [displayRangeConfigs, setDisplayRangeConfigs] = useState<Record<string, { min: number; max: number }>>({});
@@ -752,8 +754,6 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     : '';
 
   const heatmapVariableTexts = heatmapConditionsList.map(conditions => {
-    // 空の条件の場合は「フィルタなし」と表示
-    if (conditions.length === 0) return 'フィルタなし';
     return conditions.map((c, idx) => {
       // symbolを使用して正確に表示 (age<20, age=20 など)
       const condText = `${c.itemName}${c.symbol}${c.categoryName}`;
@@ -914,30 +914,26 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                           <AppButton
                             className="px-6 whitespace-nowrap ml-auto"
                             onClick={() => {
-                              setIsTableTransposed(prev => !prev);
+                              // %表示 ↔ 差分表示 トグル
+                              setTableDisplayMode(prev => prev === 'percentage' ? 'difference' : 'percentage');
+                              // 表示モード変更時は縦状態にリセット
+                              setViewType('vertical');
                             }}
-                            disabled={tableDisplayMode === 'count'}
                           >
-                            {isTableTransposed ? '縦変換' : '横変換'}
+                            {tableDisplayMode === 'percentage' ? '差分表示' : '%表示'}
                           </AppButton>
                           <AppButton
                             className="px-6 whitespace-nowrap"
                             onClick={() => {
-                              setTableDisplayMode(prev => {
-                                if (isTableTransposed) {
-                                  // 横縦変換 ON: percentage ↔ difference만 토글
-                                  return prev === 'percentage' ? 'difference' : 'percentage';
-                                } else {
-                                  // 横縦変換 OFF: 3개 모드 순환
-                                  if (prev === 'percentage') return 'difference';
-                                  if (prev === 'difference') return 'count';
-                                  return 'percentage';
-                                }
+                              // 縦変換 → 横変換 → n数表示 → 縦変換 (順環)
+                              setViewType(prev => {
+                                if (prev === 'vertical') return 'horizontal';
+                                if (prev === 'horizontal') return 'count';
+                                return 'vertical';
                               });
                             }}
                           >
-                            {tableDisplayMode === 'percentage' ? '差分表示' : 
-                             tableDisplayMode === 'difference' ? (isTableTransposed ? '%表示' : 'n数表示') : '%表示'}
+                            {viewType === 'vertical' ? '横変換' : viewType === 'horizontal' ? 'n数表示' : '縦変換'}
                           </AppButton>
                         </div>
                         <div className="flex-grow min-h-0">
@@ -1009,8 +1005,8 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                             data={comparisonData.rows}
                             segmentSizes={comparisonData.segmentSizes}
                             segmentIds={displaySelectedSegments || undefined}
-                            displayMode={tableDisplayMode}
-                            transpose={isTableTransposed}
+                            displayMode={viewType === 'count' ? 'count' : tableDisplayMode}
+                            transpose={viewType === 'horizontal'}
                           />
                         ) : (
                           <div className="flex items-center justify-center h-full">
