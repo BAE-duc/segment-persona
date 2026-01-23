@@ -297,7 +297,7 @@ export const SegmentSidebar: React.FC<SegmentSidebarProps> = ({
                           )}
                           {variable.somDataType === 'カテゴリ型' && variable.conversionDetails.categories && variable.conversionDetails.categories.length > 0 && (
                             <div>
-                              <ul className="list-disc pl-5">
+                              <ul className="pl-5">
                                 {variable.conversionDetails.categories.map((cat, index) => (
                                   <li key={index}>{cat}</li>
                                 ))}

@@ -11,6 +11,7 @@ import { SegmentSettingsEditModal, type SegmentSettings } from '../components/Se
 import { WarningModal } from '../components/shared/WarningModal';
 import { InfoModal } from '../components/shared/InfoModal';
 import { ConversionSettingsModal } from '../components/ConversionSettingsModal';
+import { FilterNameInputModal } from '../components/shared/FilterNameInputModal';
 import { TEST_CSV_RAW } from '../data/testData';
 
 // html2canvasライブラリをグローバル変数として宣言します。
@@ -75,7 +76,7 @@ headers.forEach((header, colIndex) => {
   // 数値型判定: 有効な値が存在し、全てが数値として解釈可能な場合
   const isNumeric = validValues.length > 0 && validValues.every(v => !isNaN(Number(v)));
   const dataType = isNumeric ? 'int' : 'string';
-  const itemType = isNumeric ? 'S' : 'R';
+  const itemType = isNumeric ? 'R' : 'S';
   const somDataType = isNumeric ? '数値型' : 'カテゴリ型';
 
   // Choices / Categories
@@ -187,6 +188,8 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
   const [isConversionSettingsModalOpen, setIsConversionSettingsModalOpen] = useState(false);
   // 編集中のアイテムIDとデータ型を保持するstate。
   const [editingConversionItem, setEditingConversionItem] = useState<{ id: string; somDataType: string } | null>(null);
+  // フィルタ名入力モーダルの状態管理
+  const [isFilterNameInputModalOpen, setIsFilterNameInputModalOpen] = useState(false);
 
 
   // 共有される状態
@@ -535,7 +538,9 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
       metaRows.push(['Custom filter conditions']);
       if (targetCustomFilters && targetCustomFilters.length > 0) {
         targetCustomFilters.forEach((c: any) => {
-          metaRows.push([c.itemName, c.symbol, c.categoryName, c.connector || '', c.bracketOpen || '', c.bracketClose || '']);
+          // 괄호를 조건 앞뒤에 배치: (bracketOpen) itemName symbol categoryName connector (bracketClose)
+          const conditionText = `${c.bracketOpen || ''}${c.itemName} ${c.symbol} ${c.categoryName} ${c.connector || ''}${c.bracketClose || ''}`;
+          metaRows.push([conditionText.trim()]);
         });
       } else {
         metaRows.push(['(none)']);
@@ -550,7 +555,15 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
       const metaWs = XLSX.utils.aoa_to_sheet(metaRows);
       XLSX.utils.book_append_sheet(wb, metaWs, 'Info');
 
-      // Helper to build normal sheet
+      // --- Sheet 2: segment_result (placeholder) ---
+      const segmentResultRows: any[] = [
+        ['Segment Result'],
+        ['This sheet will contain segment analysis results']
+      ];
+      const segmentResultWs = XLSX.utils.aoa_to_sheet(segmentResultRows);
+      XLSX.utils.book_append_sheet(wb, segmentResultWs, 'segment_result');
+
+      // Helper to build normal sheet (縦 - vertical)
       const buildNormalSheet = (rows: any[], segmentSizes: number[], mode: 'percentage' | 'difference' | 'count') => {
         const header = ['Variable', 'Choice', 'Total', ...segmentSizes.map((_, i) => `Segment ${i + 1}`)];
         const aoa = [header];
@@ -581,13 +594,75 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
         return aoa;
       };
 
-      const modes: ('percentage' | 'difference' | 'count')[] = ['percentage', 'difference', 'count'];
-      for (const mode of modes) {
-        const sheetName = mode;
-        const aoa = buildNormalSheet(comparisonExportData.rows, comparisonExportData.segmentSizes, mode);
-        const ws = XLSX.utils.aoa_to_sheet(aoa);
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
-      }
+      // Helper to build transposed sheet (横 - horizontal)
+      // 화면의 가로 변환 로직과 동일: 각 선택지의 전체 카운트 대비 각 세그먼트 카운트 비율
+      const buildTransposedSheet = (rows: any[], segmentSizes: number[], mode: 'percentage' | 'difference' | 'count') => {
+        const header = ['Variable', 'Choice', 'Average', ...segmentSizes.map((_, i) => `Segment ${i + 1}`)];
+        const aoa = [header];
+        
+        rows.forEach(r => {
+          const rowVals: any[] = [];
+          rowVals.push(r.variableName || r.variableId);
+          rowVals.push(r.choiceName || r.choiceId);
+          
+          // 각 선택지의 전체 카운트
+          const totalChoiceCount = r.totalCount || 0;
+          
+          // 각 세그먼트에서 이 선택지가 차지하는 비율 계산
+          const segmentPercentages = (r.segmentCounts || []).map((count: number) => {
+            return totalChoiceCount > 0 ? (count / totalChoiceCount) * 100 : 0;
+          });
+          
+          // 평균 계산
+          const averagePercentage = segmentPercentages.length > 0
+            ? segmentPercentages.reduce((sum: number, p: number) => sum + p, 0) / segmentPercentages.length
+            : 0;
+          
+          if (mode === 'percentage') {
+            // percentage 모드: 평균과 각 세그먼트 비율 표시
+            rowVals.push(Number(averagePercentage.toFixed(2)));
+            rowVals.push(...segmentPercentages.map((val: number) => Number(val.toFixed(2))));
+          } else if (mode === 'difference') {
+            // difference 모드: 평균과 (각 세그먼트 비율 - 평균) 표시
+            rowVals.push(Number(averagePercentage.toFixed(2)));
+            const diffs = segmentPercentages.map((segRatio: number) => 
+              Number((segRatio - averagePercentage).toFixed(2))
+            );
+            rowVals.push(...diffs);
+          } else {
+            // count 모드는 가로 변환 안함 (이 함수 호출 안됨)
+            rowVals.push(r.totalCount ?? 0);
+            rowVals.push(...(r.segmentCounts || []));
+          }
+          
+          aoa.push(rowVals);
+        });
+        
+        return aoa;
+      };
+
+      // percentage: 縦 + 横
+      const percentageVertical = buildNormalSheet(comparisonExportData.rows, comparisonExportData.segmentSizes, 'percentage');
+      const percentageVerticalWs = XLSX.utils.aoa_to_sheet(percentageVertical);
+      XLSX.utils.book_append_sheet(wb, percentageVerticalWs, '縦_percentage');
+
+      const percentageHorizontal = buildTransposedSheet(comparisonExportData.rows, comparisonExportData.segmentSizes, 'percentage');
+      const percentageHorizontalWs = XLSX.utils.aoa_to_sheet(percentageHorizontal);
+      XLSX.utils.book_append_sheet(wb, percentageHorizontalWs, '横_percentage');
+
+      // difference: 縦 + 横
+      const differenceVertical = buildNormalSheet(comparisonExportData.rows, comparisonExportData.segmentSizes, 'difference');
+      const differenceVerticalWs = XLSX.utils.aoa_to_sheet(differenceVertical);
+      XLSX.utils.book_append_sheet(wb, differenceVerticalWs, '縦_difference');
+
+      const differenceHorizontal = buildTransposedSheet(comparisonExportData.rows, comparisonExportData.segmentSizes, 'difference');
+      const differenceHorizontalWs = XLSX.utils.aoa_to_sheet(differenceHorizontal);
+      XLSX.utils.book_append_sheet(wb, differenceHorizontalWs, '横_difference');
+
+      // count: 縦만 (横은 제외)
+      const countVertical = buildNormalSheet(comparisonExportData.rows, comparisonExportData.segmentSizes, 'count');
+      const countVerticalWs = XLSX.utils.aoa_to_sheet(countVertical);
+      XLSX.utils.book_append_sheet(wb, countVerticalWs, '縦_count');
 
       const ts = `${today.getFullYear()}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getDate().toString().padStart(2, '0')}_${today.getHours().toString().padStart(2, '0')}${today.getMinutes().toString().padStart(2, '0')}${today.getSeconds().toString().padStart(2, '0')}`;
       const filename = `segment-analysis_${ts}.xlsx`;
@@ -600,83 +675,23 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
   };
 
   // 共通フィルター出力機能
-  // 共通フィルター出力機能
   const handleExportCommonFilter = () => {
     if (!isSegmentationExecuted) {
       handleShowWarningModal("セグメンテーションが実行されていません。");
       return;
     }
 
-    // 実行時点の条件を使用します。
-    // 実行時点の条件を使用します。
-    const targetCustomFilterConditions = executedState ? executedState.customFilterConditions : customFilterConditions;
-    const targetFilterCategories = executedState ? executedState.filterCategories : filterCategories;
+    // フィルタ名入力モーダルを表示
+    setIsFilterNameInputModalOpen(true);
+  };
 
-    // 1. フィルター編集で作成された条件 (カスタムフィルター)
-    // 1. フィルター編集で作成された条件 (カスタムフィルター)
-    let customFilterStr = '';
-    if (targetCustomFilterConditions.length > 0) {
-      customFilterStr = targetCustomFilterConditions.map((c, index) =>
-        `${c.bracketOpen === '（' ? c.bracketOpen : ''}${c.itemName} ${c.symbol} ${c.categoryName}${c.bracketClose === '）' ? c.bracketClose : ''}${index < targetCustomFilterConditions.length - 1 ? (c.connector ? ' ' + c.connector : '') : ''}`
-      ).join(' ');
-    }
-
-    // 2. サイドバーのフィルターカテゴリー (期間, 地域, 車, 人)
-    // 2. サイドバーのフィルターカテゴリー (地域, 共通フィルタ)
-    const categoryParts: string[] = [];
-    const targetCategories = ['地域', '共通フィルタ'];
-
-    targetCategories.forEach(catKey => {
-      const items = targetFilterCategories[catKey];
-      if (items && items.length > 0) {
-        // カテゴリ内のアイテムはOR条件で結合し、括弧で囲む
-        // カテゴリ内のアイテムはOR条件で結合し、括弧で囲む
-        const joined = items.map(item => `${catKey} = "${item}"`).join(' OR ');
-        categoryParts.push(`(${joined})`);
-      }
-    });
-
-    // 3. すべての条件をANDで結合
-    // 3. すべての条件をANDで結合
-    const allParts = [];
-    if (customFilterStr) {
-      allParts.push(`(${customFilterStr})`);
-    }
-    if (categoryParts.length > 0) {
-      allParts.push(categoryParts.join(' AND '));
-    }
-
-    const finalFilterExpression = allParts.join(' AND ');
-
-    // 4. JSONオブジェクトの作成
-    // 4. JSONオブジェクトの作成
-    const exportData = {
-      version: "1.0",
-      createdAt: new Date().toISOString(),
-      filterExpression: finalFilterExpression,
-      raw: {
-        customFilters: targetCustomFilterConditions,
-        categoryFilters: targetFilterCategories
-      }
-    };
-
-    // 5. ダウンロード処理
-    // 5. ダウンロード処理
-    try {
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const link = document.createElement('a');
-      const today = new Date();
-      const timestamp = `${today.getFullYear()}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getDate().toString().padStart(2, '0')}_${today.getHours().toString().padStart(2, '0')}${today.getMinutes().toString().padStart(2, '0')}${today.getSeconds().toString().padStart(2, '0')}`;
-      link.href = URL.createObjectURL(blob);
-      link.download = `common_filter_${timestamp}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-    } catch (e) {
-      console.error(e);
-      handleShowWarningModal("ファイル保存に失敗しました。");
-    }
+  // フィルタ名確定後の処理（今後実装予定）
+  const handleConfirmFilterName = (filterName: string) => {
+    // TODO: フィルタ名確定後の処理を実装
+    console.log('Filter name confirmed:', filterName);
+    
+    // モーダルを閉じる
+    setIsFilterNameInputModalOpen(false);
   };
 
   // メインコンテンツに渡すデータを決定します。
@@ -798,7 +813,7 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
             setIsFilterModalOpen(false);
           }}
           initialConditions={customFilterConditions}
-          onShowInfo={handleShowInfoModal}
+          onShowInfo={handleShowWarningModal}
         />
       )}
       {isItemSelectionModalOpen && (
@@ -848,6 +863,12 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
         <InfoModal
           message={modalMessage}
           onClose={() => setIsInfoModalOpen(false)}
+        />
+      )}
+      {isFilterNameInputModalOpen && (
+        <FilterNameInputModal
+          onClose={() => setIsFilterNameInputModalOpen(false)}
+          onConfirm={handleConfirmFilterName}
         />
       )}
     </div>

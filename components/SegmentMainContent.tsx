@@ -121,18 +121,19 @@ interface HeatmapSettingsProps {
   onDeleteCondition: (index: number) => void;
   variableDisplayTexts: string[];
   isExecuteDisabled: boolean;
+  isAddConditionDisabled: boolean; // 条件追加ボタンの無効化状態
 }
 
 // ヒートマップタブの設定コンポーネント
 
-const HeatmapSettings: React.FC<HeatmapSettingsProps> = ({ onExecute, onOpenConditionsModal, onEditCondition, onDeleteCondition, variableDisplayTexts, isExecuteDisabled }) => {
+const HeatmapSettings: React.FC<HeatmapSettingsProps> = ({ onExecute, onOpenConditionsModal, onEditCondition, onDeleteCondition, variableDisplayTexts, isExecuteDisabled, isAddConditionDisabled }) => {
   return (
 
     <div className="w-full flex flex-col gap-1 h-full">
       {/* 1行目：設定ボタンと実行ボタン */}
 
       <div className="flex items-center gap-2">
-        <AppButton onClick={onOpenConditionsModal}>ヒートマップの表示条件追加</AppButton>
+        <AppButton onClick={onOpenConditionsModal} disabled={isAddConditionDisabled} isActive={!isAddConditionDisabled}>ヒートマップの表示条件追加</AppButton>
         <AppButton className="px-6 whitespace-nowrap" onClick={onExecute} disabled={isExecuteDisabled} isActive={!isExecuteDisabled}>実行</AppButton>
       </div>
       {/* 2行目：条件表示フィールド */}
@@ -167,7 +168,7 @@ const HeatmapSettings: React.FC<HeatmapSettingsProps> = ({ onExecute, onOpenCond
             ))
           ) : (
             <div className="px-2 py-1 text-gray-500 text-xs break-words">
-              選択した内容が表示されます
+              選択した内容が表示されます（最大4件まで追加可能です）
             </div>
           )}
         </div>
@@ -751,9 +752,11 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     : '';
 
   const heatmapVariableTexts = heatmapConditionsList.map(conditions => {
-    if (conditions.length === 0) return '';
+    // 空の条件の場合は「フィルタなし」と表示
+    if (conditions.length === 0) return 'フィルタなし';
     return conditions.map((c, idx) => {
-      const condText = `${c.itemName}=${c.categoryName}`;
+      // symbolを使用して正確に表示 (age<20, age=20 など)
+      const condText = `${c.itemName}${c.symbol}${c.categoryName}`;
       if (idx < conditions.length - 1 && c.connector) {
         return `${condText} ${c.connector}`;
       }
@@ -768,7 +771,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
   // 各タブの実行ボタンの無効化状態を計算します。
 
   const isPositioningExecuteDisabled = !positioningAxes.vertical || !positioningAxes.horizontal || overlayItemDisplay === '';
-  // ヒートマップ実行ボタンは、条件が設定されており、変更事項があるときのみ有効
+  // ヒートマップ実行ボタンは、条件が1つ以上設定されており、変更事項があるときのみ有効
   const isHeatmapExecuteDisabled = heatmapConditionsList.length === 0 || !heatmapPending;
 
 
@@ -989,13 +992,12 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                           newExecutedList.splice(index, 1);
                           setExecutedHeatmapConditionsList(newExecutedList);
                           
-                          // 条件がすべて削除されたら、ヒートマップ実行状態をfalseに変更
-                          if (newConditionsList.length === 0) {
-                            setIsHeatmapExecuted(false);
-                          }
+                          // 条件削除時も実行ボタンを有効化
+                          setHeatmapPending(true);
                         }}
                         variableDisplayTexts={heatmapVariableTexts}
                         isExecuteDisabled={isHeatmapExecuteDisabled}
+                        isAddConditionDisabled={heatmapConditionsList.length >= 4}
                       />
                     )}
                   </div>

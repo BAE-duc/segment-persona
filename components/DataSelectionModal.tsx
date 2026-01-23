@@ -132,8 +132,8 @@ export const DataSelectionModal: React.FC<DataSelectionModalProps> = ({ onClose,
                       <td className="col-group">{displayGroupName}</td>
                       <td className="col-name">
                         <div className="radio-wrap">
-                          <div className="w-4 h-4 rounded-full border-2 border-gray-400 flex items-center justify-center flex-shrink-0 bg-white">
-                            {isSelected && <div className="w-2.5 h-2.5 bg-blue-600 rounded-full" />}
+                          <div className="w-4 h-4 rounded-full border-2 border-gray-700 flex items-center justify-center flex-shrink-0 bg-white">
+                            {isSelected && <div className="w-2 h-2 bg-gray-700 rounded-full" />}
                           </div>
                           <span className="text-sm text-gray-700 truncate">{item.name}</span>
                         </div>

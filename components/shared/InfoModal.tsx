@@ -5,6 +5,8 @@ import { modalStyles } from './modalStyles';
 interface InfoModalProps {
   message: string;
   onClose: () => void;
+  onConfirm?: () => void;  // オプション: 確認用のコールバック
+  showCancel?: boolean;     // オプション: Cancelボタンを表示するかどうか
 }
 
 // 情報アイコンコンポーネント。青い円の中に「i」の文字を表示します。
@@ -21,12 +23,21 @@ const InfoIcon = () => (
   </div>
 );
 
-export const InfoModal: React.FC<InfoModalProps> = ({ message, onClose }) => {
+export const InfoModal: React.FC<InfoModalProps> = ({ message, onClose, onConfirm, showCancel = false }) => {
+  const handleConfirm = () => {
+    if (onConfirm) {
+      onConfirm();
+    } else {
+      onClose();
+    }
+  };
+
   return (
     <div
       className={modalStyles.overlay}
       aria-modal="true"
       role="dialog"
+      style={showCancel ? { zIndex: 10000 } : undefined}
     >
       <div
         className={`${modalStyles.container} w-[29rem]`}
@@ -49,7 +60,12 @@ export const InfoModal: React.FC<InfoModalProps> = ({ message, onClose }) => {
         {/* フッター */}
 
         <div className={`${modalStyles.footer.container} justify-end`}>
-          <AppButton onClick={onClose} className="w-24 py-1">OK</AppButton>
+          <div className={modalStyles.footer.buttonGroup}>
+            <AppButton onClick={handleConfirm} className="w-24 py-1">OK</AppButton>
+            {showCancel && (
+              <AppButton onClick={onClose} className="w-24 py-1">Cancel</AppButton>
+            )}
+          </div>
         </div>
       </div>
     </div>

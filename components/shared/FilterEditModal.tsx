@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AppButton, AppSelect } from './FormControls';
 import { modalStyles } from './modalStyles';
 import { TEST_CSV_RAW } from '../../data/testData';
+import { InfoModal } from './InfoModal';
 
 interface FilterEditModalProps {
   onClose: () => void;
@@ -575,6 +576,25 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
   const [conditionList, setConditionList] = useState<ConditionListItem[]>(initialConditions);
   const [selectedConditionListIndex, setSelectedConditionListIndex] = useState<number | null>(null);
 
+  // キャンセル確認モーダルの状態管理
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  // 数値型入力の状態管理
+  const [numericSymbol, setNumericSymbol] = useState<string>('=');
+  const [numericValue, setNumericValue] = useState<string>('');
+
+  // 選択されたアイテムが数値型かどうかを判定
+  const isNumericItem = (itemId: string | null): boolean => {
+    if (!itemId) return false;
+    const conditions = conditionData[itemId];
+    if (!conditions || conditions.length === 0) return false;
+    
+    // 数値型の場合、conditionの名前が数値として解釈可能
+    return conditions.every(c => !isNaN(Number(c.name)));
+  };
+
+  const selectedItemIsNumeric = isNumericItem(selectedItem);
+
   // 재귀적 트리 렌더링 함수
   const renderTreeNode = (node: any, depth: number = 0): React.ReactNode => {
     const hasChildren = node.children && node.children.length > 0;
@@ -618,6 +638,43 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
   };
 
   const currentConditions = selectedItem ? conditionData[selectedItem] || [] : null;
+
+  // 数値型の条件を一覧に追加するハンドラ
+  const handleAddNumericCondition = (connectorType: 'AND' | 'OR') => {
+    if (selectedItem === null || !numericValue.trim()) return;
+
+    const childItem = findItemInTree(itemListData, selectedItem);
+    if (!childItem) return;
+
+    // 数値検証
+    if (isNaN(Number(numericValue))) {
+      onShowInfo("数値を入力してください。");
+      return;
+    }
+
+    const newListItem: ConditionListItem = {
+      id: `${Date.now()}-${Math.random()}`,
+      bracketOpen: '（',
+      itemId: 'SUSERSAGE',
+      itemName: childItem.name,
+      symbol: numericSymbol,
+      categoryNo: 0,
+      categoryName: numericValue,
+      bracketClose: '）',
+      connector: '',
+    };
+
+    setConditionList(prevList => {
+      const updatedList = [...prevList];
+      if (updatedList.length > 0) {
+        updatedList[updatedList.length - 1].connector = connectorType;
+      }
+      return [...updatedList, newListItem];
+    });
+
+    // 入力値をリセット
+    setNumericValue('');
+  };
 
   // 条件を一覧に追加するハンドラ。
 
@@ -735,8 +792,9 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
   };
 
   const validateConditionList = (list: ConditionListItem[]) => {
+    // 空の場合はそのまま許可（フィルターなし状態）
     if (list.length === 0) {
-      return '条件一覧が空です。条件を追加してください。';
+      return null;
     }
 
     for (const [index, item] of list.entries()) {
@@ -790,6 +848,15 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
     }
 
     onConfirm(normalizedList);
+  };
+
+  const handleCancelClick = () => {
+    setShowCancelConfirm(true);
+  };
+
+  const handleConfirmCancel = () => {
+    setShowCancelConfirm(false);
+    onClose();
   };
 
   return (
@@ -874,39 +941,93 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
                     ↓
                   </button>
                 </div>
-                {/* 条件テーブルコンテナ：flex-1で高さを確保 */}
-                <div className="flex-1 flex flex-col border border-gray-400 rounded-md bg-white overflow-hidden">
-                  <div className="flex-1 overflow-auto">
-                    <table className="w-full text-xs">
-                      <thead className="sticky top-0 bg-gray-50 z-10">
-                        <tr>
-                          <th className="p-1 font-semibold text-left border-b border-r border-gray-300 w-16 text-center whitespace-nowrap">No</th>
-                          <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2 whitespace-nowrap">名前</th>
-                          <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2 whitespace-nowrap">下限値</th>
-                          <th className="p-1 font-semibold text-left border-b border-gray-300 pl-2 whitespace-nowrap">上限値</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {currentConditions && currentConditions.map((item, index) => (
-                          <tr
-                            key={item.no}
-                            className={`cursor-pointer font-medium ${modalStyles.interactive.tableRow(selectedConditionIndex === index)}`}
-                            onClick={() => setSelectedConditionIndex(index)}
+                
+                {/* 数値型の場合：記号と値の入力UI */}
+                {selectedItemIsNumeric ? (
+                  <div className="flex-1 flex flex-col border border-gray-400 rounded-md bg-white overflow-hidden">
+                    <div className="flex-1 p-4">
+                      <div className="flex items-center gap-4">
+                        {/* 記号 */}
+                        <div className="flex-shrink-0" style={{ width: '100px' }}>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">記号</label>
+                          <AppSelect 
+                            value={numericSymbol} 
+                            onChange={(e) => setNumericSymbol(e.target.value)}
+                            className="w-full h-8 text-xs"
                           >
-                            <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">{item.no}</td>
-                            <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{formatConditionName(item.name, selectedItemName)}</td>
-                            <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{item.lower}</td>
-                            <td className="p-1 border-b border-gray-200 pl-2 whitespace-nowrap">{item.upper}</td>
+                            <option value="=">=</option>
+                            <option value="≠">≠</option>
+                            <option value="＜">＜</option>
+                            <option value="＞">＞</option>
+                            <option value="≦">≦</option>
+                            <option value="≧">≧</option>
+                          </AppSelect>
+                        </div>
+                        {/* 数値 */}
+                        <div className="flex-1">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">数値</label>
+                          <input
+                            type="text"
+                            value={numericValue}
+                            onChange={(e) => setNumericValue(e.target.value)}
+                            className="w-full px-3 py-2 text-xs border border-gray-400 rounded-md outline-none focus:ring-1 focus:ring-gray-400"
+                            placeholder="数値を入力してください"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0 p-2 flex justify-end gap-2 bg-gray-50 border-t border-gray-300">
+                      <AppButton 
+                        onClick={() => handleAddNumericCondition('AND')} 
+                        className="py-1 px-2 text-xs" 
+                        disabled={!numericValue.trim()}
+                      >
+                        ANDで条件を追加
+                      </AppButton>
+                      <AppButton 
+                        onClick={() => handleAddNumericCondition('OR')} 
+                        className="py-1 px-2 text-xs" 
+                        disabled={!numericValue.trim()}
+                      >
+                        ORで条件を追加
+                      </AppButton>
+                    </div>
+                  </div>
+                ) : (
+                  /* 文字列型の場合：既存のテーブルUI */
+                  <div className="flex-1 flex flex-col border border-gray-400 rounded-md bg-white overflow-hidden">
+                    <div className="flex-1 overflow-auto">
+                      <table className="w-full text-xs">
+                        <thead className="sticky top-0 bg-gray-50 z-10">
+                          <tr>
+                            <th className="p-1 font-semibold text-left border-b border-r border-gray-300 w-16 text-center whitespace-nowrap">No</th>
+                            <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2 whitespace-nowrap">名前</th>
+                            <th className="p-1 font-semibold text-left border-b border-r border-gray-300 pl-2 whitespace-nowrap">下限値</th>
+                            <th className="p-1 font-semibold text-left border-b border-gray-300 pl-2 whitespace-nowrap">上限値</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {currentConditions && currentConditions.map((item, index) => (
+                            <tr
+                              key={item.no}
+                              className={`cursor-pointer font-medium ${modalStyles.interactive.tableRow(selectedConditionIndex === index)}`}
+                              onClick={() => setSelectedConditionIndex(index)}
+                            >
+                              <td className="p-1 border-b border-r border-gray-200 text-center whitespace-nowrap">{item.no}</td>
+                              <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{formatConditionName(item.name, selectedItemName)}</td>
+                              <td className="p-1 border-b border-r border-gray-200 pl-2 whitespace-nowrap">{item.lower}</td>
+                              <td className="p-1 border-b border-gray-200 pl-2 whitespace-nowrap">{item.upper}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="flex-shrink-0 p-2 flex justify-end gap-2 bg-gray-50 border-t border-gray-300">
+                      <AppButton onClick={() => handleAddCondition('AND')} className="py-1 px-2 text-xs" disabled={isAndButtonDisabled}>ANDで条件を追加</AppButton>
+                      <AppButton onClick={() => handleAddCondition('OR')} className="py-1 px-2 text-xs" disabled={selectedConditionIndex === null}>ORで条件を追加</AppButton>
+                    </div>
                   </div>
-                  <div className="flex-shrink-0 p-2 flex justify-end gap-2 bg-gray-50 border-t border-gray-300">
-                    <AppButton onClick={() => handleAddCondition('AND')} className="py-1 px-2 text-xs" disabled={isAndButtonDisabled}>ANDで条件を追加</AppButton>
-                    <AppButton onClick={() => handleAddCondition('OR')} className="py-1 px-2 text-xs" disabled={selectedConditionIndex === null}>ORで条件を追加</AppButton>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -1050,15 +1171,25 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
             <AppButton
               onClick={handleConfirmClick}
               className="w-24 py-1"
-              isActive={conditionList.length > 0}
-              disabled={conditionList.length === 0}
+              isActive={true}
+              disabled={false}
             >
               OK
             </AppButton>
-            <AppButton onClick={onClose} className="w-24 py-1">Cancel</AppButton>
+            <AppButton onClick={handleCancelClick} className="w-24 py-1">Cancel</AppButton>
           </div>
         </div>
       </div>
+
+      {/* キャンセル確認モーダル */}
+      {showCancelConfirm && (
+        <InfoModal
+          message="条件式をキャンセルします。よろしいでしょうか。"
+          onConfirm={handleConfirmCancel}
+          onClose={() => setShowCancelConfirm(false)}
+          showCancel={true}
+        />
+      )}
     </div>
   );
 };
