@@ -792,10 +792,8 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
   };
 
   const validateConditionList = (list: ConditionListItem[]) => {
-    // 条件が1つもなければエラー
-    if (list.length === 0) {
-      return '条件を少なくとも1つ追加してください。';
-    }
+    // Allow empty condition list (removed validation)
+    // Empty list means no filter conditions applied
 
     for (const [index, item] of list.entries()) {
       if (!item.itemName?.trim() || !item.symbol?.trim() || !item.categoryName?.trim()) {
@@ -1171,8 +1169,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
             <AppButton
               onClick={handleConfirmClick}
               className="w-24 py-1"
-              isActive={conditionList.length > 0}
-              disabled={conditionList.length === 0}
+              isActive={true}
             >
               OK
             </AppButton>

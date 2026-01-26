@@ -862,8 +862,8 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                   <AppButton
                     className="w-full"
                     onClick={onOpenPersonaPopup}
-                    disabled={!isSomMapSelected}
-                    isActive={isSomMapSelected}
+                    disabled={!isSegmentationExecuted}
+                    isActive={isSegmentationExecuted}
                   >
                     ペルソナ確認
                   </AppButton>

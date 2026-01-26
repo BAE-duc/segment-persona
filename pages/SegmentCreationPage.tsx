@@ -528,21 +528,21 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
       metaRows.push(['Selected data', targetSelectedData ? JSON.stringify(targetSelectedData) : 'N/A']);
       metaRows.push([]);
 
-      // パラメータ情報を追加
-      metaRows.push(['パラメータ設定']);
+      // Parameter settings
+      metaRows.push(['Parameter settings']);
       const currentSettings = segmentSettings || defaultSettings;
-      metaRows.push(['マップサイズ', currentSettings.mapSize]);
+      metaRows.push(['Map size', currentSettings.mapSize]);
       if (currentSettings.mapSize === 'custom') {
-        metaRows.push(['カスタム幅', currentSettings.customWidth]);
-        metaRows.push(['カスタム高さ', currentSettings.customHeight]);
+        metaRows.push(['Custom width', currentSettings.customWidth]);
+        metaRows.push(['Custom height', currentSettings.customHeight]);
       }
-      metaRows.push(['学習率', currentSettings.learningRate]);
-      metaRows.push(['反復回数', currentSettings.iterations]);
-      metaRows.push(['距離メトリック', currentSettings.distanceMetric]);
-      metaRows.push(['近傍半径', currentSettings.neighborhoodRadius]);
-      metaRows.push(['近傍関数', currentSettings.neighborhoodFunction]);
-      metaRows.push(['階層的距離関数', currentSettings.hierarchicalDistanceFunction]);
-      metaRows.push(['階層的連結法', currentSettings.hierarchicalLinkageMethod]);
+      metaRows.push(['Learning rate', currentSettings.learningRate]);
+      metaRows.push(['Iterations', currentSettings.iterations]);
+      metaRows.push(['Distance metric', currentSettings.distanceMetric]);
+      metaRows.push(['Neighborhood radius', currentSettings.neighborhoodRadius]);
+      metaRows.push(['Neighborhood function', currentSettings.neighborhoodFunction]);
+      metaRows.push(['Hierarchical distance function', currentSettings.hierarchicalDistanceFunction]);
+      metaRows.push(['Hierarchical linkage method', currentSettings.hierarchicalLinkageMethod]);
       metaRows.push([]);
 
       // Selected variables (display conditions). If none, fallback to selectedItems
@@ -564,6 +564,13 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
       const targetCustomFilters = (isSegmentationExecuted && executedState) ? executedState.customFilterConditions : customFilterConditions;
       const targetFilterCategories = (isSegmentationExecuted && executedState) ? executedState.filterCategories : filterCategories;
 
+      // Sidebar filter categories (moved before Custom filter conditions)
+      metaRows.push(['Sidebar filter categories']);
+      Object.keys(targetFilterCategories).forEach((cat) => {
+        metaRows.push([cat, ...(targetFilterCategories[cat] || [])]);
+      });
+      metaRows.push([]);
+
       metaRows.push(['Custom filter conditions']);
       if (targetCustomFilters && targetCustomFilters.length > 0) {
         targetCustomFilters.forEach((c: any) => {
@@ -576,80 +583,55 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
       }
       metaRows.push([]);
 
-      metaRows.push(['Sidebar filter categories']);
-      Object.keys(targetFilterCategories).forEach((cat) => {
-        metaRows.push([cat, ...(targetFilterCategories[cat] || [])]);
-      });
-      metaRows.push([]);
+      // Aggregation table display conditions
+      // Only show Categorical variable selection settings if available
+      // Filter to only show adopted variables that are actually in the table
+      const hasCategorySettings = comparisonExportData.displaySettings && 
+        Object.keys(comparisonExportData.displaySettings.displayCategoryConfigs).length > 0 &&
+        comparisonExportData.displaySettings.displayAdoptedVariableIds;
 
-      // 集計表の表示条件を追加
-      if (comparisonExportData.displaySettings) {
-        const ds = comparisonExportData.displaySettings;
-        metaRows.push(['集計表の表示条件']);
-        metaRows.push([]);
+      if (hasCategorySettings) {
+        const ds = comparisonExportData.displaySettings!;
+        const adoptedIds = ds.displayAdoptedVariableIds ? Array.from(ds.displayAdoptedVariableIds) : [];
         
-        // 表示モード
-        metaRows.push(['表示モード']);
-        const displayModeText = ds.tableDisplayMode === 'percentage' ? '集計表示' : '差分表示';
-        metaRows.push([displayModeText]);
-        metaRows.push([]);
+        // Filter category configs to only include adopted variables
+        const filteredCategoryConfigs = Object.entries(ds.displayCategoryConfigs)
+          .filter(([varId]) => adoptedIds.includes(varId));
         
-        // 表示形式
-        metaRows.push(['表示形式']);
-        let viewTypeText = '';
-        if (ds.viewType === 'vertical') viewTypeText = '縦変換';
-        else if (ds.viewType === 'horizontal') viewTypeText = '横変換';
-        else if (ds.viewType === 'count') viewTypeText = 'n数表示';
-        metaRows.push([viewTypeText]);
-        metaRows.push([]);
-        
-        // 選択されたセグメント
-        if (ds.displaySelectedSegments && ds.displaySelectedSegments.length > 0) {
-          metaRows.push(['表示セグメント']);
-          metaRows.push([ds.displaySelectedSegments.join(', ')]);
-          metaRows.push([]);
-        }
-        
-        // 採用変数
-        if (ds.displayAdoptedVariableIds && ds.displayAdoptedVariableIds.size > 0) {
-          metaRows.push(['採用変数']);
-          const varIds = Array.from(ds.displayAdoptedVariableIds);
-          varIds.forEach(id => {
-            const varDetail = itemDetails.find(item => item.id === id);
-            metaRows.push([id, varDetail ? varDetail.name : '']);
-          });
-          metaRows.push([]);
-        }
-        
-        // 数値型変数の範囲設定
-        if (Object.keys(ds.displayRangeConfigs).length > 0) {
-          metaRows.push(['数値型変数の範囲設定']);
-          Object.entries(ds.displayRangeConfigs).forEach(([varId, range]) => {
-            const varDetail = itemDetails.find(item => item.id === varId);
-            metaRows.push([varId, varDetail ? varDetail.name : '', `${range.min} ~ ${range.max}`]);
-          });
-          metaRows.push([]);
-        }
-        
-        // カテゴリ型変数の選択肢設定
-        if (Object.keys(ds.displayCategoryConfigs).length > 0) {
-          metaRows.push(['カテゴリ型変数の選択肢設定']);
-          Object.entries(ds.displayCategoryConfigs).forEach(([varId, categories]) => {
+        if (filteredCategoryConfigs.length > 0) {
+          metaRows.push(['Aggregation table display conditions']);
+          
+          // Categorical variable selection settings only (filtered by adopted variables)
+          filteredCategoryConfigs.forEach(([varId, categories]) => {
             const varDetail = itemDetails.find(item => item.id === varId);
             metaRows.push([varId, varDetail ? varDetail.name : '', categories.join(', ')]);
           });
           metaRows.push([]);
-        }
-        
-        // 区間設定
-        if (Object.keys(ds.displayIntervalConfigs).length > 0) {
-          metaRows.push(['区間設定']);
-          Object.entries(ds.displayIntervalConfigs).forEach(([varId, interval]) => {
-            const varDetail = itemDetails.find(item => item.id === varId);
-            metaRows.push([varId, varDetail ? varDetail.name : '', `区間: ${interval}`]);
-          });
+        } else {
+          // If no filtered category settings, show custom filter conditions
+          metaRows.push(['Aggregation table display conditions']);
+          if (targetCustomFilters && targetCustomFilters.length > 0) {
+            targetCustomFilters.forEach((c: any) => {
+              const conditionText = `${c.bracketOpen || ''}${c.itemName} ${c.symbol} ${c.categoryName} ${c.connector || ''}${c.bracketClose || ''}`;
+              metaRows.push([conditionText.trim()]);
+            });
+          } else {
+            metaRows.push(['(none)']);
+          }
           metaRows.push([]);
         }
+      } else {
+        // If no category settings, show custom filter conditions info
+        metaRows.push(['Aggregation table display conditions']);
+        if (targetCustomFilters && targetCustomFilters.length > 0) {
+          targetCustomFilters.forEach((c: any) => {
+            const conditionText = `${c.bracketOpen || ''}${c.itemName} ${c.symbol} ${c.categoryName} ${c.connector || ''}${c.bracketClose || ''}`;
+            metaRows.push([conditionText.trim()]);
+          });
+        } else {
+          metaRows.push(['(none)']);
+        }
+        metaRows.push([]);
       }
 
       const metaWs = XLSX.utils.aoa_to_sheet(metaRows);

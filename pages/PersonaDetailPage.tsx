@@ -103,8 +103,8 @@ const RadarChart = () => {
 };
 
 export const PersonaDetailPage: React.FC<PersonaDetailPageProps> = ({ currentPersona, allPersonas, readStatus, onSelectPersona, onBack }) => {
-    // Chat mode state
-    const [isChatMode, setIsChatMode] = useState(false);
+    // Chat modal state
+    const [isChatModalOpen, setIsChatModalOpen] = useState(false);
     const [messages, setMessages] = useState<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
     const [inputMessage, setInputMessage] = useState('');
 
@@ -126,21 +126,15 @@ export const PersonaDetailPage: React.FC<PersonaDetailPageProps> = ({ currentPer
         return allPurchaseItems.filter(item => item.category === selectedCategory);
     }, [allPurchaseItems, selectedCategory]);
 
-    // Handle chat mode toggle
-    const handleChatToggle = () => {
-        if (isChatMode) {
-            // Switch back to detail view
-            setIsChatMode(false);
-        } else {
-            // Switch to chat mode
-            setIsChatMode(true);
-            if (messages.length === 0) {
-                // Add initial greeting message
-                setMessages([{
-                    role: 'assistant',
-                    content: 'こんにちは！'
-                }]);
-            }
+    // Handle chat modal open
+    const handleChatOpen = () => {
+        setIsChatModalOpen(true);
+        if (messages.length === 0) {
+            // Add initial greeting message
+            setMessages([{
+                role: 'assistant',
+                content: 'こんにちは！'
+            }]);
         }
     };
 
@@ -206,160 +200,165 @@ export const PersonaDetailPage: React.FC<PersonaDetailPageProps> = ({ currentPer
                         ペルソナ一覧表示
                     </button>
                     <button 
-                        onClick={handleChatToggle}
+                        onClick={handleChatOpen}
                         className="w-full py-2 bg-gray-200 border border-gray-400 rounded shadow-sm hover:bg-gray-300 font-bold text-gray-700 text-sm"
                     >
-                        {isChatMode ? 'ペルソナ詳細表示' : 'ペルソナと会話'}
+                        ペルソナと会話
                     </button>
                 </div>
             </div>
 
             {/* メインコンテンツ */}
-            <div className="w-3/4 flex flex-col h-full">
-                {/* 上部ナビゲーションタブ - 通常モードのみ表示 */}
-                {!isChatMode && (
-                    <div className="flex border-b border-gray-300 bg-white px-2 pt-2">
-                        {allPersonas.map(persona => (
-                            <button
-                                key={persona.id}
-                                onClick={() => onSelectPersona(persona.id)}
-                                className={`relative px-4 py-2 text-sm font-bold rounded-t-md mr-1 transition-colors ${currentPersona.id === persona.id
-                                    ? 'bg-white border-t border-l border-r border-gray-300 text-gray-800 z-10 -mb-[1px]'
-                                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                                    }`}
-                            >
-                                {persona.name}
-                                {!readStatus.has(persona.id) && currentPersona.id !== persona.id && (
-                                    <span className="absolute top-1 right-1 w-2 h-2 bg-pink-500 rounded-full"></span>
-                                )}
-                            </button>
-                        ))}
-                    </div>
-                )}
+            <div className="w-3/4 flex flex-col h-full relative">
+                {/* 上部ナビゲーションタブ */}
+                <div className="flex border-b border-gray-300 bg-white px-2 pt-2">
+                    {allPersonas.map(persona => (
+                        <button
+                            key={persona.id}
+                            onClick={() => onSelectPersona(persona.id)}
+                            className={`relative px-4 py-2 text-sm font-bold rounded-t-md mr-1 transition-colors ${currentPersona.id === persona.id
+                                ? 'bg-white border-t border-l border-r border-gray-300 text-gray-800 z-10 -mb-[1px]'
+                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                }`}
+                        >
+                            {persona.name}
+                            {!readStatus.has(persona.id) && currentPersona.id !== persona.id && (
+                                <span className="absolute top-1 right-1 w-2 h-2 bg-pink-500 rounded-full"></span>
+                            )}
+                        </button>
+                    ))}
+                </div>
 
                 {/* コンテンツエリア */}
                 <div className="flex-grow p-4 overflow-y-auto bg-gray-50">
-                    {!isChatMode ? (
-                        // Original content view
-                        <div className="flex gap-4 h-full">
-                            {/* 左カラム：価値観＆レーダーチャート */}
-                            <div className="w-1/3 flex flex-col gap-2">
-                                {/* 価値観 */}
-                                <div className="bg-white p-4 rounded shadow-sm border border-gray-200 flex-grow flex flex-col">
-                                    <h3 className="font-bold text-gray-700 mb-4 border-l-4 border-gray-500 pl-2">価値観</h3>
+                    <div className="flex gap-4 h-full">
+                        {/* 左カラム：価値観＆レーダーチャート */}
+                        <div className="w-1/3 flex flex-col gap-2">
+                            {/* 価値観 */}
+                            <div className="bg-white p-4 rounded shadow-sm border border-gray-200 flex-grow flex flex-col">
+                                <h3 className="font-bold text-gray-700 mb-4 border-l-4 border-gray-500 pl-2">価値観</h3>
 
-                                    <div className="flex-grow flex flex-col gap-6 justify-center">
-                                        {/* 平均以上グループ */}
-                                        <div className="flex items-center gap-4">
-                                            {/* インジケーター */}
-                                            <div className="flex flex-col items-center w-16 flex-shrink-0">
-                                                <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-b-[35px] border-b-[#93C5FD] mb-1"></div>
-                                                <span className="text-[10px] text-gray-500 font-bold">平均以上</span>
-                                            </div>
-                                            {/* リスト */}
-                                            <ul className="text-xs space-y-1 text-gray-700">
-                                                {dummyValuesAbove.map((val, i) => (
-                                                    <li key={i} className="flex items-start">
-                                                        <span className="mr-1">・</span>
-                                                        {val}
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                <div className="flex-grow flex flex-col gap-6 justify-center">
+                                    {/* 平均以上グループ */}
+                                    <div className="flex items-center gap-4">
+                                        {/* インジケーター */}
+                                        <div className="flex flex-col items-center w-16 flex-shrink-0">
+                                            <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-b-[35px] border-b-[#93C5FD] mb-1"></div>
+                                            <span className="text-[10px] text-gray-500 font-bold">平均以上</span>
                                         </div>
-
-                                        {/* 平均以下グループ */}
-                                        <div className="flex items-center gap-4">
-                                            {/* インジケーター */}
-                                            <div className="flex flex-col items-center w-16 flex-shrink-0">
-                                                <span className="text-[10px] text-gray-500 font-bold mb-1">平均以下</span>
-                                                <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[35px] border-t-[#9CA3AF]"></div>
-                                            </div>
-                                            {/* リスト */}
-                                            <ul className="text-xs space-y-1 text-gray-700">
-                                                {dummyValuesBelow.map((val, i) => (
-                                                    <li key={i} className="flex items-start">
-                                                        <span className="mr-1">・</span>
-                                                        {val}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
+                                        {/* リスト */}
+                                        <ul className="text-xs space-y-1 text-gray-700">
+                                            {dummyValuesAbove.map((val, i) => (
+                                                <li key={i} className="flex items-start">
+                                                    <span className="mr-1">・</span>
+                                                    {val}
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </div>
-                                </div>
 
-                                {/* レーダーチャート */}
-                                <div className="bg-white p-2 rounded shadow-sm border border-gray-200 flex flex-col">
-                                    <h3 className="font-bold text-gray-700 mb-0 border-l-4 border-gray-500 pl-2">購入カテゴリ</h3>
-                                    <div className="flex-grow flex items-center justify-center">
-                                        <RadarChart />
+                                    {/* 平均以下グループ */}
+                                    <div className="flex items-center gap-4">
+                                        {/* インジケーター */}
+                                        <div className="flex flex-col items-center w-16 flex-shrink-0">
+                                            <span className="text-[10px] text-gray-500 font-bold mb-1">平均以下</span>
+                                            <div className="w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[35px] border-t-[#9CA3AF]"></div>
+                                        </div>
+                                        {/* リスト */}
+                                        <ul className="text-xs space-y-1 text-gray-700">
+                                            {dummyValuesBelow.map((val, i) => (
+                                                <li key={i} className="flex items-start">
+                                                    <span className="mr-1">・</span>
+                                                    {val}
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* 右カラム：購入履歴 */}
-                            <div className="w-2/3 bg-white p-4 rounded shadow-sm border border-gray-200 flex flex-col h-full">
-                                <h3 className="font-bold text-gray-700 mb-4 border-l-4 border-gray-500 pl-2">データ詳細参照</h3>
-
-                                <div className="flex justify-end gap-4 mb-4 text-xs">
-                                    <div className="flex items-center gap-2">
-                                        <span>表示データ</span>
-                                        <select className="border border-gray-300 rounded px-2 py-1" disabled>
-                                            <option>購入データ</option>
-                                        </select>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span>表示カテゴリ</span>
-                                        <select
-                                            className="border border-gray-300 rounded px-2 py-1"
-                                            value={selectedCategory}
-                                            onChange={(e) => setSelectedCategory(e.target.value)}
-                                        >
-                                            <option>全て</option>
-                                            {categories.map(cat => (
-                                                <option key={cat} value={cat}>{cat}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="overflow-auto flex-grow">
-                                    <table className="w-full text-xs text-left">
-                                        <thead className="bg-gray-50 text-gray-600 sticky top-0">
-                                            <tr>
-                                                <th className="p-2 border-b">カテゴリ</th>
-                                                <th className="p-2 border-b">購入場所</th>
-                                                <th className="p-2 border-b">アイテム</th>
-                                                <th className="p-2 border-b text-right">購入額</th>
-                                                <th className="p-2 border-b">用途</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {filteredItems.map((row, i) => (
-                                                <tr key={i} className="border-b hover:bg-gray-50">
-                                                    <td className="py-3 px-2 text-blue-600 font-bold">{row.category}</td>
-                                                    <td className="py-3 px-2 text-blue-600 font-bold">{row.place}</td>
-                                                    <td className="py-3 px-2">{row.item}</td>
-                                                    <td className="py-3 px-2 text-right">{row.price.toLocaleString()}</td>
-                                                    <td className="py-3 px-2 text-gray-500">{row.usage}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                            {/* レーダーチャート */}
+                            <div className="bg-white p-2 rounded shadow-sm border border-gray-200 flex flex-col">
+                                <h3 className="font-bold text-gray-700 mb-0 border-l-4 border-gray-500 pl-2">購入カテゴリ</h3>
+                                <div className="flex-grow flex items-center justify-center">
+                                    <RadarChart />
                                 </div>
                             </div>
                         </div>
-                    ) : (
-                        // Chat view
-                        <div className="flex flex-col h-full bg-white rounded shadow-sm border border-gray-200">
+
+                        {/* 右カラム：購入履歴 */}
+                        <div className="w-2/3 bg-white p-4 rounded shadow-sm border border-gray-200 flex flex-col h-full">
+                            <h3 className="font-bold text-gray-700 mb-4 border-l-4 border-gray-500 pl-2">データ詳細参照</h3>
+
+                            <div className="flex justify-end gap-4 mb-4 text-xs">
+                                <div className="flex items-center gap-2">
+                                    <span>表示データ</span>
+                                    <select className="border border-gray-300 rounded px-2 py-1" disabled>
+                                        <option>購入データ</option>
+                                    </select>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span>表示カテゴリ</span>
+                                    <select
+                                        className="border border-gray-300 rounded px-2 py-1"
+                                        value={selectedCategory}
+                                        onChange={(e) => setSelectedCategory(e.target.value)}
+                                    >
+                                        <option>全て</option>
+                                        {categories.map(cat => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="overflow-auto flex-grow">
+                                <table className="w-full text-xs text-left">
+                                    <thead className="bg-gray-50 text-gray-600 sticky top-0">
+                                        <tr>
+                                            <th className="p-2 border-b">カテゴリ</th>
+                                            <th className="p-2 border-b">購入場所</th>
+                                            <th className="p-2 border-b">アイテム</th>
+                                            <th className="p-2 border-b text-right">購入額</th>
+                                            <th className="p-2 border-b">用途</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredItems.map((row, i) => (
+                                            <tr key={i} className="border-b hover:bg-gray-50">
+                                                <td className="py-3 px-2 text-blue-600 font-bold">{row.category}</td>
+                                                <td className="py-3 px-2 text-blue-600 font-bold">{row.place}</td>
+                                                <td className="py-3 px-2">{row.item}</td>
+                                                <td className="py-3 px-2 text-right">{row.price.toLocaleString()}</td>
+                                                <td className="py-3 px-2 text-gray-500">{row.usage}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Chat Modal - centered and fixed size */}
+                {isChatModalOpen && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+                        <div className="bg-white w-[90%] h-[90%] flex flex-col shadow-xl rounded-lg">
                             {/* Chat header */}
-                            <div className="p-4 border-b border-gray-200">
+                            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-white rounded-t-lg">
                                 <h3 className="font-bold text-gray-700">
                                     {currentPersona.name}について会話
                                 </h3>
+                                <button
+                                    onClick={() => setIsChatModalOpen(false)}
+                                    className="text-gray-500 hover:text-gray-700 text-2xl font-bold leading-none"
+                                >
+                                    ×
+                                </button>
                             </div>
 
                             {/* Messages area */}
-                            <div className="flex-grow overflow-y-auto p-4 space-y-4">
+                            <div className="flex-grow overflow-y-auto p-4 space-y-4 bg-gray-50">
                                 {messages.map((msg, idx) => (
                                     <div
                                         key={idx}
@@ -379,7 +378,7 @@ export const PersonaDetailPage: React.FC<PersonaDetailPageProps> = ({ currentPer
                             </div>
 
                             {/* Input area */}
-                            <div className="p-4 border-t border-gray-200">
+                            <div className="p-4 border-t border-gray-200 bg-white rounded-b-lg">
                                 <div className="flex gap-2">
                                     <input
                                         type="text"
@@ -398,8 +397,8 @@ export const PersonaDetailPage: React.FC<PersonaDetailPageProps> = ({ currentPer
                                 </div>
                             </div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         </div>
     );
