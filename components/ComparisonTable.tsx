@@ -161,10 +161,10 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
               <div>セグメントサイズ→</div>
               <div className="text-[10px] text-gray-500 mt-1">
                 {displayMode === 'difference' 
-                  ? (transpose ? '(絶対値-横)' : '(絶対値-縦)') 
+                  ? (transpose ? '(絶対値-横%)' : '(絶対値-縦%)') 
                   : displayMode === 'count' 
                     ? '(n数)' 
-                    : (transpose ? '(絶対値-横)' : '(絶対値-縦)')}
+                    : (transpose ? '(絶対値-横%)' : '(絶対値-縦%)')}
               </div>
             </th>
             <th className="border-b border-r border-gray-300 bg-gray-50 p-1 text-center w-16">

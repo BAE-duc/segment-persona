@@ -293,16 +293,7 @@ export const ProductPersonaListPage: React.FC = () => {
                                 </AppSelect>
                             )}
                         </div>
-                    ) : (
-                        <div className="mt-2 pl-2">
-                            <button
-                                className="text-xs text-blue-600 font-medium hover:underline"
-                                onClick={() => setIsDataSelectionModalOpen(true)}
-                            >
-                                データを選択
-                            </button>
-                        </div>
-                    )}
+                    ) : null}
                 </div>
 
                 {/* フィルター編集セクション（タブなしでツリービューを表示） */}
@@ -327,12 +318,10 @@ export const ProductPersonaListPage: React.FC = () => {
                                 )}
                             </div>
                             <div className="pl-4 my-1 text-xs text-gray-600">
-                                {customFilterConditions.length > 0 ? (
+                                {customFilterConditions.length > 0 && (
                                     customFilterConditions.map((c, index) => (
                                         <div key={c.id}>{`${c.bracketOpen === '（' ? c.bracketOpen : ''}${c.itemName} ${c.symbol} ${c.categoryName}${c.bracketClose === '）' ? c.bracketClose : ''} ${index < customFilterConditions.length - 1 ? c.connector : ''}`.trim()}</div>
                                     ))
-                                ) : (
-                                    <span className="text-gray-400 italic">条件なし</span>
                                 )}
                             </div>
                         </div>
