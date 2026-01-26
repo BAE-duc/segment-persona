@@ -260,7 +260,6 @@ export const SegmentPersonaListPage: React.FC = () => {
                                     <span className="text-[9px] font-normal text-gray-400">※1~7点で表示</span>
                                     <span className="text-[9px] font-normal text-gray-400">数字が大きいほど</span>
                                     <span className="text-[9px] font-normal text-gray-400">高い</span>
-                                    <span className="text-[9px] font-normal text-gray-400 mt-1">全体平均 .......</span>
                                 </div>
                                 <div className="grid grid-cols-6 gap-1.5 items-end relative mr-2">
                                     {/* 平均線 (点線) */}
@@ -285,7 +284,7 @@ export const SegmentPersonaListPage: React.FC = () => {
 
                             {/* その他属性 */}
                             {[
-                                { label: '[特徴的な 購入カテゴリ]', key: 'purchaseCategory' },
+                                { label: '特徴的な購入カテゴリ', key: 'purchaseCategory' },
                                 { label: '居住地', key: 'residence' },
                                 { label: '職業', key: 'occupation' },
                                 { label: 'ライフステージ', key: 'lifeStage' },
