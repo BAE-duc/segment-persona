@@ -600,7 +600,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = !!expandedState[node.id];
     
-    // 3레벨 이상(depth >= 2)만 클릭시 조건 표시
+    // 3レベル以上(depth >= 2)のみクリック時に条件を表示
     const shouldShowConditions = depth >= 2;
 
     return (
@@ -617,7 +617,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
               setSelectedItem(node.id);
               setSelectedConditionIndex(null);
             } else {
-              // 최상위나 2번째 레벨 클릭시 조건 표시 지우기
+              // 最上位または2番目のレベルクリック時に条件表示をクリア
               setSelectedItem(null);
               setSelectedConditionIndex(null);
             }
@@ -792,7 +792,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
   };
 
   const validateConditionList = (list: ConditionListItem[]) => {
-    // 조건이 하나도 없으면 에러
+    // 条件が1つもなければエラー
     if (list.length === 0) {
       return '条件を少なくとも1つ追加してください。';
     }
@@ -907,7 +907,7 @@ export const FilterEditModal: React.FC<FilterEditModalProps> = ({
                           className="flex items-center cursor-pointer p-1 rounded-sm"
                           onClick={() => {
                             setExpandedState(prev => ({ ...prev, [key]: !prev[key] }));
-                            // 최상위 노드 클릭시 조건 클리어
+                            // 最上位ノードクリック時に条件をクリア
                             setSelectedItem(null);
                             setSelectedConditionIndex(null);
                           }}

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import * as d3 from 'd3';
 
-// 데이터 행 인터페이스 정의
+// データ行のインターフェース定義
 
 export interface ComparisonRow {
   variableId: string;
@@ -10,7 +10,7 @@ export interface ComparisonRow {
   choiceName: string;
   totalRatio: number;
   segmentRatios: number[];
-  // n수 표시를 위한 실제 건수 데이터 추가
+  // n数表示用の実際の件数データを追加
   totalCount?: number;
   segmentCounts?: number[];
 }
@@ -102,21 +102,21 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
     );
   };
 
-  // n수 표시를 위한 렌더링 함수 (색상은 percentage 기준으로 유지)
+  // n数表示用のレンダリング関数（色はpercentage基準で維持）
   const renderCountBar = (count: number, percentage: number, isTotal: boolean) => {
-    const widthPct = xScale(percentage); // 색상과 바 길이는 percentage 기준
+    const widthPct = xScale(percentage); // 色とバーの長さはpercentage基準
 
     return (
       <div className="relative w-full h-6 flex items-center px-1">
         {/* バー背景 */}
         <div className="absolute inset-y-1 left-0 bg-gray-100 w-full z-0 rounded-sm overflow-hidden">
-          {/* 실제 바 (percentage 기준 길이와 색상) */}
+          {/* 実際のバー（percentage基準の長さと色） */}
           <div
             style={{ width: `${widthPct}%` }}
             className={`h-full ${isTotal ? 'bg-gray-400' : 'bg-[#8ab0e6]'} transition-all duration-500`}
           ></div>
         </div>
-        {/* 건수 텍스트 표시 */}
+        {/* 件数テキスト表示 */}
         <span className={`relative z-10 ml-auto text-xs font-medium text-gray-700`}>
           {count}
         </span>
@@ -160,7 +160,11 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
             <th colSpan={2} className="border-b border-r border-gray-300 bg-gray-50 p-1 text-center font-bold min-w-[200px]">
               <div>セグメントサイズ→</div>
               <div className="text-[10px] text-gray-500 mt-1">
-                {displayMode === 'difference' ? '(差分)' : displayMode === 'count' ? '(n数)' : '(絶対値)'}
+                {displayMode === 'difference' 
+                  ? (transpose ? '(絶対値-横)' : '(絶対値-縦)') 
+                  : displayMode === 'count' 
+                    ? '(n数)' 
+                    : (transpose ? '(絶対値-横)' : '(絶対値-縦)')}
               </div>
             </th>
             <th className="border-b border-r border-gray-300 bg-gray-50 p-1 text-center w-16">
@@ -189,10 +193,10 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
           {groupedData.order.map((varId) => {
             const rows = groupedData.groups[varId];
             return rows.map((row, rowIndex) => {
-              // 수치형 데이터 판별 (choiceId가 빈 문자열)
+              // 数値型データの判別（choiceIdが空文字列）
               const isNumerical = row.choiceId === '';
               
-              // transpose データを取得
+              // transposeデータを取得
               const transRow = transpose && transposedData ? transposedData.find(tr => 
                 tr.variableId === row.variableId && tr.choiceId === row.choiceId
               ) : null;
@@ -225,25 +229,25 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                   </td>
                   <td className="border-r border-b border-gray-300 p-1">
                     {transpose && transRow
-                      ? renderBar(transRow.averagePercentage, true, false) // transpose: 항상 평均% 표시
+                      ? renderBar(transRow.averagePercentage, true, false) // transpose: 常に平均%を表示
                       : displayMode === 'count' 
                         ? renderCountBar(row.totalCount || 0, row.totalRatio, true)
                         : isNumerical && !transpose
-                          ? renderBar(100, true, false) // 수치형 통상 모드: 100%
+                          ? renderBar(100, true, false) // 数値型通常モード: 100%
                           : renderBar(row.totalRatio, true, false)
                     }
                   </td>
                   {(transpose && transRow ? transRow.transposedSegmentPercentages : 
                     isNumerical && !transpose ? row.segmentRatios.map(() => 100) : row.segmentRatios
                   ).map((ratio, i) => {
-                    // このセルが最大値かどうかを確인 (동점의 경우는 모두 강조)
+                    // このセルが最大値かどうかを確認（同点の場合は全て強調）
                     const isMaxInRow = ratio === maxRatio && maxRatio > 0;
                     
-                    // 배경색 계산
+                    // 背景色の計算
                     let cellBgColor = '';
                     if (displayMode === 'difference' && !isNumerical) {
                       if (transpose && transRow) {
-                        // transpose + difference: 평균 기준 차이
+                        // transpose + difference: 平均基準の差
                         const differences = transRow.transposedSegmentPercentages.map(p => p - transRow.averagePercentage);
                         const maxDiff = Math.max(...differences);
                         const minDiff = Math.min(...differences);
@@ -255,7 +259,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                           cellBgColor = 'bg-red-100';
                         }
                       } else {
-                        // 통상 차분 모드
+                        // 通常の差分モード
                         const differences = row.segmentRatios.map(r => r - row.totalRatio);
                         const maxDiff = Math.max(...differences);
                         const minDiff = Math.min(...differences);
@@ -268,19 +272,19 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                         }
                       }
                     } else if (!transpose && !isNumerical) {
-                      // 절대값 모드(percentage, count)에서의 배경색 계산: 전체값과의 차이가 5 이상인 경우
+                      // 絶対値モード（percentage, count）での背景色計算：全体値との差が5以上の場合
                       const difference = row.segmentRatios[i] - row.totalRatio;
                       if (difference >= 5) {
-                        cellBgColor = 'bg-blue-100'; // 전체보다 5 이상 큰 경우는 파란 배경
+                        cellBgColor = 'bg-blue-100'; // 全体より5以上大きい場合は青背景
                       } else if (difference <= -5) {
-                        cellBgColor = 'bg-red-100'; // 전체보다 5 이상 작은 경우는 빨간 배경
+                        cellBgColor = 'bg-red-100'; // 全体より5以上小さい場合は赤背景
                       }
                     }
                     
-                    // 표시 모드에 따른 렌더링 분기
+                    // 表示モードによるレンダリング分岐
                     let cellContent;
                     if (isNumerical && !transpose) {
-                      // 수치형 통상 모드
+                      // 数値型通常モード
                       if (displayMode === 'count') {
                         cellContent = renderCountBar(row.segmentCounts?.[i] || 0, 100, false);
                       } else if (displayMode === 'difference') {
@@ -289,10 +293,10 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({
                         cellContent = renderBar(100, false, false); // 100%
                       }
                     } else if (transpose && displayMode === 'difference' && transRow) {
-                      // transpose + difference モード: セグメント% - 平均%
+                      // transpose + differenceモード: セグメント% - 平均%
                       cellContent = renderDifferenceBar(ratio, transRow.averagePercentage);
                     } else if (transpose) {
-                      // transpose + percentage モード: 選択肢全体に対するセグメントの割合
+                      // transpose + percentageモード: 選択肢全体に対するセグメントの割合
                       cellContent = renderBar(ratio, false, false);
                     } else if (displayMode === 'difference') {
                       cellContent = renderDifferenceBar(row.segmentRatios[i], row.totalRatio);

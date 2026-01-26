@@ -429,9 +429,9 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
     });
 
     analyzeTargets.forEach(target => {
-      // 수치형 데이터인 경우: 한 줄로 집계 (선택지별 분리 안함)
+      // 数値型データの場合：1行で集計（選択肢別の分離なし）
       if (target.isNumerical) {
-        // 전체 카운트 (NA 제외)
+        // 全体カウント（NA除外）
         const totalCount = rowsWithSegment.filter(r => {
           const val = r[target.id];
           const numVal = Number(val);
@@ -440,7 +440,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
         
         const totalRatio = totalSamples > 0 ? (totalCount / totalSamples) * 100 : 0;
         
-        // 세그먼트별 카운트
+        // セグメント別カウント
         const segCounts = segmentSizes.map((size, segIndex) => {
           const segId = segIndex + 1;
           return rowsWithSegment.filter(r => {
@@ -451,13 +451,13 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
           }).length;
         });
         
-        // 세그먼트별 비율 (각 세그먼트 내에서의 비율)
+        // セグメント別比率（各セグメント内での比率）
         const segmentRatios = segCounts.map((count, i) => {
           const size = segmentSizes[i];
           return size > 0 ? (count / size) * 100 : 0;
         });
         
-        // 한 줄만 추가 (선택지는 공란)
+        // 1行のみ追加（選択肢は空欄）
         resultRows.push({
           variableId: target.id.toUpperCase(),
           variableName: target.name,
@@ -469,10 +469,10 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
           segmentCounts: segCounts
         });
         
-        return; // 다음 target으로
+        return; // 次のtargetへ
       }
       
-      // 카테고리형 데이터: 기존 로직
+      // カテゴリ型データ：既存ロジック
       const choiceSet = new Set<string>();
       
       // 通常のカテゴリ収集
@@ -656,7 +656,7 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       let filteredSegmentSizes = result.segmentSizes;
 
       if (displaySelectedSegments && displaySelectedSegments.length > 0) {
-        // 各行의 데이터를 選択されたセグメント インデックスに従って フィルタリング
+        // 各行のデータを選択されたセグメントインデックスに従ってフィルタリング
         filteredRows = result.rows.map(row => ({
           ...row,
           segmentRatios: displaySelectedSegments.map(segNum => row.segmentRatios[segNum - 1]),
@@ -914,13 +914,11 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
                           <AppButton
                             className="px-6 whitespace-nowrap ml-auto"
                             onClick={() => {
-                              // %表示 ↔ 差分表示 トグル
+                              // 集計表示 ↔ 差分表示 トグル
                               setTableDisplayMode(prev => prev === 'percentage' ? 'difference' : 'percentage');
-                              // 表示モード変更時は縦状態にリセット
-                              setViewType('vertical');
                             }}
                           >
-                            {tableDisplayMode === 'percentage' ? '差分表示' : '%表示'}
+                            {tableDisplayMode === 'percentage' ? '差分表示' : '集計表示'}
                           </AppButton>
                           <AppButton
                             className="px-6 whitespace-nowrap"

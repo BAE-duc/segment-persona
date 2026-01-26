@@ -538,7 +538,7 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
       metaRows.push(['Custom filter conditions']);
       if (targetCustomFilters && targetCustomFilters.length > 0) {
         targetCustomFilters.forEach((c: any) => {
-          // 괄호를 조건 앞뒤에 배치: (bracketOpen) itemName symbol categoryName connector (bracketClose)
+          // 括弧を条件の前後に配置: (bracketOpen) itemName symbol categoryName connector (bracketClose)
           const conditionText = `${c.bracketOpen || ''}${c.itemName} ${c.symbol} ${c.categoryName} ${c.connector || ''}${c.bracketClose || ''}`;
           metaRows.push([conditionText.trim()]);
         });
@@ -595,7 +595,7 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
       };
 
       // Helper to build transposed sheet (横 - horizontal)
-      // 화면의 가로 변환 로직과 동일: 각 선택지의 전체 카운트 대비 각 세그먼트 카운트 비율
+      // 画面の横変換ロジックと同じ：各選択肢の全体カウントに対する各セグメントカウントの比率
       const buildTransposedSheet = (rows: any[], segmentSizes: number[], mode: 'percentage' | 'difference' | 'count') => {
         const header = ['Variable', 'Choice', 'Average', ...segmentSizes.map((_, i) => `Segment ${i + 1}`)];
         const aoa = [header];
@@ -605,32 +605,32 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
           rowVals.push(r.variableName || r.variableId);
           rowVals.push(r.choiceName || r.choiceId);
           
-          // 각 선택지의 전체 카운트
+          // 各選択肢の全体カウント
           const totalChoiceCount = r.totalCount || 0;
           
-          // 각 세그먼트에서 이 선택지가 차지하는 비율 계산
+          // 各セグメントでこの選択肢が占める比率を計算
           const segmentPercentages = (r.segmentCounts || []).map((count: number) => {
             return totalChoiceCount > 0 ? (count / totalChoiceCount) * 100 : 0;
           });
           
-          // 평균 계산
+          // 平均を計算
           const averagePercentage = segmentPercentages.length > 0
             ? segmentPercentages.reduce((sum: number, p: number) => sum + p, 0) / segmentPercentages.length
             : 0;
           
           if (mode === 'percentage') {
-            // percentage 모드: 평균과 각 세그먼트 비율 표시
+            // percentageモード: 平均と各セグメント比率を表示
             rowVals.push(Number(averagePercentage.toFixed(2)));
             rowVals.push(...segmentPercentages.map((val: number) => Number(val.toFixed(2))));
           } else if (mode === 'difference') {
-            // difference 모드: 평균과 (각 세그먼트 비율 - 평균) 표시
+            // differenceモード: 平均と（各セグメント比率 - 平均）を表示
             rowVals.push(Number(averagePercentage.toFixed(2)));
             const diffs = segmentPercentages.map((segRatio: number) => 
               Number((segRatio - averagePercentage).toFixed(2))
             );
             rowVals.push(...diffs);
           } else {
-            // count 모드는 가로 변환 안함 (이 함수 호출 안됨)
+            // countモードは横変換なし（この関数は呼び出されない）
             rowVals.push(r.totalCount ?? 0);
             rowVals.push(...(r.segmentCounts || []));
           }

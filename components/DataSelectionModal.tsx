@@ -19,7 +19,7 @@ interface DataGroup {
   items: Omit<DataItem, 'groupName'>[];
 }
 
-// モーダルに 표시할 고정 데이터 (사용자 요청에 따라 변경)
+// モーダルに表示する固定データ（ユーザー要求により変更）
 
 const modalData: DataGroup[] = [
   {
