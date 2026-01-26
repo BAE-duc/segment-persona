@@ -209,7 +209,19 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
     customFilterConditions: ConditionListItem[];
   } | null>(null);
   // comparison data for export (filled by SegmentMainContent via callback)
-  const [comparisonExportData, setComparisonExportData] = useState<{ rows: any[]; segmentSizes: number[] } | null>(null);
+  const [comparisonExportData, setComparisonExportData] = useState<{ 
+    rows: any[]; 
+    segmentSizes: number[];
+    displaySettings?: {
+      tableDisplayMode: 'percentage' | 'difference';
+      viewType: 'vertical' | 'horizontal' | 'count';
+      displayRangeConfigs: Record<string, { min: number; max: number }>;
+      displayCategoryConfigs: Record<string, string[]>;
+      displayIntervalConfigs: Record<string, number>;
+      displayAdoptedVariableIds: Set<string> | null;
+      displaySelectedSegments: number[] | null;
+    };
+  } | null>(null);
 
 
   const handleSegmentationExecute = () => {
@@ -516,6 +528,23 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
       metaRows.push(['Selected data', targetSelectedData ? JSON.stringify(targetSelectedData) : 'N/A']);
       metaRows.push([]);
 
+      // パラメータ情報を追加
+      metaRows.push(['パラメータ設定']);
+      const currentSettings = segmentSettings || defaultSettings;
+      metaRows.push(['マップサイズ', currentSettings.mapSize]);
+      if (currentSettings.mapSize === 'custom') {
+        metaRows.push(['カスタム幅', currentSettings.customWidth]);
+        metaRows.push(['カスタム高さ', currentSettings.customHeight]);
+      }
+      metaRows.push(['学習率', currentSettings.learningRate]);
+      metaRows.push(['反復回数', currentSettings.iterations]);
+      metaRows.push(['距離メトリック', currentSettings.distanceMetric]);
+      metaRows.push(['近傍半径', currentSettings.neighborhoodRadius]);
+      metaRows.push(['近傍関数', currentSettings.neighborhoodFunction]);
+      metaRows.push(['階層的距離関数', currentSettings.hierarchicalDistanceFunction]);
+      metaRows.push(['階層的連結法', currentSettings.hierarchicalLinkageMethod]);
+      metaRows.push([]);
+
       // Selected variables (display conditions). If none, fallback to selectedItems
       const targetVariables = (isSegmentationExecuted && executedState) ? executedState.selectedVariables : selectedVariables;
       if (targetVariables && Object.keys(targetVariables).length > 0) {
@@ -551,6 +580,77 @@ export const SegmentCreationPage: React.FC<SegmentCreationPageProps> = ({ onOpen
       Object.keys(targetFilterCategories).forEach((cat) => {
         metaRows.push([cat, ...(targetFilterCategories[cat] || [])]);
       });
+      metaRows.push([]);
+
+      // 集計表の表示条件を追加
+      if (comparisonExportData.displaySettings) {
+        const ds = comparisonExportData.displaySettings;
+        metaRows.push(['集計表の表示条件']);
+        metaRows.push([]);
+        
+        // 表示モード
+        metaRows.push(['表示モード']);
+        const displayModeText = ds.tableDisplayMode === 'percentage' ? '集計表示' : '差分表示';
+        metaRows.push([displayModeText]);
+        metaRows.push([]);
+        
+        // 表示形式
+        metaRows.push(['表示形式']);
+        let viewTypeText = '';
+        if (ds.viewType === 'vertical') viewTypeText = '縦変換';
+        else if (ds.viewType === 'horizontal') viewTypeText = '横変換';
+        else if (ds.viewType === 'count') viewTypeText = 'n数表示';
+        metaRows.push([viewTypeText]);
+        metaRows.push([]);
+        
+        // 選択されたセグメント
+        if (ds.displaySelectedSegments && ds.displaySelectedSegments.length > 0) {
+          metaRows.push(['表示セグメント']);
+          metaRows.push([ds.displaySelectedSegments.join(', ')]);
+          metaRows.push([]);
+        }
+        
+        // 採用変数
+        if (ds.displayAdoptedVariableIds && ds.displayAdoptedVariableIds.size > 0) {
+          metaRows.push(['採用変数']);
+          const varIds = Array.from(ds.displayAdoptedVariableIds);
+          varIds.forEach(id => {
+            const varDetail = itemDetails.find(item => item.id === id);
+            metaRows.push([id, varDetail ? varDetail.name : '']);
+          });
+          metaRows.push([]);
+        }
+        
+        // 数値型変数の範囲設定
+        if (Object.keys(ds.displayRangeConfigs).length > 0) {
+          metaRows.push(['数値型変数の範囲設定']);
+          Object.entries(ds.displayRangeConfigs).forEach(([varId, range]) => {
+            const varDetail = itemDetails.find(item => item.id === varId);
+            metaRows.push([varId, varDetail ? varDetail.name : '', `${range.min} ~ ${range.max}`]);
+          });
+          metaRows.push([]);
+        }
+        
+        // カテゴリ型変数の選択肢設定
+        if (Object.keys(ds.displayCategoryConfigs).length > 0) {
+          metaRows.push(['カテゴリ型変数の選択肢設定']);
+          Object.entries(ds.displayCategoryConfigs).forEach(([varId, categories]) => {
+            const varDetail = itemDetails.find(item => item.id === varId);
+            metaRows.push([varId, varDetail ? varDetail.name : '', categories.join(', ')]);
+          });
+          metaRows.push([]);
+        }
+        
+        // 区間設定
+        if (Object.keys(ds.displayIntervalConfigs).length > 0) {
+          metaRows.push(['区間設定']);
+          Object.entries(ds.displayIntervalConfigs).forEach(([varId, interval]) => {
+            const varDetail = itemDetails.find(item => item.id === varId);
+            metaRows.push([varId, varDetail ? varDetail.name : '', `区間: ${interval}`]);
+          });
+          metaRows.push([]);
+        }
+      }
 
       const metaWs = XLSX.utils.aoa_to_sheet(metaRows);
       XLSX.utils.book_append_sheet(wb, metaWs, 'Info');

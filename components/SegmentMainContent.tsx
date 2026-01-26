@@ -39,7 +39,19 @@ interface SegmentMainContentProps {
   rangeConfigs?: Record<string, { min: number; max: number }>;
   customFilterConditions: ConditionListItem[];
   onOpenPersonaPopup?: () => void;
-  onComparisonDataChange?: (data: { rows: any[]; segmentSizes: number[] } | null) => void;
+  onComparisonDataChange?: (data: { 
+    rows: any[]; 
+    segmentSizes: number[];
+    displaySettings?: {
+      tableDisplayMode: 'percentage' | 'difference';
+      viewType: 'vertical' | 'horizontal' | 'count';
+      displayRangeConfigs: Record<string, { min: number; max: number }>;
+      displayCategoryConfigs: Record<string, string[]>;
+      displayIntervalConfigs: Record<string, number>;
+      displayAdoptedVariableIds: Set<string> | null;
+      displaySelectedSegments: number[] | null;
+    };
+  } | null) => void;
 }
 
 // ポジショニングタブの設定コンポーネントのPropsインターフェース
@@ -673,7 +685,19 @@ export const SegmentMainContent: React.FC<SegmentMainContentProps> = ({
       try {
         const callback = onComparisonDataChangeRef.current;
         if (typeof callback === 'function') {
-          callback({ rows: filteredRows, segmentSizes: filteredSegmentSizes });
+          callback({ 
+            rows: filteredRows, 
+            segmentSizes: filteredSegmentSizes,
+            displaySettings: {
+              tableDisplayMode,
+              viewType,
+              displayRangeConfigs,
+              displayCategoryConfigs,
+              displayIntervalConfigs,
+              displayAdoptedVariableIds,
+              displaySelectedSegments
+            }
+          });
         }
       } catch (error) {
         console.error('Failed to call onComparisonDataChange:', error);

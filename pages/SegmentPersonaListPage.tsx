@@ -266,17 +266,12 @@ export const SegmentPersonaListPage: React.FC = () => {
                                     <div className="absolute left-0 right-0 top-1/2 border-t border-dotted border-gray-400 z-0"></div>
 
                                     {personaData.map(p => (
-                                        <div key={p.id} className="flex flex-col items-center justify-end h-24 z-10 relative group">
+                                        <div key={p.id} className="flex flex-col items-center justify-end h-24 z-10 relative">
                                             <span className="mb-1 text-[10px] text-gray-500">{p.innovatorScore}</span>
                                             <div
-                                                className="w-full bg-[#2CA0F0] cursor-help"
+                                                className="w-full bg-[#2CA0F0]"
                                                 style={{ height: `${(p.innovatorScore / 7) * 100}%` }}
                                             ></div>
-                                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 px-2 py-1 bg-gray-800 text-white text-[9px] rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                                                <div>Information</div>
-                                                <div>1. Content</div>
-                                                <div>2. Content</div>
-                                            </div>
                                         </div>
                                     ))}
                                 </div>
